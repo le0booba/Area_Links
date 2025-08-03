@@ -3,7 +3,7 @@
 <div align="center">
   <div style="display: flex; justify-content: center; align-items: center; gap: 10px; flex-wrap: wrap;">
     <img src="https://raw.githubusercontent.com/le0booba/Area_Links/refs/heads/main/screen-options-1.png" alt="Area Links Screenshot 1" width="300"/>
-    <img src="https://raw.githubusercontent.com/le0booba/Area_Links/refs/heads/main/screen-options-2.png" alt="Area Links Screenshot 2" width="400"/>
+    <img src="https://raw.githubusercontent.com/le0booba/Area_Links/refs/heads/main/screen-options.png" alt="Area Links Screenshot 2" width="400"/>
   </div>
   
   **Select. Open. Done.**
