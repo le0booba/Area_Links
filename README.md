@@ -2,15 +2,17 @@
 
 <div align="center">
   <div style="display: flex; justify-content: center; align-items: center; gap: 10px; flex-wrap: wrap;">
-    <img src="https://raw.githubusercontent.com/le0booba/Area_Links/refs/heads/main/screen-options-1.png" alt="Area Links Screenshot 1" width="300"/>
+    <img src="https://raw.githubusercontent.com/le0booba/Area_Links/refs/heads/main/screen-options-popup.png" alt="Area Links Screenshot 1" width="280"/>
     <img src="https://raw.githubusercontent.com/le0booba/Area_Links/refs/heads/main/screen-options.png" alt="Area Links Screenshot 2" width="400"/>
   </div>
   
-  **Select. Open. Done.**
+  **Select. Open. Done**
   
   A powerful Chrome extension to select an area on any webpage and instantly open or copy all links within it.
 
   ![Chrome Extension](https://img.shields.io/badge/Chrome-Extension-blue?logo=googlechrome)
+  ![Manifest V3](https://img.shields.io/badge/Manifest-V3-brightgreen)
+  ![License](https://img.shields.io/badge/License-MIT-yellow.svg)
 </div>
 
 ---
@@ -19,46 +21,49 @@
 
 ### Installation
 
-1. **Download** the [LATEST RELEASE](https://github.com/le0booba/Area_Links/releases/latest) from GitHub
-2. **Extract** the ZIP file to a folder on your computer
-3. **Open Chrome** and navigate to `chrome://extensions/`
-4. **Enable** "Developer mode" (toggle in top-right corner)
-5. **Click** "Load unpacked" and select the extracted folder
-6. **Done!** The Area Links icon will appear in your toolbar
+1.  **Download** the [LATEST RELEASE](https://github.com/le0booba/Area_Links/releases/latest) from GitHub.
+2.  **Extract** the ZIP file to a permanent folder on your computer.
+3.  **Open Chrome** and navigate to the extensions page: `chrome://extensions/`.
+4.  **Enable "Developer mode"** using the toggle switch in the top-right corner.
+5.  **Click "Load unpacked"** and select the folder where you extracted the files.
+6.  **Done!** The Area Links icon will now be available in your browser's toolbar.
 
 ### Basic Usage
 
-| Action | Keyboard Shortcut | Steps |
-|--------|------------------|-------|
-| **Open Links** | `Alt+Z` (default) | Hold shortcut → Drag selection box → Release |
-| **Copy Links** | `Alt+X` (default) | Hold shortcut → Drag selection box → Release |
-| **Cancel Selection** | `Esc` | Press while in selection mode |
+| Action             | Default Shortcut | Mouse Action                             |
+| ------------------ | ---------------- | ---------------------------------------- |
+| **Open Links**     | `Alt+Z`          | Hold shortcut, drag a box, then release. |
+| **Copy Links**     | `Alt+X`          | Hold shortcut, drag a box, then release. |
+| **Cancel Selection** | `Esc`            | Press `Esc` key during an active selection. |
 
-> **Tip:** Customize shortcuts at `chrome://extensions/shortcuts`
+> **Tip:** You can customize keyboard shortcuts anytime at `chrome://extensions/shortcuts`.
 
 ---
 
 ## 🌟 Features
 
 ### Core Functionality
-- 🎯 **Visual Area Selection** - Intuitive drag-and-drop interface
-- 🚀 **Dual Operation Modes** - Open links OR copy to clipboard
-- ⚡ **Instant Action** - No menus, no clicks - just select and go
-- 🔄 **Smart Duplicate Prevention** - Remembers previously opened links
+- 🎯 **Visual Area Selection**: An intuitive drag-and-drop interface to select links.
+- 🚀 **Dual Operation Modes**: Seamlessly switch between opening links in new tabs or copying them to your clipboard.
+- ✨ **Visual Highlighting**: Instantly see which links are inside your selection box before you commit.
+- 🔗 **Smart Filtering**: Automatically ignores non-http, anchor (`#`), and javascript links.
+- 🖱️ **Context Menu Integration**: Activate selection using the right-click menu on any page.
 
 ### Customization Options
-- 🎨 **4 Selection Box Styles** - Classic Blue, Dashed Red, Dashed Green, Subtle Gray
-- 📂 **Flexible Opening** - New tabs, new window, or reverse order
-- 🚫 **Smart Filtering** - Exclude specific domains and keywords
-- ⚙️ **Configurable Limits** - Set maximum tabs to open at once
-- 🎹 **Custom Shortcuts** - Fully customizable keyboard combinations
+- 🎨 **4 Selection Box Styles**: Choose from Classic Blue, Dashed Red, Dashed Green, or a Subtle Gray theme.
+- 📂 **Flexible Opening Behavior**: Open links in new tabs, a completely new window, or even in reverse order.
+- 🚫 **Advanced Exclusion Filters**: Exclude links from specific domains or URLs containing certain keywords.
+- ⚙️ **Configurable Tab Limit**: Set a maximum number of tabs to open at once to prevent browser overload (from 1 to 50).
+- 🧠 **Duplicate Prevention**: Option to remember recently opened links to avoid opening the same ones again.
+- 🌍 **Multi-Language Support**: Full UI localization in English and Russian.
 
 <details>
-<summary>User Experience</summary>
+<summary><b>User Experience Enhancements</b></summary>
 
-- 📱 **Quick Settings Popup** - Fast access to common toggles
-- 💾 **Settings Sync** - Preferences saved across browser instances
-- 🎯 **Visual Link Highlighting** - Links within the selected area are visually highlighted in both open and copy modes, providing clear feedback on which links will be processed. When the "Remember opened links to avoid duplicates" or "Remove duplicates when copying links" option is enabled, duplicate links are not highlighted, ensuring users can easily identify unique links being targeted.
+- 📱 **Quick Settings Popup**: Click the toolbar icon for a compact menu to toggle common settings on the fly.
+- 💾 **Cross-Device Sync**: Your core settings are synced to your Chrome account, providing a consistent experience everywhere.
+- 🗑️ **History Management**: Easily clear the list of "remembered" links directly from the options page.
+- 😌 **Lightweight & Fast**: Built to be efficient and not slow down your browsing experience.
 
 </details>
 
@@ -66,84 +71,38 @@
 
 ## 📋 Use Cases
 
-Perfect for:
-- **📚 Research** - Open multiple academic papers or articles
-- **🛍️ Shopping** - Compare products across multiple tabs
-- **📱 Social Media** - Open interesting posts in bulk
-- **👨‍💻 Development** - Test multiple URLs from documentation
-- **📖 Content Curation** - Collect links for later reading
-- **📰 News Reading** - Open multiple articles from news aggregators
+This extension is perfect for:
+- **📚 Researchers**: Quickly open dozens of citations, search results, or articles.
+- **🛍️ Online Shoppers**: Easily compare multiple product listings across different tabs.
+- **👨‍💻 Developers**: Open all links from a project's dependency list or API documentation.
+- **📖 Content Curators**: Gather a list of links from an article or blog for sharing.
+- **📰 News Readers**: Open all headlines from a news aggregator's front page in one go.
 
 ---
 
 ## ⚙️ Configuration
 
 ### Quick Settings (Extension Popup)
-Click the extension icon for instant access to:
-- 🔼 Open in new window
-- 🔼 Open in reverse order  
-- 🔼 Remember opened links to avoid duplicates
-- 🔼 Remove duplicates when copying links
+Click the extension icon in your toolbar for instant access to toggle:
+-   `Open in new window`
+-   `Open in reverse order`
+-   `Remember opened links`
+-   `Remove duplicates on copy`
 
 ### Advanced Settings (Options Page)
 
 <details>
-<summary>View Advanced Settings</summary>
+<summary><b>View All Advanced Settings</b></summary>
 
-| Setting | Description | Example |
-|---------|-------------|---------|
-| **Excluded Domains** | Skip links from specific websites | `facebook.com, ads.google.com` |
-| **Excluded Words** | Ignore links containing keywords | `login, logout, unsubscribe` |
-| **Tab Limit** | Maximum tabs opened simultaneously | `1-50` (default: 15) |
-| **Selection Style** | Visual appearance of selection box | 4 styles available |
-| **History Management** | Remember opened links to prevent duplicates | ✅ Enabled by default |
-
-</details>
-
----
-
-## 🔒 Privacy & Security
-
-**🔐 Security Guarantees**
-- **🚫 Zero Tracking** - No analytics, telemetry, or user data collection
-- **🔒 Offline Operation** - No external network requests or data transmission
-- **🛡️ Local Processing** - All link detection and filtering happens on your device
-- **🗑️ Easy Cleanup** - Clear history anytime via extension options
-
-### Data Handling
-
-<details>
-<summary><strong>🏠 Local Storage (chrome.storage.local)</strong> - Data stored only on your device, never synced to your Google account</summary>
-
-- **Link History** - URLs you've previously opened (up to 75 links)
-- **History Preferences** - Whether to remember opened links (`useHistory`)
-- **Copy Settings** - Remove duplicates when copying links (`checkDuplicatesOnCopy`)
-</details>
-
-<details>
-<summary><strong>☁️ Chrome Sync Storage (chrome.storage.sync)</strong> - Settings synced to your Chrome account across devices</summary>
-
-- **Excluded Domains** - Websites to skip (`excludedDomains`)
-- **Excluded Words** - Keywords to filter out (`excludedWords`)
-- **Tab Limits** - Maximum tabs to open (`tabLimit`)
-- **Visual Settings** - Selection box style (`selectionStyle`)
-- **Opening Behavior** - New window preference (`openInNewWindow`)
-- **Order Settings** - Reverse link order (`reverseOrder`)
-</details>
-
-### Required Permissions
-
-<details>
-<summary>View Permission Details</summary>
-
-| Permission | Purpose |
-|------------|---------|
-| `storage` | Save your preferences and link history locally |
-| `tabs` | Create new tabs and manage browser windows |
-| `scripting` | Inject the selection interface into web pages |
-| `<all_urls>` | Enable functionality on all websites you visit |
-
-*We only request permissions essential for core functionality.*
+| Setting | Description | Default |
+|---|---|---|
+| **Tab Limit** | Set the maximum number of tabs to open in a single action. | `15` |
+| **Selection Style** | Changes the visual appearance of the selection box. | `Classic Blue` |
+| **Excluded Domains** | Comma-separated list of domains to ignore (e.g., `google.com, twitter.com`). | `(empty)` |
+| **Excluded Words** | Comma-separated list of keywords to ignore in link URLs (e.g., `logout, unsubscribe`). | `(empty)` |
+| **Show in context menu** | Toggles the "Open/Copy Links" options in the right-click menu. | `On` |
+| **Language** | Switch the extension's display language between supported locales. | `English` |
+| **Clear History** | A button to clear the list of links remembered by the "Remember opened links" feature. | `N/A` |
 
 </details>
 
@@ -151,63 +110,78 @@ Click the extension icon for instant access to:
 
 ## 🛠️ Troubleshooting
 
-### Common Issues
-
 <details>
-<summary>Extension not working on certain pages</summary>
+<summary><b>Extension doesn't work on certain pages (e.g., New Tab page)</b></summary>
+  
+**Cause:** For security reasons, Chrome extensions are not allowed to run on internal `chrome://` pages (like Settings, Bookmarks, or the Extensions page itself), the Chrome Web Store, or other protected browser pages.
 
-**Problem:** Area Links doesn't respond on some pages.
-
-**Solution:** The extension cannot work on Chrome's internal pages like:
-- `chrome://` pages (settings, extensions, etc.)
-- Chrome Web Store
-- New Tab page
-- Some restricted websites
-
-**Workaround:** Navigate to a regular website and try again.
+**Solution:** This is expected behavior. The extension will function correctly on standard websites.
 </details>
 
 <details>
-<summary>Keyboard shortcuts not responding</summary>
+<summary><b>Keyboard shortcuts are not working</b></summary>
+  
+**Cause:** Another extension might be using the same shortcuts, or the shortcuts might have been changed.
 
-**Problem:** Alt+Z or Alt+X shortcuts don't work.
-
-**Solutions:**
-1. Check for shortcut conflicts at `chrome://extensions/shortcuts`
-2. Ensure the extension is enabled
-3. Try on a different website
-4. Refresh the page and try again
+**Solution:**
+1.  Navigate to `chrome://extensions/shortcuts`.
+2.  Find "Area Links" in the list.
+3.  Check for any conflicts and reassign the shortcuts if needed.
 </details>
 
 <details>
-<summary>No links opening despite selection</summary>
+<summary><b>No links are opening even after I make a selection</b></summary>
+  
+**Cause:** The links might be filtered out by your settings, or the selection area might not contain valid links.
 
-**Problem:** Selection works but no tabs open.
+**Solution:**
+1.  Ensure your selection box covers actual, clickable `<a>` links.
+2.  Check your **Options Page** to see if the links are being blocked by your **Excluded Domains** or **Excluded Words** filters.
+3.  If you have "Remember opened links" enabled, try clearing the history via the Options Page.
+</details>
 
-**Solutions:**
-1. Verify your selection covers actual clickable links
-2. Check if tab limit is reached (increase in settings)
-3. Ensure popup blockers aren't interfering
-4. Check if links are filtered by your exclusion rules
+---
+
+## 🔒 Permissions & Privacy
+
+This extension was built with your privacy as a top priority.
+
+-   **🚫 Zero Tracking**: No analytics, telemetry, or user data is ever collected.
+-   **🔒 Offline First**: All processing happens locally in your browser. The extension makes no external network requests.
+-   **🗑️ Transparent Storage**: You have full control over the data stored by the extension and can clear it at any time.
+
+### Data Handling
+
+<details>
+<summary><strong>🏠 Local Storage (<code>chrome.storage.local</code>)</strong> - This data is stored only on your computer and is NOT synced to your Google Account.</summary>
+
+-   `linkHistory`: Stores a list of the last 50 unique URLs you opened using the extension, if `useHistory` is enabled.
+-   `useHistory`: A true/false setting for whether to remember opened links.
+-   `checkDuplicatesOnCopy`: A true/false setting for whether to remove duplicate links when copying.
 </details>
 
 <details>
-<summary>Links already visited message</summary>
+<summary><strong>☁️ Sync Storage (<code>chrome.storage.sync</code>)</strong> - These settings are synced across all browsers where you are logged into your Chrome account.</summary>
 
-**Problem:** Extension says "links already visited" but you want to open them again.
-
-**Solutions:**
-1. Click the extension icon → uncheck "Remember opened links"
-2. Go to Options → click "Clear History"
-3. Disable history feature temporarily
+-   All other settings, including `excludedDomains`, `excludedWords`, `tabLimit`, `selectionStyle`, `openInNewWindow`, `reverseOrder`, `language`, and `showContextMenu`.
 </details>
 
-### Debug Steps
-1. **Refresh the page** and try again
-2. **Check extension permissions** for the current site
-3. **Test on a simple webpage** with obvious links
-4. **Temporarily disable other extensions** to check for conflicts
-5. **Reset settings** using the options page
+### Required Permissions
+
+<details>
+<summary><b>View Permission Explanations</b></summary>
+
+| Permission         | Purpose                                                                   |
+| ------------------ | ------------------------------------------------------------------------- |
+| `storage`          | To save your settings and link history.                                   |
+| `tabs`             | To open links in new tabs and create new windows.                         |
+| `scripting`        | To inject the code that draws the selection box onto web pages.           |
+| `contextMenus`     | To add the activation options to your right-click menu for easy access.   |
+| `<all_urls>`       | To allow the extension to run on any website you visit.                   |
+
+*We only request permissions that are essential for the extension's core functionality.*
+
+</details>
 
 ---
 
@@ -215,28 +189,30 @@ Click the extension icon for instant access to:
 
 ```
 Area_Links/
-├── manifest.json           # Extension configuration
-├── background.js          # Service worker & message handling  
-├── content.js             # Page interaction & selection logic
-├── styles.css             # Selection box styling
-├── options.html           # Full settings page
-├── options.js             # Settings page logic
-├── popup.html             # Quick settings popup
-├── popup.js               # Popup functionality
-├── README.md              # Documentation
-└── icons/                 # Extension icons
-    ├── icon16.png
-    ├── icon48.png
-    ├── icon128.png
-    └── peace.jpg
+├── _locales/              # Language files for internationalization (i18n)
+│   ├── en/messages.json   # English localization strings
+│   └── ru/messages.json   # Russian localization strings
+├── icons/                 # Application and branding icons
+│   ├── icon16.png         # Icon for browser toolbar
+│   ├── icon48.png         # Icon for extensions management page
+│   ├── icon128.png        # Icon for the Chrome Web Store
+│   └── peace.jpg          # Branding image for README footer
+├── background.js          # Service worker for event handling
+├── content.js             # Injects selection logic into pages
+├── styles.css             # CSS for the selection box and highlights
+├── manifest.json          # The extension's manifest file
+├── options.html           # The full settings page
+├── options.js             # Logic for the settings page
+├── popup.html             # The extension's popup UI
+├── popup.js               # Logic for the popup
+└── README.md              # This documentation file
 ```
 
 ---
 
 <div align="center">
-  <img src="icons/peace.jpg" width="50" alt="Peace" />
-  <br>
+  
   **Made with ❤️ by badrenton**
   
-  *© 2025 • Give it a ⭐ if you found it helpful!*
+  *© 2025 • If you find this extension helpful, please consider giving it a ⭐ on GitHub!*
 </div>
