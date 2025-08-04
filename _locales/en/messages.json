@@ -1,0 +1,113 @@
+{
+    "extName": {
+        "message": "Area Links"
+    },
+    "extDescription": {
+        "message": "Select a webpage area to open all links within it."
+    },
+    "cmdActivate": {
+        "message": "Open Links"
+    },
+    "cmdActivateCopy": {
+        "message": "Copy Links"
+    },
+    "optionsTitle": {
+        "message": "Settings"
+    },
+    "optionsLanguage": {
+        "message": "Language"
+    },
+    "optionsHeaderBehavior": {
+        "message": "Behavior"
+    },
+    "optionsTabLimit": {
+        "message": "Maximum Tabs to Open at Once:"
+    },
+    "optionsOpenInNewWindow": {
+        "message": "Open in new window"
+    },
+    "optionsReverseOrder": {
+        "message": "Open in reverse order"
+    },
+    "optionsUseHistory": {
+        "message": "Remember opened links"
+    },
+    "optionsClearHistory": {
+        "message": "Clear History"
+    },
+    "optionsCheckDuplicatesOnCopy": {
+        "message": "Remove duplicates on copy"
+    },
+    "optionsShowContextMenu": {
+        "message": "Show in context menu"
+    },
+    "optionsHeaderExclusions": {
+        "message": "Exclusions"
+    },
+    "optionsExcludedDomains": {
+        "message": "Excluded Domains (comma-separated):"
+    },
+    "optionsExcludedWords": {
+        "message": "Exclude links with these words (comma-separated):"
+    },
+    "optionsHeaderAppearance": {
+        "message": "Appearance"
+    },
+    "optionsSelectionStyle": {
+        "message": "Selection Box Style:"
+    },
+    "optionsStyleClassicBlue": {
+        "message": "Classic Blue"
+    },
+    "optionsStyleDashedRed": {
+        "message": "Dashed Red"
+    },
+    "optionsStyleDashedGreen": {
+        "message": "Dashed Green"
+    },
+    "optionsStyleSubtleGray": {
+        "message": "Subtle Gray"
+    },
+    "optionsSaveExclusionsButton": {
+        "message": "Save Exclusions"
+    },
+    "optionsStatusExclusionsSaved": {
+        "message": "Exclusions saved."
+    },
+    "optionsStatusSettingSaved": {
+        "message": "Setting saved."
+    },
+    "optionsStatusHistoryCleared": {
+        "message": "History cleared!"
+    },
+    "optionsStatusError": {
+        "message": "Error:"
+    },
+    "optionsStatusTabLimitError": {
+        "message": "Tab limit must be between 1 and 50."
+    },
+    "optionsHowToUseTitle": {
+        "message": "How to Use"
+    },
+    "optionsHowToUseOpen": {
+        "message": "Press and hold"
+    },
+    "optionsHowToUseOpenDetail": {
+        "message": "and drag a box with your mouse to open all links in the area."
+    },
+    "optionsHowToUseCopy": {
+        "message": "Press and hold"
+    },
+    "optionsHowToUseCopyDetail": {
+        "message": "and drag a box to copy all links in the area."
+    },
+    "optionsHowToUseShortcuts_part1": {
+        "message": "Above are the default keyboard shortcuts."
+    },
+    "optionsHowToUseShortcuts_part2": {
+        "message": "Customize shortcuts here:"
+    },
+    "popupStatusSaved": {
+        "message": "Saved!"
+    }
+}

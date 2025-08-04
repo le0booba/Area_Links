@@ -1,281 +1,124 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Area Links Options</title>
-  <style>
-    body {
-      background-color: #f0f2f5;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      margin: 0;
-      padding: 20px;
-      display: flex;
-      justify-content: center;
-    }
-    .container {
-      background-color: white;
-      padding: 20px 40px;
-      border-radius: 8px;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-      width: 100%;
-      max-width: 500px;
-    }
-    h1 {
-      font-size: 1.5em;
-      text-align: center;
-      color: #333;
-    }
-    label {
-      display: block;
-      margin-top: 20px;
-      font-weight: 600;
-      color: #555;
-    }
-    textarea, input[type="number"], select {
-      width: 100%;
-      padding: 8px;
-      margin-top: 5px;
-      box-sizing: border-box;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-    }
-    textarea {
-      height: 100px;
-      resize: vertical;
-    }
-    button {
-      background-color: #007bff;
-      color: white;
-      padding: 10px 15px;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      font-size: 1em;
-      margin-top: 20px;
-      transition: background-color 0.2s;
-    }
-    button:hover {
-      background-color: #0056b3;
-    }
-    #clearHistory {
-      background-color: #dc3545;
-    }
-    #clearHistory:hover {
-      background-color: #c82333;
-    }
-    #status {
-      margin-top: 15px;
-      color: #105a9b;
-      font-weight: bold;
-      text-align: center;
-      height: 1em;
-    }
-    .info {
-      background-color: #e9ecef;
-      padding: 15px;
-      border-radius: 4px;
-      margin-top: 25px;
-      font-size: 1.07em;
-      text-align: left;
-    }
-    .history-options {
-      margin-top: 20px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-    .history-options label {
-      margin-top: 0;
-    }
-    .link-style {
-      color: #007bff;
-      text-decoration: underline;
-      cursor: pointer;
-    }
-    .header-row {
-      display: flex;
-      align-items: flex-end;
-      justify-content: space-between;
-      margin-bottom: 10px;
-    }
-    .title-group {
-      display: flex;
-      align-items: flex-end;
-      gap: 15px;
-    }
-    .main-title {
-      font-family: Impact, 'Arial Black', Arial, sans-serif;
-      font-size: 2.1em;
-      font-weight: 500;
-      color: #007bff;
-      letter-spacing: 1px;
-      margin: 0;
-      padding: 0;
-      text-align: left;
-    }
-    .main-title.dashed-outline {
-      padding: 8px 18px;
-      border: 2.5px dashed #007bff;
-      border-radius: 12px;
-      background: rgba(0,123,255,0.06);
-      box-shadow: 0 2px 8px rgba(0,123,255,0.07);
-      display: inline-block;
-      position: relative;
-      z-index: 1;
-    }
-    .settings-title {
-      font-size: 2em;
-      font-weight: 700;
-      color: #555;
-      margin: 0 0 0 20px;
-      padding-bottom: 2px;
-      align-self: flex-end;
-      position: relative;
-      top: 8px;
-      right: 0;
-      opacity: 0.85;
-      font-family: monospace;
-    }
-    .ext-version {
-      font-size: 1.3em;
-      color: #105a9b;
-      opacity: 0.7;
-      position: relative;
-      font-family: system-ui;
-      bottom: 8px;
-    }
-    .footer-info {
-      margin-top: 40px;
-      text-align: center;
-      color: #888;
-      font-size: medium;
-      font-family: monospace;
-      user-select: text;
-    }
-    .footer-info a {
-      color: #007bff;
-      text-decoration: underline;
-      word-break: break-all;
-      display: inline-block;
-      margin-bottom: 10px;
-    }
-    .footer-info img {
-      display: block;
-      margin-left: auto;
-      margin-right: auto;
-      margin-bottom: 15px;
-    }
-    .copyright-symbol {
-      font-size: 1.3em;
-    }
-    .icon-btn {
-      background: #f3f3f3;
-      border: none;
-      border-radius: 50%;
-      width: 28px;
-      height: 28px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 0;
-      margin: 0;
-      cursor: pointer;
-      transition: background 0.15s;
-    }
-    .icon-btn:hover {
-      background: #e0e0e0;
-    }
-    .icon-btn:disabled {
-      cursor: auto;
-      background: #f8f9fa;
-      opacity: 0.6;
-    }
-    .icon-btn:disabled:hover {
-       background: #f8f9fa;
-    }
-  </style>
+    <meta charset="utf-8">
+    <title data-i18n-title="Area Links Options"></title>
+    <link rel="stylesheet" href="options.css">
 </head>
 <body>
-  <div class="container">
-    <div class="header-row">
-      <div class="title-group">
-        <span class="main-title dashed-outline">Area Links</span>
-        <span id="ext-version" class="ext-version"></span>
-      </div>
-      <span class="settings-title">Settings</span>
-    </div>
+    <div class="container">
+        <header>
+            <div class="title-group">
+                <img src="icons/icon48.png" alt="Extension Icon" class="header-icon">
+                <h1>Area Links</h1>
+                <span id="ext-version" class="version-tag"></span>
+                <span class="author-tag">by badrenton</span>
+            </div>
+            <div class="controls-group">
+                <div class="control-item">
+                    <label for="language-select" data-i18n="optionsLanguage">Language</label>
+                    <select id="language-select">
+                        <option value="en">English</option>
+                        <option value="ru">Русский</option>
+                    </select>
+                </div>
+            </div>
+        </header>
 
-    <label for="excludedDomains">Excluded Domains (comma-separated):</label>
-    <div style="display: flex; gap: 8px; align-items: flex-start;">
-      <textarea id="excludedDomains" placeholder="example.com, sitelock.com"></textarea>
-      <button type="button" id="clearExcludedDomains" title="Clear field" class="icon-btn">
-        <svg width="18" height="18" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg">
-          <line x1="4" y1="4" x2="14" y2="14" stroke="#888" stroke-width="2" stroke-linecap="round"/>
-          <line x1="14" y1="4" x2="4" y2="14" stroke="#888" stroke-width="2" stroke-linecap="round"/>
-        </svg>
-      </button>
-    </div>
+        <main>
+            <section class="card">
+                <h2 data-i18n="optionsHeaderBehavior">Behavior</h2>
+                <div class="setting-row">
+                    <label for="tabLimit" data-i18n="optionsTabLimit">Maximum Tabs to Open at Once:</label>
+                    <input type="number" id="tabLimit" min="1" max="50">
+                </div>
+                <div class="setting-row toggle-row">
+                    <label for="openInNewWindow" data-i18n="optionsOpenInNewWindow">Open in new window</label>
+                    <label class="switch"><input type="checkbox" id="openInNewWindow"><span class="slider"></span></label>
+                </div>
+                <div class="setting-row toggle-row">
+                    <label for="reverseOrder" data-i18n="optionsReverseOrder">Open in reverse order</label>
+                    <label class="switch"><input type="checkbox" id="reverseOrder"><span class="slider"></span></label>
+                </div>
+                <div class="setting-row toggle-row">
+                    <label for="checkDuplicatesOnCopy" data-i18n="optionsCheckDuplicatesOnCopy">Remove duplicates on copy</label>
+                    <label class="switch"><input type="checkbox" id="checkDuplicatesOnCopy"><span class="slider"></span></label>
+                </div>
+                <div class="setting-row toggle-row">
+                    <label for="useHistory" data-i18n="optionsUseHistory">Remember opened links</label>
+                    <label class="switch"><input type="checkbox" id="useHistory"><span class="slider"></span></label>
+                </div>
+                <div class="card-footer">
+                    <div id="status-behavior" class="status-message"></div>
+                    <div class="control-wrapper">
+                        <div id="status-history" class="status-message"></div>
+                        <button id="clearHistory" class="button-danger" data-i18n="optionsClearHistory">Clear History</button>
+                    </div>
+                </div>
+            </section>
 
-    <label for="excludedWords">Exclude links containing these words (comma-separated):</label>
-    <div style="display: flex; gap: 8px; align-items: flex-start;">
-      <textarea id="excludedWords" placeholder="logout, unsubscribe"></textarea>
-      <button type="button" id="clearExcludedWords" title="Clear field" class="icon-btn">
-        <svg width="18" height="18" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg">
-          <line x1="4" y1="4" x2="14" y2="14" stroke="#888" stroke-width="2" stroke-linecap="round"/>
-          <line x1="14" y1="4" x2="4" y2="14" stroke="#888" stroke-width="2" stroke-linecap="round"/>
-        </svg>
-      </button>
-    </div>
+            <details class="card" id="exclusions-details">
+                <summary>
+                    <h2 data-i18n="optionsHeaderExclusions">Exclusions</h2>
+                </summary>
+                <div class="details-content">
+                    <div class="setting-row-vertical">
+                        <label for="excludedDomains" data-i18n="optionsExcludedDomains">Excluded Domains (comma-separated):</label>
+                        <div class="textarea-wrapper">
+                            <textarea id="excludedDomains" data-i18n-placeholder="e.g., example.com, sitelock.com" rows="3"></textarea>
+                            <button class="clear-btn" id="clearExcludedDomains" title="Clear field" disabled>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="setting-row-vertical">
+                        <label for="excludedWords" data-i18n="optionsExcludedWords">Exclude links with these words (comma-separated):</label>
+                        <div class="textarea-wrapper">
+                            <textarea id="excludedWords" data-i18n-placeholder="e.g., logout, unsubscribe" rows="3"></textarea>
+                            <button class="clear-btn" id="clearExcludedWords" title="Clear field" disabled>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <div id="status-exclusions" class="status-message"></div>
+                        <button id="saveExclusions" class="button-primary">
+                            <span class="unsaved-indicator">!</span>
+                            <span class="button-text" data-i18n="optionsSaveExclusionsButton">Save Exclusions</span>
+                        </button>
+                    </div>
+                </div>
+            </details>
 
-    <label for="tabLimit">Maximum Tabs to Open at Once:</label>
-    <input type="number" id="tabLimit" min="1" max="50">
+            <section class="card">
+                <h2 data-i18n="optionsHeaderAppearance">Appearance</h2>
+                <div class="setting-row">
+                    <label for="selectionStyle" data-i18n="optionsSelectionStyle">Selection Box Style:</label>
+                    <select id="selectionStyle">
+                        <option value="classic-blue" data-i18n="optionsStyleClassicBlue">Classic Blue</option>
+                        <option value="dashed-red" data-i18n="optionsStyleDashedRed">Dashed Red</option>
+                        <option value="dashed-green" data-i18n="optionsStyleDashedGreen">Dashed Green</option>
+                        <option value="subtle-gray" data-i18n="optionsStyleSubtleGray">Subtle Gray</option>
+                    </select>
+                </div>
+                <div class="setting-row toggle-row">
+                    <label for="showContextMenu" data-i18n="optionsShowContextMenu">Show in context menu</label>
+                    <label class="switch"><input type="checkbox" id="showContextMenu"><span class="slider"></span></label>
+                </div>
+                <div class="card-footer">
+                    <div id="status-appearance" class="status-message"></div>
+                </div>
+            </section>
 
-    <label for="selectionStyle">Selection Box Style:</label>
-    <select id="selectionStyle">
-      <option value="classic-blue">Classic Blue</option>
-      <option value="dashed-red">Dashed Red</option>
-      <option value="dashed-green">Dashed Green</option>
-      <option value="subtle-gray">Subtle Gray</option>
-    </select>
-
-    <div class="history-options">
-      <div>
-        <input type="checkbox" id="useHistory" checked>
-        <label for="useHistory" style="display: inline-block; font-weight: normal;">Remember opened links to avoid duplicates</label>
-      </div>
-      <button id="clearHistory">Clear History</button>
+            <section class="card-alt">
+                <h2 data-i18n="optionsHowToUseTitle">How to Use</h2>
+                <p><span data-i18n="optionsHowToUseOpen"></span> <kbd>Alt + Z</kbd> <span data-i18n="optionsHowToUseOpenDetail"></span></p>
+                <p><span data-i18n="optionsHowToUseCopy"></span> <kbd>Alt + X</kbd> <span data-i18n="optionsHowToUseCopyDetail"></span></p>
+                <p><i><span data-i18n="optionsHowToUseShortcuts_part1"></span></i></p>
+                <p><span data-i18n="optionsHowToUseShortcuts_part2"></span> <a href="chrome://extensions/shortcuts" id="shortcutsLink" target="_blank">chrome://extensions/shortcuts</a></p>
+            </section>
+        </main>
     </div>
-
-    <div style="margin-bottom: 20px;">
-      <label style="display: inline-block; font-weight: normal;"><input type="checkbox" id="checkDuplicatesOnCopy">Remove duplicates when copying links</label>
-    </div>
-
-    <div style="margin-top: 10px;">
-      <label for="openInNewWindow" style="display: inline-block; font-weight: normal;">
-        <input type="checkbox" id="openInNewWindow">
-        Open in new window
-      </label>
-    </div>
-    <div style="margin-top: 10px; margin-bottom: 20px;">
-      <label for="reverseOrder" style="display: inline-block; font-weight: normal;">
-        <input type="checkbox" id="reverseOrder">
-        Open in reverse order
-      </label>
-    </div>
-    <button id="save">Save Settings</button>
-    <div id="status"></div>
-
-    <div class="info">
-      <p><strong>How to use:</strong> Hold down <strong>Alt + Z</strong><i> (by default)</i> and drag a box with your left mouse button over the links you want to open.</p>
-      <p><strong>To copy links:</strong> Hold down <strong>Alt + X</strong><i> (by default)</i> and drag a box to copy all links in the area to the clipboard.</p>
-      <p><strong>To customize shortcuts:</strong> Go to <span id="shortcutsLink" class="link-style">chrome://extensions/shortcuts</span>.</p>
-    </div>
-    <div class="footer-info">
-      <img src="icons/peace.jpg">
-      <a href="https://github.com/le0booba/Area_Links" target="_blank">https://github.com/le0booba/Area_Links</a><br>
-      <span class="copyright-symbol">©</span> badrenton, <span id="copyright-year"></span>
-    </div>
-  </div>
-
-  <script src="options.js"></script>
+    <script src="options.js"></script>
 </body>
 </html>

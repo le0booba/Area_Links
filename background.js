@@ -5,59 +5,118 @@ const SYNC_DEFAULTS = {
   tabLimit: 15,
   selectionStyle: 'classic-blue',
   openInNewWindow: false,
-  reverseOrder: false
+  reverseOrder: false,
+  language: 'en',
+  showContextMenu: true,
 };
+
 const LOCAL_DEFAULTS = {
   linkHistory: [],
   useHistory: true,
   checkDuplicatesOnCopy: true,
 };
 
+let isMenuSetupRunning = false;
+
 async function getSettings() {
-  const [syncSettings, localSettings] = await Promise.all([
+  let [syncSettings, localSettings] = await Promise.all([
     chrome.storage.sync.get(SYNC_DEFAULTS),
     chrome.storage.local.get(LOCAL_DEFAULTS)
   ]);
+  
   return { ...syncSettings, ...localSettings };
 }
 
-chrome.runtime.onInstalled.addListener(() => {
-  chrome.storage.sync.set(SYNC_DEFAULTS);
-  chrome.storage.local.set(LOCAL_DEFAULTS);
+function i18n(key) {
+    return chrome.i18n.getMessage(key);
+}
+
+async function setupContextMenu() {
+    if (isMenuSetupRunning) {
+        return;
+    }
+    isMenuSetupRunning = true;
+
+    try {
+        await chrome.contextMenus.removeAll();
+        const settings = await getSettings();
+        if (settings.showContextMenu) {
+            const commands = await chrome.commands.getAll();
+            const activateShortcut = commands.find(c => c.name === 'activate-selection')?.shortcut || '';
+            const copyShortcut = commands.find(c => c.name === 'activate-selection-copy')?.shortcut || '';
+
+            chrome.contextMenus.create({
+                id: "activate-selection-menu",
+                title: `${i18n("cmdActivate")}${activateShortcut ? ` (${activateShortcut})` : ''}`,
+                contexts: ["page"]
+            });
+            chrome.contextMenus.create({
+                id: "activate-selection-copy-menu",
+                title: `${i18n("cmdActivateCopy")}${copyShortcut ? ` (${copyShortcut})` : ''}`,
+                contexts: ["page"]
+            });
+        }
+    } finally {
+        isMenuSetupRunning = false;
+    }
+}
+
+chrome.runtime.onInstalled.addListener((details) => {
+  if (details.reason === 'install') {
+    chrome.storage.sync.set(SYNC_DEFAULTS);
+    chrome.storage.local.set(LOCAL_DEFAULTS);
+  }
+  setupContextMenu();
 });
 
-chrome.commands.onCommand.addListener(async (command, tab) => {
-  const isActivationCommand = command === "activate-selection" || command === "activate-selection-copy";
-  if (!isActivationCommand || !tab.url?.startsWith('http')) {
-    if (isActivationCommand) {
-      console.log("Area Links: Cannot activate on this page (e.g., chrome://, New Tab Page).");
+chrome.runtime.onStartup.addListener(() => {
+    setTimeout(() => {
+        setupContextMenu();
+    }, 1500);
+});
+
+chrome.storage.onChanged.addListener((changes, area) => {
+    if (area === 'sync' && (changes.showContextMenu || changes.language)) {
+        setupContextMenu();
     }
-    return;
-  }
+});
 
-  const settings = await getSettings();
+chrome.contextMenus.onClicked.addListener((info, tab) => {
+    if (info.menuItemId === "activate-selection-menu") {
+        triggerSelection(tab, "initiateSelection");
+    } else if (info.menuItemId === "activate-selection-copy-menu") {
+        triggerSelection(tab, "initiateSelectionCopy");
+    }
+});
 
-  chrome.tabs.sendMessage(tab.id, {
-    type: command === "activate-selection" ? "initiateSelection" : "initiateSelectionCopy",
-    style: settings.selectionStyle,
-    checkDuplicatesOnCopy: settings.checkDuplicatesOnCopy,
-    useHistory: settings.useHistory,
-    linkHistory: settings.useHistory ? settings.linkHistory : []
-  }).catch(error => {
-    console.warn(`Area Links: Could not establish connection with content script. ${error.message}`);
-  });
+async function triggerSelection(tab, commandType) {
+    if (!tab.url?.startsWith('http')) {
+        return;
+    }
+
+    const settings = await getSettings();
+
+    chrome.tabs.sendMessage(tab.id, {
+        type: commandType,
+        style: settings.selectionStyle,
+        checkDuplicatesOnCopy: settings.checkDuplicatesOnCopy,
+        useHistory: settings.useHistory,
+        linkHistory: settings.useHistory ? settings.linkHistory : []
+    }).catch(error => {
+        console.warn(`Area Links: Could not establish connection with content script. ${error.message}`);
+    });
+}
+
+
+chrome.commands.onCommand.addListener((command, tab) => {
+    const commandType = command === "activate-selection" ? "initiateSelection" : "initiateSelectionCopy";
+    triggerSelection(tab, commandType);
 });
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.type === "openLinks") {
     processLinks(request.urls);
     return false;
-  }
-  if (request.type === "clearHistory") {
-    chrome.storage.local.set({ linkHistory: [] })
-      .then(() => sendResponse({ success: true, message: 'History cleared!' }))
-      .catch(err => sendResponse({ success: false, message: err.message }));
-    return true;
   }
   return false;
 });
