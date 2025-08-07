@@ -189,23 +189,23 @@ This extension was built with your privacy as a top priority.
 
 ```
 Area_Links/
-├── _locales/              # Language files for internationalization (i18n)
-│   ├── en/messages.json   # English localization strings
-│   └── ru/messages.json   # Russian localization strings
-├── icons/                 # Application and branding icons
-│   ├── icon16.png         # Icon for browser toolbar
-│   ├── icon48.png         # Icon for extensions management page
-│   ├── icon128.png        # Icon for the Chrome Web Store
-│   └── peace.jpg          # Branding image for README footer
-├── background.js          # Service worker for event handling
-├── content.js             # Injects selection logic into pages
-├── styles.css             # CSS for the selection box and highlights
-├── manifest.json          # The extension's manifest file
-├── options.html           # The full settings page
-├── options.js             # Logic for the settings page
-├── popup.html             # The extension's popup UI
-├── popup.js               # Logic for the popup
-└── README.md              # This documentation file
+├── 🌍 _locales/              # Language files for internationalization (i18n)
+│   ├── 🔤 en/messages.json   # English localization strings
+│   └── 🔤 ru/messages.json   # Russian localization strings
+├── 🖼️ icons/                 # Application and branding icons
+│   ├── 🖼️ icon16.png         # Icon for browser toolbar
+│   ├── 🖼️ icon48.png         # Icon for extensions management page
+│   ├── 🖼️ icon128.png        # Icon for the Chrome Web Store
+│   └── 🖼️ peace.jpg          # Branding image for README footer
+├── 🧠 background.js          # Service worker for event handling
+├── ⚡ content.js             # Injects selection logic into pages
+├── 🎨 styles.css             # CSS for the selection box and highlights
+├── 🧩 manifest.json          # The extension's manifest file
+├── 🎛️🖥️ options.html         # The full settings page
+├── 🎛️ options.js             # Logic for the settings page
+├── 💬🖥️ popup.html           # The extension's popup UI
+├── 💬 popup.js               # Logic for the popup
+└── ℹ️ README.md              # This documentation file
 ```
 
 ---
