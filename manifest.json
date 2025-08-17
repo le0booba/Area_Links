@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "__MSG_extName__",
-  "version": "2.1.6",
+  "version": "2.2.0",
   "description": "__MSG_extDescription__",
   "default_locale": "en",
   "icons": {
@@ -16,7 +16,8 @@
     "contextMenus"
   ],
   "host_permissions": [
-    "<all_urls>"
+    "http://*/*",
+    "https://*/*"
   ],
   "action": {
     "default_icon": {
@@ -32,7 +33,8 @@
   "content_scripts": [
     {
       "matches": [
-        "<all_urls>"
+        "http://*/*",
+        "https://*/*"
       ],
       "js": [
         "content.js"

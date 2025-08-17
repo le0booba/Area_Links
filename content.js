@@ -6,6 +6,7 @@ const selectionState = {
     isActive: false,
     isSelecting: false,
     isCopyMode: false,
+    isUpdateScheduled: false,
     selectionBox: null,
     style: 'classic-blue',
     startCoords: { x: 0, y: 0 },
@@ -13,6 +14,7 @@ const selectionState = {
     checkDuplicatesOnCopy: true,
     useHistory: false,
     linkHistory: [],
+    historySet: new Set(),
 };
 
 let highlightedElements = new Set();
@@ -50,7 +52,6 @@ function getIntersectingLinkData(docRect) {
 function updateLinkHighlights(docRect) {
     const intersectingData = getIntersectingLinkData(docRect);
     const newHighlightedElements = new Set();
-    const historySet = new Set(selectionState.linkHistory);
     const seenInSelection = new Set();
 
     intersectingData.forEach(({ element, href }) => {
@@ -62,7 +63,7 @@ function updateLinkHighlights(docRect) {
                 isFiltered = true;
             }
         } else {
-            if (isSeenInSelection || (selectionState.useHistory && historySet.has(href))) {
+            if (isSeenInSelection || (selectionState.useHistory && selectionState.historySet.has(href))) {
                 isFiltered = true;
             }
         }
@@ -113,9 +114,11 @@ function resetSelection() {
         isActive: false,
         isSelecting: false,
         isCopyMode: false,
+        isUpdateScheduled: false,
         selectionBox: null,
         startCoords: { x: 0, y: 0 },
         currentCoords: { x: 0, y: 0 },
+        historySet: new Set(),
     });
 }
 
@@ -149,19 +152,33 @@ function handleKeyDown(e) {
     }
 }
 
-function handleScroll() {
-    if (!selectionState.isSelecting) return;
+function runScheduledUpdate() {
+    if (!selectionState.isSelecting) {
+        selectionState.isUpdateScheduled = false;
+        return;
+    }
     updateSelectionBox();
     const rect = getSelectionRectangle(selectionState.startCoords, selectionState.currentCoords);
     updateLinkHighlights(rect);
+    selectionState.isUpdateScheduled = false;
+}
+
+function scheduleUpdate() {
+    if (!selectionState.isUpdateScheduled) {
+        selectionState.isUpdateScheduled = true;
+        requestAnimationFrame(runScheduledUpdate);
+    }
+}
+
+function handleScroll() {
+    if (!selectionState.isSelecting) return;
+    scheduleUpdate();
 }
 
 function handleMouseMove(e) {
     if (!selectionState.isSelecting) return;
     selectionState.currentCoords = { x: e.pageX, y: e.pageY };
-    updateSelectionBox();
-    const rect = getSelectionRectangle(selectionState.startCoords, selectionState.currentCoords);
-    updateLinkHighlights(rect);
+    scheduleUpdate();
 }
 
 function handleMouseUp(e) {
@@ -245,6 +262,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     selectionState.checkDuplicatesOnCopy = request.checkDuplicatesOnCopy;
     selectionState.useHistory = request.useHistory;
     selectionState.linkHistory = request.linkHistory || [];
+    selectionState.historySet = new Set(selectionState.linkHistory);
 
     document.body.style.cursor = isCopyMode ? customCopyCursor : 'crosshair';
 

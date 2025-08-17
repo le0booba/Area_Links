@@ -95,22 +95,20 @@ async function activateSelection(type) {
     }
 }
 
-
 async function initialize() {
-    const settings = await chrome.storage.sync.get({ language: 'en' });
-    await loadLanguage(settings.language);
-    localizePage();
-    loadCommands();
-
     const syncKeys = QUICK_SETTINGS_CONFIG.filter(c => c.storage === 'sync').map(c => c.key);
     const localKeys = QUICK_SETTINGS_CONFIG.filter(c => c.storage === 'local').map(c => c.key);
 
     const [syncItems, localItems] = await Promise.all([
-        chrome.storage.sync.get(syncKeys),
+        chrome.storage.sync.get([...syncKeys, 'language']),
         chrome.storage.local.get(localKeys)
     ]);
 
     const allSettings = { ...syncItems, ...localItems };
+
+    await loadLanguage(allSettings.language || 'en');
+    localizePage();
+    loadCommands();
 
     QUICK_SETTINGS_CONFIG.forEach(config => {
         const el = document.getElementById(config.id);
