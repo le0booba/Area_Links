@@ -104,6 +104,8 @@ Click the extension icon in your toolbar for instant access to toggle:
 | **Language** | Switch the extension's display language between supported locales. | `English` |
 | **Clear History** | A button to clear the list of links remembered by the "Remember opened links" feature. | `N/A` |
 
+###### HISTORY_LIMIT = 50 (const)
+
 </details>
 
 ---
