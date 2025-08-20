@@ -38,6 +38,8 @@
 
 > **Tip:** You can customize keyboard shortcuts anytime at `chrome://extensions/shortcuts`.
 
+> **Note:** The extension does not work on Chrome system pages (New Tab page, Settings, Extensions page, etc.).
+
 ---
 
 ## 🌟 Features
