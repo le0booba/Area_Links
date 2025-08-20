@@ -35,6 +35,7 @@ header {
     align-items: center;
     gap: 2px;
     font-family: "FreeMono", monospace;
+    cursor: default;
 }
 
 .logo {
