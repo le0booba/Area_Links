@@ -2,8 +2,8 @@
 
 <div align="center">
   <div style="display: flex; justify-content: center; align-items: center; gap: 10px; flex-wrap: wrap;">
-    <img src="https://raw.githubusercontent.com/le0booba/Area_Links/refs/heads/main/screen-options-popup.png" alt="Area Links Screenshot 1" width="280"/>
-    <img src="https://raw.githubusercontent.com/le0booba/Area_Links/refs/heads/main/screen-options.png" alt="Area Links Screenshot 2" width="400"/>
+    <img src="https://raw.githubusercontent.com/le0booba/Area_Links/refs/heads/main/screen-options-popup-2.png" alt="Area Links Screenshot 1" width="280"/>
+    <img src="https://raw.githubusercontent.com/le0booba/Area_Links/refs/heads/main/screen-options-1.png" alt="Area Links Screenshot 2" width="400"/>
   </div>
   
   **Select. Open. Done**
@@ -103,6 +103,8 @@ Click the extension icon in your toolbar for instant access to toggle:
 | **Show in context menu** | Toggles the "Open/Copy Links" options in the right-click menu. | `On` |
 | **Language** | Switch the extension's display language between supported locales. | `English` |
 | **Clear History** | A button to clear the list of links remembered by the "Remember opened links" feature. | `N/A` |
+
+###### HISTORY_LIMIT = 50 (const)
 
 </details>
 
