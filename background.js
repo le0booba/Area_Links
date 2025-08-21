@@ -9,22 +9,26 @@ const SYNC_DEFAULTS = {
   language: 'en',
   showContextMenu: true,
 };
-
 const LOCAL_DEFAULTS = {
   linkHistory: [],
   useHistory: true,
   checkDuplicatesOnCopy: true,
 };
 
+let settingsCache = null;
 let isMenuSetupRunning = false;
 
+async function initializeSettings() {
+    const [syncSettings, localSettings] = await Promise.all([
+        chrome.storage.sync.get(SYNC_DEFAULTS),
+        chrome.storage.local.get(LOCAL_DEFAULTS)
+    ]);
+    settingsCache = { ...syncSettings, ...localSettings };
+    return settingsCache;
+}
+
 async function getSettings() {
-  let [syncSettings, localSettings] = await Promise.all([
-    chrome.storage.sync.get(SYNC_DEFAULTS),
-    chrome.storage.local.get(LOCAL_DEFAULTS)
-  ]);
-  
-  return { ...syncSettings, ...localSettings };
+    return settingsCache || await initializeSettings();
 }
 
 function i18n(key) {
@@ -36,7 +40,6 @@ async function setupContextMenu() {
         return;
     }
     isMenuSetupRunning = true;
-
     try {
         await chrome.contextMenus.removeAll();
         const settings = await getSettings();
@@ -44,7 +47,6 @@ async function setupContextMenu() {
             const commands = await chrome.commands.getAll();
             const activateShortcut = commands.find(c => c.name === 'activate-selection')?.shortcut || '';
             const copyShortcut = commands.find(c => c.name === 'activate-selection-copy')?.shortcut || '';
-
             chrome.contextMenus.create({
                 id: "activate-selection-menu",
                 title: `${i18n("cmdActivate")}${activateShortcut ? ` (${activateShortcut})` : ''}`,
@@ -61,23 +63,41 @@ async function setupContextMenu() {
     }
 }
 
+async function checkAndApplyBrowserLanguage() {
+    const settings = await getSettings();
+    const currentLang = settings.language;
+    const UILang = chrome.i18n.getUILanguage().split('-')[0];
+    const supportedLangs = ['en', 'ru'];
+
+    if (supportedLangs.includes(UILang) && UILang !== currentLang) {
+        await chrome.storage.sync.set({ language: UILang });
+        return true;
+    }
+    return false;
+}
+
+async function runInitialization() {
+    await initializeSettings();
+    const languageChanged = await checkAndApplyBrowserLanguage();
+    if (!languageChanged) {
+        await setupContextMenu();
+    }
+}
+
 chrome.runtime.onInstalled.addListener((details) => {
-  if (details.reason === 'install') {
-    chrome.storage.sync.set(SYNC_DEFAULTS);
-    chrome.storage.local.set(LOCAL_DEFAULTS);
-  }
-  setupContextMenu();
+    if (details.reason === 'install') {
+        chrome.storage.sync.set(SYNC_DEFAULTS);
+        chrome.storage.local.set(LOCAL_DEFAULTS);
+    }
+    runInitialization();
 });
 
-chrome.runtime.onStartup.addListener(() => {
-    setTimeout(() => {
-        setupContextMenu();
-    }, 1500);
-});
+chrome.runtime.onStartup.addListener(runInitialization);
 
-chrome.storage.onChanged.addListener((changes, area) => {
+chrome.storage.onChanged.addListener(async (changes, area) => {
+    await initializeSettings();
     if (area === 'sync' && (changes.showContextMenu || changes.language)) {
-        setupContextMenu();
+        await setupContextMenu();
     }
 });
 
@@ -90,23 +110,40 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
 });
 
 async function triggerSelection(tab, commandType) {
-    if (!tab.url?.startsWith('http')) {
+    if (!tab.url?.startsWith('http') || !tab.id) {
         return;
     }
-
+    const tabId = tab.id;
     const settings = await getSettings();
-
-    chrome.tabs.sendMessage(tab.id, {
+    const message = {
         type: commandType,
         style: settings.selectionStyle,
         checkDuplicatesOnCopy: settings.checkDuplicatesOnCopy,
         useHistory: settings.useHistory,
         linkHistory: settings.useHistory ? settings.linkHistory : []
-    }).catch(error => {
-        console.warn(`Area Links: Could not establish connection with content script. ${error.message}`);
-    });
-}
+    };
 
+    try {
+        const response = await chrome.tabs.sendMessage(tabId, { type: "ping" });
+        if (response && response.type === "pong") {
+            chrome.tabs.sendMessage(tabId, message);
+        }
+    } catch (e) {
+        try {
+            await chrome.scripting.insertCSS({
+                target: { tabId },
+                files: ['styles.css'],
+            });
+            await chrome.scripting.executeScript({
+                target: { tabId },
+                files: ['content.js'],
+            });
+            chrome.tabs.sendMessage(tabId, message);
+        } catch (injectError) {
+            console.warn(`Area Links: Could not inject scripts into tab ${tabId}.`, injectError);
+        }
+    }
+}
 
 chrome.commands.onCommand.addListener((command, tab) => {
     const commandType = command === "activate-selection" ? "initiateSelection" : "initiateSelectionCopy";
@@ -114,50 +151,61 @@ chrome.commands.onCommand.addListener((command, tab) => {
 });
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  if (request.type === "openLinks") {
-    processLinks(request.urls);
+    if (request.type === "openLinks") {
+        processLinks(request.urls);
+        return false;
+    }
+
+    if (request.type === 'triggerSelectionFromPopup') {
+         chrome.tabs.query({ active: true, currentWindow: true }).then(([tab]) => {
+            if (tab) {
+                triggerSelection(tab, request.commandType);
+            }
+        });
+        return false;
+    }
     return false;
-  }
-  return false;
 });
 
 async function processLinks(urls) {
-  const settings = await getSettings();
-
-  const excludedDomains = settings.excludedDomains.split(',').map(d => d.trim().toLowerCase()).filter(Boolean);
-  const excludedWords = settings.excludedWords.split(',').map(w => w.trim().toLowerCase()).filter(Boolean);
-
-  let uniqueUrls = [...new Set(urls)];
-  if (settings.reverseOrder) {
-    uniqueUrls.reverse();
-  }
-
-  const filteredUrls = uniqueUrls.filter(url => {
-    if (settings.useHistory && settings.linkHistory.includes(url)) {
-      return false;
+    const settings = await getSettings();
+    const excludedDomains = settings.excludedDomains.split(',').map(d => d.trim().toLowerCase()).filter(Boolean);
+    const excludedWords = settings.excludedWords.split(',').map(w => w.trim().toLowerCase()).filter(Boolean);
+    let uniqueUrls = [...new Set(urls)];
+    if (settings.reverseOrder) {
+        uniqueUrls.reverse();
     }
-    try {
-      const lowerCaseUrl = url.toLowerCase();
-      const urlHostname = new URL(url).hostname.toLowerCase();
-      if (excludedDomains.some(domain => urlHostname.includes(domain))) return false;
-      if (excludedWords.some(word => lowerCaseUrl.includes(word))) return false;
-    } catch {
-      return false;
+    const filteredUrls = uniqueUrls.filter(url => {
+        if (settings.useHistory && settings.linkHistory.includes(url)) {
+            return false;
+        }
+        try {
+            const lowerCaseUrl = url.toLowerCase();
+            const urlHostname = new URL(url).hostname.toLowerCase();
+            if (excludedDomains.some(domain => urlHostname.includes(domain))) return false;
+            if (excludedWords.some(word => lowerCaseUrl.includes(word))) return false;
+        } catch {
+            return false;
+        }
+        return true;
+    });
+    const urlsToOpen = filteredUrls.slice(0, settings.tabLimit);
+    if (urlsToOpen.length === 0) return;
+    if (settings.openInNewWindow) {
+        chrome.windows.create({
+            url: urlsToOpen,
+            focused: true
+        });
+    } else {
+        urlsToOpen.forEach(url => chrome.tabs.create({
+            url,
+            active: false
+        }));
     }
-    return true;
-  });
-
-  const urlsToOpen = filteredUrls.slice(0, settings.tabLimit);
-  if (urlsToOpen.length === 0) return;
-
-  if (settings.openInNewWindow) {
-    chrome.windows.create({ url: urlsToOpen, focused: true });
-  } else {
-    urlsToOpen.forEach(url => chrome.tabs.create({ url, active: false }));
-  }
-
-  if (settings.useHistory) {
-    const newHistory = [...urlsToOpen, ...settings.linkHistory].slice(0, HISTORY_LIMIT);
-    chrome.storage.local.set({ linkHistory: newHistory });
-  }
+    if (settings.useHistory) {
+        const newHistory = [...urlsToOpen, ...settings.linkHistory].slice(0, HISTORY_LIMIT);
+        chrome.storage.local.set({
+            linkHistory: newHistory
+        });
+    }
 }

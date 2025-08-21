@@ -1,18 +1,15 @@
-const DEFAULT_SETTINGS = {
-    excludedDomains: '',
-    excludedWords: '',
-    tabLimit: 15,
-    selectionStyle: 'classic-blue',
-    openInNewWindow: false,
-    reverseOrder: false,
-    useHistory: true,
-    checkDuplicatesOnCopy: true,
-    language: 'en',
-    showContextMenu: true,
+const SETTINGS_CONFIG = {
+    excludedDomains: { default: '', storage: 'sync' },
+    excludedWords: { default: '', storage: 'sync' },
+    tabLimit: { default: 15, storage: 'sync' },
+    selectionStyle: { default: 'classic-blue', storage: 'sync' },
+    openInNewWindow: { default: false, storage: 'sync' },
+    reverseOrder: { default: false, storage: 'sync' },
+    language: { default: 'en', storage: 'sync' },
+    showContextMenu: { default: true, storage: 'sync' },
+    useHistory: { default: true, storage: 'local' },
+    checkDuplicatesOnCopy: { default: true, storage: 'local' },
 };
-
-const SYNC_SETTINGS_KEYS = ['excludedDomains', 'excludedWords', 'tabLimit', 'selectionStyle', 'openInNewWindow', 'reverseOrder', 'language', 'showContextMenu'];
-const LOCAL_SETTINGS_KEYS = ['useHistory', 'checkDuplicatesOnCopy'];
 
 let messages = {};
 let savedExcludedDomains = '';
@@ -37,20 +34,11 @@ async function loadLanguage(lang) {
 function localizePage() {
     document.querySelectorAll('[data-i18n]').forEach(el => {
         const key = el.getAttribute('data-i18n');
-        const target = el.classList.contains('button-text') ? el : el;
-        if (messages[key]) target.textContent = messages[key];
+        if (messages[key]) el.textContent = messages[key];
     });
     document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
         const key = el.getAttribute('data-i18n-placeholder');
         if (messages[key]) el.placeholder = messages[key];
-    });
-    document.querySelectorAll('[data-i18n-title]').forEach(el => {
-        const key = el.getAttribute('data-i18n-title');
-        if (key === "Area Links Options") {
-            document.title = `${messages.extName || 'Area Links'} - ${messages.optionsTitle || 'Settings'}`;
-        } else if (messages[key]) {
-            el.title = messages[key];
-        }
     });
 }
 
@@ -76,26 +64,22 @@ function updateClearButtonsState() {
 function updateSaveButtonState() {
     const saveButton = document.getElementById('saveExclusions');
     if (!saveButton) return;
-
     const currentDomains = document.getElementById('excludedDomains').value;
     const currentWords = document.getElementById('excludedWords').value;
-
-    const hasUnsavedChanges =
-        currentDomains.trim() !== savedExcludedDomains.trim() ||
-        currentWords.trim() !== savedExcludedWords.trim();
-    
+    const hasUnsavedChanges = currentDomains.trim() !== savedExcludedDomains.trim() || currentWords.trim() !== savedExcludedWords.trim();
     saveButton.classList.toggle('has-unsaved-changes', hasUnsavedChanges);
 }
 
 async function restoreOptions() {
-    const syncDefaults = SYNC_SETTINGS_KEYS.reduce((acc, key) => ({ ...acc, [key]: DEFAULT_SETTINGS[key] }), {});
-    const localDefaults = LOCAL_SETTINGS_KEYS.reduce((acc, key) => ({ ...acc, [key]: DEFAULT_SETTINGS[key] }), {});
+    const syncKeys = Object.keys(SETTINGS_CONFIG).filter(k => SETTINGS_CONFIG[k].storage === 'sync');
+    const localKeys = Object.keys(SETTINGS_CONFIG).filter(k => SETTINGS_CONFIG[k].storage === 'local');
+    const syncDefaults = syncKeys.reduce((acc, key) => ({ ...acc, [key]: SETTINGS_CONFIG[key].default }), {});
+    const localDefaults = localKeys.reduce((acc, key) => ({ ...acc, [key]: SETTINGS_CONFIG[key].default }), {});
 
     const [syncItems, localItems] = await Promise.all([
         chrome.storage.sync.get(syncDefaults),
         chrome.storage.local.get(localDefaults)
     ]);
-
     const settings = { ...syncItems, ...localItems };
 
     await loadLanguage(settings.language);
@@ -103,42 +87,35 @@ async function restoreOptions() {
     document.getElementById('ext-version').textContent = 'v' + chrome.runtime.getManifest().version;
     document.getElementById('tabLimit').value = settings.tabLimit;
     document.getElementById('selectionStyle').value = settings.selectionStyle;
-    document.getElementById('openInNewWindow').checked = settings.openInNewWindow;
-    document.getElementById('reverseOrder').checked = settings.reverseOrder;
-    document.getElementById('useHistory').checked = settings.useHistory;
-    document.getElementById('checkDuplicatesOnCopy').checked = settings.checkDuplicatesOnCopy;
-    document.getElementById('showContextMenu').checked = settings.showContextMenu;
     document.getElementById('language-select').value = settings.language;
+    
+    ['openInNewWindow', 'reverseOrder', 'useHistory', 'checkDuplicatesOnCopy', 'showContextMenu'].forEach(id => {
+        document.getElementById(id).checked = settings[id];
+    });
 
     savedExcludedDomains = settings.excludedDomains;
     savedExcludedWords = settings.excludedWords;
     document.getElementById('excludedDomains').value = savedExcludedDomains;
     document.getElementById('excludedWords').value = savedExcludedWords;
 
-    const exclusionsDetails = document.getElementById('exclusions-details');
     if (localStorage.getItem('exclusionsOpen') === 'true') {
-        exclusionsDetails.open = true;
+        document.getElementById('exclusions-details').open = true;
     }
-
     localizePage();
     updateClearButtonsState();
     updateSaveButtonState();
+
+    document.body.classList.remove('loading-settings');
 }
 
 function saveExclusions() {
     const domainsTextarea = document.getElementById('excludedDomains');
     const wordsTextarea = document.getElementById('excludedWords');
-    
     const domainsToSave = domainsTextarea.value.trim();
     const wordsToSave = wordsTextarea.value.trim();
-
     domainsTextarea.value = domainsToSave;
     wordsTextarea.value = wordsToSave;
-
-    const settingsToSave = {
-        excludedDomains: domainsToSave,
-        excludedWords: wordsToSave,
-    };
+    const settingsToSave = { excludedDomains: domainsToSave, excludedWords: wordsToSave };
     chrome.storage.sync.set(settingsToSave).then(() => {
         showStatus('status-exclusions', messages.optionsStatusExclusionsSaved);
         savedExcludedDomains = domainsToSave;
@@ -155,86 +132,86 @@ function clearHistory() {
 function setupEventListeners() {
     document.getElementById('saveExclusions').addEventListener('click', saveExclusions);
     document.getElementById('clearHistory').addEventListener('click', clearHistory);
-
-    const exclusionsDetails = document.getElementById('exclusions-details');
-    exclusionsDetails.addEventListener('toggle', () => {
-        localStorage.setItem('exclusionsOpen', exclusionsDetails.open);
+    document.getElementById('exclusions-details').addEventListener('toggle', (e) => {
+        localStorage.setItem('exclusionsOpen', e.target.open);
     });
 
     const domainsTextarea = document.getElementById('excludedDomains');
     const wordsTextarea = document.getElementById('excludedWords');
-    
-    domainsTextarea.addEventListener('input', () => {
+    const textareasHandler = () => {
         updateClearButtonsState();
         updateSaveButtonState();
-    });
-    wordsTextarea.addEventListener('input', () => {
-        updateClearButtonsState();
-        updateSaveButtonState();
-    });
+    };
+    domainsTextarea.addEventListener('input', textareasHandler);
+    wordsTextarea.addEventListener('input', textareasHandler);
 
     document.getElementById('clearExcludedDomains').addEventListener('click', () => {
         domainsTextarea.value = '';
-        updateClearButtonsState();
         saveExclusions();
+        updateClearButtonsState();
     });
     document.getElementById('clearExcludedWords').addEventListener('click', () => {
         wordsTextarea.value = '';
-        updateClearButtonsState();
         saveExclusions();
+        updateClearButtonsState();
     });
-
     document.getElementById('shortcutsLink').addEventListener('click', (e) => {
         e.preventDefault();
         chrome.tabs.create({ url: 'chrome://extensions/shortcuts' });
     });
-}
 
-function setupInstantSaveHandlers() {
-    const instantSaveHandler = (key, value, storageArea, statusId) => {
-        chrome.storage[storageArea].set({ [key]: value }).then(() => {
-            if (statusId) {
-                showStatus(statusId, messages.optionsStatusSettingSaved);
-            }
+    document.getElementById('language-select').addEventListener('change', (e) => {
+        const newLang = e.target.value;
+        chrome.storage.sync.set({ language: newLang }).then(() => {
+            location.reload();
         });
-    };
-
-    ['openInNewWindow', 'reverseOrder'].forEach(id => {
-        document.getElementById(id).addEventListener('change', (e) => instantSaveHandler(id, e.target.checked, 'sync', 'status-behavior'));
-    });
-    ['useHistory', 'checkDuplicatesOnCopy'].forEach(id => {
-        document.getElementById(id).addEventListener('change', (e) => instantSaveHandler(id, e.target.checked, 'local', 'status-behavior'));
     });
 
-    document.getElementById('showContextMenu').addEventListener('change', (e) => {
-        instantSaveHandler('showContextMenu', e.target.checked, 'sync', 'status-appearance');
-    });
+    document.querySelector('main').addEventListener('change', (e) => {
+        const el = e.target;
+        const id = el.id;
+        if (id === 'language-select') return;
 
-    document.getElementById('selectionStyle').addEventListener('change', (e) => {
-        instantSaveHandler('selectionStyle', e.target.value, 'sync', 'status-appearance');
-    });
+        const config = SETTINGS_CONFIG[id];
+        if (!config || el.tagName === 'TEXTAREA') return;
 
-    document.getElementById('language-select').addEventListener('change', async (e) => {
-        await loadLanguage(e.target.value);
-        localizePage();
-        instantSaveHandler('language', e.target.value, 'sync');
-    });
-
-    document.getElementById('tabLimit').addEventListener('change', (e) => {
-        const value = parseInt(e.target.value, 10);
-        if (isNaN(value) || value < 1 || value > 50) {
-            showStatus('status-behavior', `${messages.optionsStatusError} ${messages.optionsStatusTabLimitError}`, true, 3500);
-            chrome.storage.sync.get({ tabLimit: 15 }).then(items => {
-                e.target.value = items.tabLimit;
-            });
-        } else {
-            instantSaveHandler('tabLimit', value, 'sync', 'status-behavior');
+        let value;
+        let statusId;
+        
+        switch (el.type) {
+            case 'checkbox':
+                value = el.checked;
+                break;
+            case 'number':
+                value = parseInt(el.value, 10);
+                if (isNaN(value) || value < 1 || value > 50) {
+                    showStatus('status-behavior', `${messages.optionsStatusError} ${messages.optionsStatusTabLimitError}`, true, 3500);
+                    chrome.storage.sync.get({ tabLimit: SETTINGS_CONFIG.tabLimit.default }).then(items => {
+                        el.value = items.tabLimit;
+                    });
+                    return;
+                }
+                break;
+            default:
+                value = el.value;
+                break;
         }
+
+        const storageArea = chrome.storage[config.storage];
+        storageArea.set({ [id]: value }).then(() => {
+            if (id.startsWith('popup-')) return;
+            if (['selectionStyle', 'showContextMenu'].includes(id)) {
+                statusId = 'status-appearance';
+            } else {
+                statusId = 'status-behavior';
+            }
+            if(statusId) showStatus(statusId, messages.optionsStatusSettingSaved);
+        });
     });
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+    document.title = `${chrome.i18n.getMessage('extName')} - ${chrome.i18n.getMessage('optionsTitle')}`;
     restoreOptions();
     setupEventListeners();
-    setupInstantSaveHandlers();
 });

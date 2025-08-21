@@ -7,7 +7,6 @@ const selectionState = {
     isSelecting: false,
     isCopyMode: false,
     isUpdateScheduled: false,
-    selectionBox: null,
     style: 'classic-blue',
     startCoords: { x: 0, y: 0 },
     currentCoords: { x: 0, y: 0 },
@@ -17,8 +16,16 @@ const selectionState = {
     historySet: new Set(),
 };
 
+let selectionBox = null;
 let highlightedElements = new Set();
 let linkDataCache = [];
+
+function createSelectionBox() {
+    if (selectionBox) return;
+    selectionBox = document.createElement('div');
+    selectionBox.id = 'link-opener-selection-box';
+    document.body.appendChild(selectionBox);
+}
 
 function getSelectionRectangle(start, end) {
     const x = Math.min(start.x, end.x);
@@ -29,14 +36,14 @@ function getSelectionRectangle(start, end) {
 }
 
 function updateSelectionBox() {
-    if (!selectionState.selectionBox) return;
-
+    if (!selectionBox) return;
     const rect = getSelectionRectangle(selectionState.startCoords, selectionState.currentCoords);
-    Object.assign(selectionState.selectionBox.style, {
+    Object.assign(selectionBox.style, {
         left: `${rect.x - window.scrollX}px`,
         top: `${rect.y - window.scrollY}px`,
         width: `${rect.width}px`,
         height: `${rect.height}px`,
+        display: 'block',
     });
 }
 
@@ -53,11 +60,9 @@ function updateLinkHighlights(docRect) {
     const intersectingData = getIntersectingLinkData(docRect);
     const newHighlightedElements = new Set();
     const seenInSelection = new Set();
-
     intersectingData.forEach(({ element, href }) => {
         const isSeenInSelection = seenInSelection.has(href);
         let isFiltered = false;
-
         if (selectionState.isCopyMode) {
             if (selectionState.checkDuplicatesOnCopy && isSeenInSelection) {
                 isFiltered = true;
@@ -67,7 +72,6 @@ function updateLinkHighlights(docRect) {
                 isFiltered = true;
             }
         }
-
         if (!isFiltered) {
             newHighlightedElements.add(element);
             if (!selectionState.isCopyMode || selectionState.checkDuplicatesOnCopy) {
@@ -75,7 +79,6 @@ function updateLinkHighlights(docRect) {
             }
         }
     });
-
     highlightedElements.forEach(el => {
         if (!newHighlightedElements.has(el)) {
             el.classList.remove(HIGHLIGHT_CLASS);
@@ -86,7 +89,6 @@ function updateLinkHighlights(docRect) {
             el.classList.add(HIGHLIGHT_CLASS);
         }
     });
-
     highlightedElements = newHighlightedElements;
 }
 
@@ -96,30 +98,30 @@ function clearHighlights() {
 }
 
 function resetSelection() {
-    if (selectionState.selectionBox) {
-        selectionState.selectionBox.remove();
+    if (selectionBox) {
+        selectionBox.remove();
+        selectionBox = null;
     }
     clearHighlights();
     document.body.style.cursor = 'default';
-
     document.removeEventListener('mousedown', handleMouseDown, true);
     document.removeEventListener('mousemove', handleMouseMove, true);
     document.removeEventListener('mouseup', handleMouseUp, true);
     document.removeEventListener('keydown', handleKeyDown, true);
     document.removeEventListener('scroll', handleScroll, true);
 
-    linkDataCache = [];
-
     Object.assign(selectionState, {
         isActive: false,
         isSelecting: false,
         isCopyMode: false,
         isUpdateScheduled: false,
-        selectionBox: null,
         startCoords: { x: 0, y: 0 },
         currentCoords: { x: 0, y: 0 },
         historySet: new Set(),
     });
+    
+    linkDataCache = [];
+    highlightedElements = new Set();
 }
 
 function copyLinksToClipboard(links) {
@@ -175,6 +177,36 @@ function handleScroll() {
     scheduleUpdate();
 }
 
+function populateLinkDataCache() {
+    const viewportTop = window.scrollY;
+    const viewportBottom = viewportTop + window.innerHeight;
+
+    linkDataCache = Array.from(document.querySelectorAll('a[href]')).map(link => {
+        const { href } = link;
+        if (!href || href.startsWith('#') || href.startsWith('javascript:')) return null;
+
+        const rect = link.getBoundingClientRect();
+        if (rect.width === 0 || rect.height === 0) return null;
+        
+        const elementTop = rect.top + viewportTop;
+        const elementBottom = rect.bottom + viewportTop;
+        if (elementBottom < viewportTop - 200 || elementTop > viewportBottom + 200) {
+            return null;
+        }
+
+        return {
+            element: link,
+            href: href,
+            docRect: {
+                top: elementTop,
+                left: rect.left + window.scrollX,
+                right: rect.left + window.scrollX + rect.width,
+                bottom: elementBottom,
+            }
+        };
+    }).filter(Boolean);
+}
+
 function handleMouseMove(e) {
     if (!selectionState.isSelecting) return;
     selectionState.currentCoords = { x: e.pageX, y: e.pageY };
@@ -183,13 +215,10 @@ function handleMouseMove(e) {
 
 function handleMouseUp(e) {
     if (e.button !== 0) return;
-
     e.preventDefault();
     e.stopPropagation();
-
     const selectionRect = getSelectionRectangle(selectionState.startCoords, selectionState.currentCoords);
-
-    if (selectionRect.width > 5 && selectionRect.height > 5) {
+    if (selectionRect.width > 5 || selectionRect.height > 5) {
         let links = Array.from(highlightedElements, el => el.href);
         if (links.length > 0) {
             if (selectionState.isCopyMode) {
@@ -207,40 +236,15 @@ function handleMouseUp(e) {
 
 function handleMouseDown(e) {
     if (e.button !== 0) return;
-
     e.preventDefault();
     e.stopPropagation();
-
-    linkDataCache = Array.from(document.querySelectorAll('a[href]')).map(link => {
-        const { href } = link;
-        if (!href || href.startsWith('#') || href.startsWith('javascript:')) return null;
-
-        const rect = link.getBoundingClientRect();
-        if (rect.width === 0 || rect.height === 0) return null;
-
-        return {
-            element: link,
-            href: href,
-            docRect: {
-                top: rect.top + window.scrollY,
-                left: rect.left + window.scrollX,
-                right: rect.left + window.scrollX + rect.width,
-                bottom: rect.top + window.scrollY + rect.height,
-            }
-        };
-    }).filter(Boolean);
-
     selectionState.isSelecting = true;
     selectionState.startCoords = { x: e.pageX, y: e.pageY };
     selectionState.currentCoords = { x: e.pageX, y: e.pageY };
-
-    selectionState.selectionBox = document.createElement('div');
-    selectionState.selectionBox.id = 'link-opener-selection-box';
-    selectionState.selectionBox.className = selectionState.style;
-    document.body.appendChild(selectionState.selectionBox);
-
+    createSelectionBox();
+    selectionBox.className = selectionState.style;
     updateSelectionBox();
-
+    setTimeout(populateLinkDataCache, 0);
     document.addEventListener('mousemove', handleMouseMove, true);
     document.addEventListener('mouseup', handleMouseUp, true);
     document.addEventListener('scroll', handleScroll, true);
@@ -251,32 +255,25 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         sendResponse({ type: "pong" });
         return true;
     }
-
     const isInitiate = request.type === "initiateSelection" || request.type === "initiateSelectionCopy";
     if (!isInitiate) {
         return true;
     }
-
     const isCopyMode = request.type === "initiateSelectionCopy";
     selectionState.isCopyMode = isCopyMode;
     selectionState.checkDuplicatesOnCopy = request.checkDuplicatesOnCopy;
     selectionState.useHistory = request.useHistory;
     selectionState.linkHistory = request.linkHistory || [];
     selectionState.historySet = new Set(selectionState.linkHistory);
-
     document.body.style.cursor = isCopyMode ? customCopyCursor : 'crosshair';
-
     if (selectionState.isActive) {
         sendResponse({ success: true, message: "Mode switched" });
         return true;
     }
-
     selectionState.isActive = true;
     selectionState.style = request.style;
-
     document.addEventListener('mousedown', handleMouseDown, true);
     document.addEventListener('keydown', handleKeyDown, true);
-
     sendResponse({ success: true, message: "Selection initiated" });
     return true;
 });

@@ -59,42 +59,6 @@ async function loadCommands() {
     });
 }
 
-async function activateSelection(type) {
-    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-    if (!tab || !tab.id) {
-        window.close();
-        return;
-    }
-
-    try {
-        const response = await chrome.tabs.sendMessage(tab.id, { type: "ping" });
-        if (response?.type !== "pong") {
-            window.close();
-            return;
-        }
-    } catch (err) {
-        window.close();
-        return;
-    }
-
-    try {
-        const settings = await chrome.storage.sync.get(['selectionStyle']);
-        const localSettings = await chrome.storage.local.get(['useHistory', 'checkDuplicatesOnCopy', 'linkHistory']);
-        const message = {
-            type: type,
-            style: settings.selectionStyle,
-            checkDuplicatesOnCopy: localSettings.checkDuplicatesOnCopy,
-            useHistory: localSettings.useHistory,
-            linkHistory: localSettings.useHistory ? localSettings.linkHistory : [],
-        };
-        chrome.tabs.sendMessage(tab.id, message);
-        window.close();
-    } catch (err) {
-        console.error("An error occurred while preparing to activate selection:", err);
-        window.close();
-    }
-}
-
 async function initialize() {
     const syncKeys = QUICK_SETTINGS_CONFIG.filter(c => c.storage === 'sync').map(c => c.key);
     const localKeys = QUICK_SETTINGS_CONFIG.filter(c => c.storage === 'local').map(c => c.key);
@@ -121,8 +85,20 @@ async function initialize() {
         }
     });
 
-    document.getElementById('action-open-links').addEventListener('click', () => activateSelection('initiateSelection'));
-    document.getElementById('action-copy-links').addEventListener('click', () => activateSelection('initiateSelectionCopy'));
+    document.getElementById('action-open-links').addEventListener('click', () => {
+        chrome.runtime.sendMessage({
+            type: 'triggerSelectionFromPopup',
+            commandType: 'initiateSelection'
+        });
+        window.close();
+    });
+    document.getElementById('action-copy-links').addEventListener('click', () => {
+        chrome.runtime.sendMessage({
+            type: 'triggerSelectionFromPopup',
+            commandType: 'initiateSelectionCopy'
+        });
+        window.close();
+    });
     document.getElementById('open-options').addEventListener('click', () => chrome.runtime.openOptionsPage());
 }
 

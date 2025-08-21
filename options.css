@@ -25,6 +25,10 @@ body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
 
+body.loading-settings main {
+    visibility: hidden;
+}
+
 .container {
     max-width: 650px;
     margin: 0 auto;

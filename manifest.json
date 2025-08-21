@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "__MSG_extName__",
-  "version": "2.2.2",
+  "version": "2.2.3",
   "description": "__MSG_extDescription__",
   "default_locale": "en",
   "icons": {
@@ -30,20 +30,6 @@
   "background": {
     "service_worker": "background.js"
   },
-  "content_scripts": [
-    {
-      "matches": [
-        "http://*/*",
-        "https://*/*"
-      ],
-      "js": [
-        "content.js"
-      ],
-      "css": [
-        "styles.css"
-      ]
-    }
-  ],
   "options_page": "options.html",
   "commands": {
     "activate-selection": {
