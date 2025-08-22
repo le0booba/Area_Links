@@ -41,22 +41,38 @@ async function setupContextMenu() {
     }
     isMenuSetupRunning = true;
     try {
-        await chrome.contextMenus.removeAll();
         const settings = await getSettings();
         if (settings.showContextMenu) {
             const commands = await chrome.commands.getAll();
             const activateShortcut = commands.find(c => c.name === 'activate-selection')?.shortcut || '';
             const copyShortcut = commands.find(c => c.name === 'activate-selection-copy')?.shortcut || '';
-            chrome.contextMenus.create({
-                id: "activate-selection-menu",
-                title: `${i18n("cmdActivate")}${activateShortcut ? ` (${activateShortcut})` : ''}`,
-                contexts: ["page"]
-            });
-            chrome.contextMenus.create({
-                id: "activate-selection-copy-menu",
-                title: `${i18n("cmdActivateCopy")}${copyShortcut ? ` (${copyShortcut})` : ''}`,
-                contexts: ["page"]
-            });
+
+            const menus = [
+                {
+                    id: "activate-selection-menu",
+                    title: `${i18n("cmdActivate")}${activateShortcut ? ` (${activateShortcut})` : ''}`,
+                    contexts: ["page"]
+                },
+                {
+                    id: "activate-selection-copy-menu",
+                    title: `${i18n("cmdActivateCopy")}${copyShortcut ? ` (${copyShortcut})` : ''}`,
+                    contexts: ["page"]
+                }
+            ];
+
+            await Promise.all(menus.map(menu => {
+                return new Promise(resolve => {
+                    chrome.contextMenus.update(menu.id, { title: menu.title }, () => {
+                        if (chrome.runtime.lastError) {
+                            chrome.contextMenus.create(menu, resolve);
+                        } else {
+                            resolve();
+                        }
+                    });
+                });
+            }));
+        } else {
+             await chrome.contextMenus.removeAll();
         }
     } finally {
         isMenuSetupRunning = false;
@@ -71,28 +87,24 @@ async function checkAndApplyBrowserLanguage() {
 
     if (supportedLangs.includes(UILang) && UILang !== currentLang) {
         await chrome.storage.sync.set({ language: UILang });
-        return true;
-    }
-    return false;
-}
-
-async function runInitialization() {
-    await initializeSettings();
-    const languageChanged = await checkAndApplyBrowserLanguage();
-    if (!languageChanged) {
-        await setupContextMenu();
     }
 }
 
-chrome.runtime.onInstalled.addListener((details) => {
+chrome.runtime.onInstalled.addListener(async (details) => {
     if (details.reason === 'install') {
-        chrome.storage.sync.set(SYNC_DEFAULTS);
-        chrome.storage.local.set(LOCAL_DEFAULTS);
+        await chrome.storage.sync.set(SYNC_DEFAULTS);
+        await chrome.storage.local.set(LOCAL_DEFAULTS);
+        await initializeSettings();
+        await checkAndApplyBrowserLanguage();
     }
-    runInitialization();
+    await initializeSettings();
+    await setupContextMenu();
 });
 
-chrome.runtime.onStartup.addListener(runInitialization);
+chrome.runtime.onStartup.addListener(async () => {
+    await initializeSettings();
+    await setupContextMenu();
+});
 
 chrome.storage.onChanged.addListener(async (changes, area) => {
     await initializeSettings();
