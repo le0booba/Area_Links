@@ -1,113 +1,43 @@
 {
-    "extName": {
-        "message": "Area Links"
-    },
-    "extDescription": {
-        "message": "Выделите область на странице, чтобы открыть все ссылки в ней."
-    },
-    "cmdActivate": {
-        "message": "Откр. ссылки"
-    },
-    "cmdActivateCopy": {
-        "message": "Копир. ссылки"
-    },
-    "optionsTitle": {
-        "message": "Настройки"
-    },
-    "optionsLanguage": {
-        "message": "Язык"
-    },
-    "optionsHeaderBehavior": {
-        "message": "Поведение"
-    },
-    "optionsTabLimit": {
-        "message": "Максимум вкладок для открытия за раз:"
-    },
-    "optionsOpenInNewWindow": {
-        "message": "Открывать в новом окне"
-    },
-    "optionsReverseOrder": {
-        "message": "Открывать в обратном порядке"
-    },
-    "optionsUseHistory": {
-        "message": "Запоминать открытые ссылки"
-    },
-    "optionsClearHistory": {
-        "message": "Очистить историю"
-    },
-    "optionsCheckDuplicatesOnCopy": {
-        "message": "Убирать дубликаты при копировании"
-    },
-    "optionsShowContextMenu": {
-        "message": "Показывать в контекстном меню"
-    },
-    "optionsHeaderExclusions": {
-        "message": "Исключения"
-    },
-    "optionsExcludedDomains": {
-        "message": "Исключенные домены (через запятую):"
-    },
-    "optionsExcludedWords": {
-        "message": "Исключить ссылки со словами (через запятую):"
-    },
-    "optionsHeaderAppearance": {
-        "message": "Внешний вид"
-    },
-    "optionsSelectionStyle": {
-        "message": "Стиль рамки выделения:"
-    },
-    "optionsStyleClassicBlue": {
-        "message": "Классический синий"
-    },
-    "optionsStyleDashedRed": {
-        "message": "Красный пунктир"
-    },
-    "optionsStyleDashedGreen": {
-        "message": "Зеленый пунктир"
-    },
-    "optionsStyleSubtleGray": {
-        "message": "Тонкий серый"
-    },
-    "optionsSaveExclusionsButton": {
-        "message": "Сохранить исключения"
-    },
-    "optionsStatusExclusionsSaved": {
-        "message": "Исключения сохранены."
-    },
-    "optionsStatusSettingSaved": {
-        "message": "Настройка сохранена."
-    },
-    "optionsStatusHistoryCleared": {
-        "message": "История очищена!"
-    },
-    "optionsStatusError": {
-        "message": "Ошибка:"
-    },
-    "optionsStatusTabLimitError": {
-        "message": "Лимит вкладок должен быть от 1 до 50."
-    },
-    "optionsHowToUseTitle": {
-        "message": "Как использовать"
-    },
-    "optionsHowToUseOpen": {
-        "message": "Нажмите и удерживайте"
-    },
-    "optionsHowToUseOpenDetail": {
-        "message": "и выделите мышью область, чтобы открыть все ссылки в ней."
-    },
-    "optionsHowToUseCopy": {
-        "message": "Нажмите и удерживайте"
-    },
-    "optionsHowToUseCopyDetail": {
-        "message": "и выделите область, чтобы скопировать все ссылки."
-    },
-    "optionsHowToUseShortcuts_part1": {
-        "message": "Выше указаны горячие клавиши по-умолчанию."
-    },
-    "optionsHowToUseShortcuts_part2": {
-        "message": "Настроить сочетания клавиш можно здесь:"
-    },
-    "popupStatusSaved": {
-        "message": "Сохранено!"
-    }
+  "extName": { "message": "Area Links" },
+  "extDescription": { "message": "Открывайте или копируйте несколько ссылок, выделяя область." },
+  "cmdActivate": { "message": "Активировать выделение (Открыть)" },
+  "cmdActivateCopy": { "message": "Активировать выделение (Копировать)" },
+  "popupStatusSaved": { "message": "Сохранено!" },
+  "optionsOpenInNewWindow": { "message": "Открывать в новом окне" },
+  "optionsReverseOrder": { "message": "Открывать в обратном порядке" },
+  "optionsUseHistory": { "message": "Запоминать открытые ссылки" },
+  "optionsCheckDuplicatesOnCopy": { "message": "Убирать дубликаты при копир." },
+  "optionsTitle": { "message": "Настройки" },
+  "optionsLanguage": { "message": "Язык" },
+  "optionsHeaderBehavior": { "message": "Поведение" },
+  "optionsTabLimit": { "message": "Максимум вкладок для открытия за раз:" },
+  "optionsClearHistory": { "message": "Очистить историю" },
+  "optionsHeaderExclusions": { "message": "Исключения" },
+  "optionsExcludedDomains": { "message": "Исключенные домены (через запятую):" },
+  "optionsExcludedWords": { "message": "Исключить ссылки с этими словами (через запятую):" },
+  "optionsSaveExclusionsButton": { "message": "Сохранить исключения" },
+  "optionsHeaderAppearance": { "message": "Внешний вид" },
+  "optionsSelectionStyle": { "message": "Стиль рамки выделения:" },
+  "optionsStyleClassicBlue": { "message": "Классический синий" },
+  "optionsStyleDashedRed": { "message": "Пунктирный красный" },
+  "optionsStyleDashedGreen": { "message": "Пунктирный зеленый" },
+  "optionsStyleSubtleGray": { "message": "Нейтральный серый" },
+  "optionsShowContextMenu": { "message": "Показывать в контекстном меню" },
+  "optionsHowToUseTitle": { "message": "Как использовать" },
+  "optionsHowToUseOpen": { "message": "Чтобы открыть ссылки," },
+  "optionsHowToUseOpenDetail": { "message": "нажмите сочетание клавиш, затем выделите область с помощью мыши." },
+  "optionsHowToUseCopy": { "message": "Чтобы скопировать ссылки," },
+  "optionsHowToUseCopyDetail": { "message": "нажмите сочетание клавиш, затем выделите область с помощью мыши." },
+  "optionsHowToUseShortcuts_part1": { "message": "Сочетания клавиш можно изменить." },
+  "optionsHowToUseShortcuts_part2": { "message": "Перейдите по адресу:" },
+  "optionsStatusExclusionsSaved": { "message": "Исключения сохранены." },
+  "optionsStatusHistoryCleared": { "message": "История очищена." },
+  "optionsStatusSettingSaved": { "message": "Настройка сохранена." },
+  "optionsStatusError": { "message": "Ошибка:" },
+  "optionsStatusTabLimitError": { "message": "Лимит вкладок должен быть от 1 до 50." },
+  "popupOpenNextToParent": { "message": "Открывать рядом с текущей" },
+  "optionsHighlightStyle": { "message": "Цвет выделения ссылок:" },
+  "optionsHighlightStyleClassicYellow": { "message": "Желтый" },
+  "optionsHighlightStyleDarkGray": { "message": "Темно-серый" }
 }

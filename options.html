@@ -41,12 +41,16 @@
                     <label class="switch"><input type="checkbox" id="reverseOrder"><span class="slider"></span></label>
                 </div>
                 <div class="setting-row toggle-row">
-                    <label for="checkDuplicatesOnCopy" data-i18n="optionsCheckDuplicatesOnCopy">Remove duplicates on copy</label>
-                    <label class="switch"><input type="checkbox" id="checkDuplicatesOnCopy"><span class="slider"></span></label>
+                    <label for="openNextToParent" data-i18n="popupOpenNextToParent"></label>
+                    <label class="switch"><input type="checkbox" id="openNextToParent"><span class="slider"></span></label>
                 </div>
                 <div class="setting-row toggle-row">
                     <label for="useHistory" data-i18n="optionsUseHistory">Remember opened links</label>
                     <label class="switch"><input type="checkbox" id="useHistory"><span class="slider"></span></label>
+                </div>
+                <div class="setting-row toggle-row">
+                    <label for="checkDuplicatesOnCopy" data-i18n="optionsCheckDuplicatesOnCopy">Remove duplicates on copy</label>
+                    <label class="switch"><input type="checkbox" id="checkDuplicatesOnCopy"><span class="slider"></span></label>
                 </div>
                 <div class="card-footer">
                     <div id="status-behavior" class="status-message"></div>
@@ -99,6 +103,13 @@
                         <option value="dashed-red" data-i18n="optionsStyleDashedRed">Dashed Red</option>
                         <option value="dashed-green" data-i18n="optionsStyleDashedGreen">Dashed Green</option>
                         <option value="subtle-gray" data-i18n="optionsStyleSubtleGray">Subtle Gray</option>
+                    </select>
+                </div>
+                 <div class="setting-row">
+                    <label for="highlightStyle" data-i18n="optionsHighlightStyle"></label>
+                    <select id="highlightStyle">
+                        <option value="classic-yellow" data-i18n="optionsHighlightStyleClassicYellow"></option>
+                        <option value="dark-gray" data-i18n="optionsHighlightStyleDarkGray"></option>
                     </select>
                 </div>
                 <div class="setting-row toggle-row">

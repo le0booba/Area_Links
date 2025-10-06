@@ -3,8 +3,10 @@ const SETTINGS_CONFIG = {
     excludedWords: { default: '', storage: 'sync' },
     tabLimit: { default: 15, storage: 'sync' },
     selectionStyle: { default: 'classic-blue', storage: 'sync' },
+    highlightStyle: { default: 'classic-yellow', storage: 'sync' },
     openInNewWindow: { default: false, storage: 'sync' },
     reverseOrder: { default: false, storage: 'sync' },
+    openNextToParent: { default: false, storage: 'sync' },
     language: { default: 'en', storage: 'sync' },
     showContextMenu: { default: true, storage: 'sync' },
     useHistory: { default: true, storage: 'local' },
@@ -87,10 +89,14 @@ async function restoreOptions() {
     document.getElementById('ext-version').textContent = 'v' + chrome.runtime.getManifest().version;
     document.getElementById('tabLimit').value = settings.tabLimit;
     document.getElementById('selectionStyle').value = settings.selectionStyle;
+    document.getElementById('highlightStyle').value = settings.highlightStyle;
     document.getElementById('language-select').value = settings.language;
     
-    ['openInNewWindow', 'reverseOrder', 'useHistory', 'checkDuplicatesOnCopy', 'showContextMenu'].forEach(id => {
-        document.getElementById(id).checked = settings[id];
+    ['openInNewWindow', 'reverseOrder', 'openNextToParent', 'useHistory', 'checkDuplicatesOnCopy', 'showContextMenu'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.checked = settings[id];
+        }
     });
 
     savedExcludedDomains = settings.excludedDomains;
@@ -200,7 +206,7 @@ function setupEventListeners() {
         const storageArea = chrome.storage[config.storage];
         storageArea.set({ [id]: value }).then(() => {
             if (id.startsWith('popup-')) return;
-            if (['selectionStyle', 'showContextMenu'].includes(id)) {
+            if (['selectionStyle', 'showContextMenu', 'highlightStyle'].includes(id)) {
                 statusId = 'status-appearance';
             } else {
                 statusId = 'status-behavior';

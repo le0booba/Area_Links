@@ -8,6 +8,7 @@ const selectionState = {
     isCopyMode: false,
     isUpdateScheduled: false,
     style: 'classic-blue',
+    highlightStyle: 'classic-yellow',
     startCoords: { x: 0, y: 0 },
     currentCoords: { x: 0, y: 0 },
     checkDuplicatesOnCopy: true,
@@ -103,6 +104,7 @@ function resetSelection() {
         selectionBox = null;
     }
     clearHighlights();
+    delete document.body.dataset.linkOpenerHighlightStyle;
     document.body.style.cursor = 'default';
     document.removeEventListener('mousedown', handleMouseDown, true);
     document.removeEventListener('mousemove', handleMouseMove, true);
@@ -265,6 +267,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     selectionState.useHistory = request.useHistory;
     selectionState.linkHistory = request.linkHistory || [];
     selectionState.historySet = new Set(selectionState.linkHistory);
+    selectionState.highlightStyle = request.highlightStyle;
+    document.body.dataset.linkOpenerHighlightStyle = selectionState.highlightStyle;
     document.body.style.cursor = isCopyMode ? customCopyCursor : 'crosshair';
     if (selectionState.isActive) {
         sendResponse({ success: true, message: "Mode switched" });

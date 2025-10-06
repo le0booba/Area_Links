@@ -4,8 +4,10 @@ const SYNC_DEFAULTS = {
   excludedWords: '',
   tabLimit: 15,
   selectionStyle: 'classic-blue',
+  highlightStyle: 'classic-yellow',
   openInNewWindow: false,
   reverseOrder: false,
+  openNextToParent: false,
   language: 'en',
   showContextMenu: true,
 };
@@ -130,6 +132,7 @@ async function triggerSelection(tab, commandType) {
     const message = {
         type: commandType,
         style: settings.selectionStyle,
+        highlightStyle: settings.highlightStyle,
         checkDuplicatesOnCopy: settings.checkDuplicatesOnCopy,
         useHistory: settings.useHistory,
         linkHistory: settings.useHistory ? settings.linkHistory : []
@@ -164,7 +167,7 @@ chrome.commands.onCommand.addListener((command, tab) => {
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.type === "openLinks") {
-        processLinks(request.urls);
+        processLinks(request.urls, sender.tab);
         return false;
     }
 
@@ -179,7 +182,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     return false;
 });
 
-async function processLinks(urls) {
+async function processLinks(urls, tab) {
     const settings = await getSettings();
     const excludedDomains = settings.excludedDomains.split(',').map(d => d.trim().toLowerCase()).filter(Boolean);
     const excludedWords = settings.excludedWords.split(',').map(w => w.trim().toLowerCase()).filter(Boolean);
@@ -203,17 +206,24 @@ async function processLinks(urls) {
     });
     const urlsToOpen = filteredUrls.slice(0, settings.tabLimit);
     if (urlsToOpen.length === 0) return;
+
     if (settings.openInNewWindow) {
         chrome.windows.create({
             url: urlsToOpen,
             focused: true
         });
     } else {
-        urlsToOpen.forEach(url => chrome.tabs.create({
-            url,
-            active: false
-        }));
+        const startIndex = (settings.openNextToParent && tab) ? tab.index + 1 : undefined;
+        urlsToOpen.forEach((url, i) => {
+            const newTabIndex = (startIndex !== undefined) ? startIndex + i : undefined;
+            chrome.tabs.create({
+                url,
+                active: false,
+                index: newTabIndex
+            });
+        });
     }
+    
     if (settings.useHistory) {
         const newHistory = [...urlsToOpen, ...settings.linkHistory].slice(0, HISTORY_LIMIT);
         chrome.storage.local.set({

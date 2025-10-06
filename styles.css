@@ -25,10 +25,19 @@
     border: 1px solid rgba(52, 58, 64, 0.7);
 }
 
-body a.link-opener-highlighted-link {
+body[data-link-opener-highlight-style='classic-yellow'] a.link-opener-highlighted-link {
     background-color: rgba(255, 255, 0, 0.45);
     border-radius: 3px;
     outline: 1px solid rgba(255, 165, 0, 0.8);
     box-shadow: 0 0 4px rgba(255, 165, 0, 0.6);
+    outline-offset: 1px;
+}
+
+body[data-link-opener-highlight-style='dark-gray'] a.link-opener-highlighted-link {
+    background-color: rgba(50, 50, 50, 0.8);
+    color: #E0E0E0 !important;
+    border-radius: 3px;
+    outline: 1px solid rgba(120, 120, 120, 0.9);
+    box-shadow: none;
     outline-offset: 1px;
 }

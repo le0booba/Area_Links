@@ -1,6 +1,6 @@
 const QUICK_SETTINGS_CONFIG = [
     { id: 'popup-openInNewWindow', key: 'openInNewWindow', default: false, storage: 'sync' },
-    { id: 'popup-reverseOrder', key: 'reverseOrder', default: false, storage: 'sync' },
+    { id: 'popup-openNextToParent', key: 'openNextToParent', default: false, storage: 'sync' },
     { id: 'popup-useHistory', key: 'useHistory', default: true, storage: 'local' },
     { id: 'popup-checkDuplicatesOnCopy', key: 'checkDuplicatesOnCopy', default: true, storage: 'local' },
 ];
