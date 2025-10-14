@@ -72,9 +72,9 @@ function updateExportButtonState() {
 function updateSaveButtonState() {
     const saveButton = document.getElementById('saveExclusions');
     if (!saveButton) return;
-    const currentDomains = document.getElementById('excludedDomains').value;
-    const currentWords = document.getElementById('excludedWords').value;
-    const hasUnsavedChanges = currentDomains.trim() !== savedExcludedDomains.trim() || currentWords.trim() !== savedExcludedWords.trim();
+    const currentDomainsValue = document.getElementById('excludedDomains').value;
+    const currentWordsValue = document.getElementById('excludedWords').value;
+    const hasUnsavedChanges = currentDomainsValue.trim() !== savedExcludedDomains.trim() || currentWordsValue.trim() !== savedExcludedWords.trim();
     saveButton.classList.toggle('has-unsaved-changes', hasUnsavedChanges);
     saveButton.disabled = !hasUnsavedChanges;
 }
@@ -140,10 +140,20 @@ async function restoreOptions() {
 function saveExclusions() {
     const domainsTextarea = document.getElementById('excludedDomains');
     const wordsTextarea = document.getElementById('excludedWords');
-    const domainsToSave = domainsTextarea.value.trim();
-    const wordsToSave = wordsTextarea.value.trim();
+
+    const processExclusionString = (str) => {
+        return str.split(',')
+            .map(item => item.trim())
+            .filter(item => item)
+            .join(',');
+    };
+    
+    const domainsToSave = processExclusionString(domainsTextarea.value);
+    const wordsToSave = processExclusionString(wordsTextarea.value);
+
     domainsTextarea.value = domainsToSave;
     wordsTextarea.value = wordsToSave;
+
     const settingsToSave = { excludedDomains: domainsToSave, excludedWords: wordsToSave };
     chrome.storage.local.set(settingsToSave).then(() => {
         showStatus('status-exclusions', messages.optionsStatusExclusionsSaved);
@@ -177,8 +187,12 @@ function handleExport() {
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
+    
+    const date = new Date();
+    const dateString = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+    a.download = `area-links-exclusions_${dateString}.json`;
+    
     a.href = url;
-    a.download = 'area-links-exclusions.json';
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -193,15 +207,39 @@ function handleImport(event) {
     reader.onload = (e) => {
         try {
             const data = JSON.parse(e.target.result);
-            if (typeof data.excludedDomains === 'string' && typeof data.excludedWords === 'string') {
-                document.getElementById('excludedDomains').value = data.excludedDomains;
-                document.getElementById('excludedWords').value = data.excludedWords;
+            const domainsTextarea = document.getElementById('excludedDomains');
+            const wordsTextarea = document.getElementById('excludedWords');
+            let changesMade = false;
+
+            const processField = (fieldName, textarea) => {
+                if (fieldName in data && typeof data[fieldName] === 'string') {
+                    const newData = data[fieldName].trim();
+                    const oldData = textarea.value.trim();
+
+                    if (oldData && newData) {
+                        const message = messages.optionsImportConflictMessage.replace('[FIELD_NAME]', fieldName);
+                        if (confirm(message)) {
+                            textarea.value = oldData + ',' + newData;
+                        } else {
+                            textarea.value = newData;
+                        }
+                    } else if (newData) {
+                        textarea.value = newData;
+                    }
+                    changesMade = true;
+                }
+            };
+
+            processField('excludedDomains', domainsTextarea);
+            processField('excludedWords', wordsTextarea);
+
+            if (changesMade) {
                 saveExclusions();
                 updateExportButtonState();
+                updateClearButtonsState();
                 showStatus('status-exclusions', messages.optionsStatusImportSuccess);
-            } else {
-                throw new Error('Invalid file format');
             }
+
         } catch (error) {
             showStatus('status-exclusions', messages.optionsStatusImportError, true);
         }

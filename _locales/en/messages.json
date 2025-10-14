@@ -43,5 +43,6 @@
   "optionsImportExclusionsButton": { "message": "Import" },
   "optionsExportExclusionsButton": { "message": "Export" },
   "optionsStatusImportSuccess": { "message": "Import successful." },
-  "optionsStatusImportError": { "message": "Import failed: Invalid file format." }
+  "optionsStatusImportError": { "message": "Import failed: Invalid file format." },
+  "optionsImportConflictMessage": { "message": "The '[FIELD_NAME]' field has existing data. \n\n • Press OK to MERGE the new data with the existing data. \n • Press Cancel to REPLACE the existing data with the new data." }
 }
