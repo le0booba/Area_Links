@@ -1,7 +1,5 @@
 const HISTORY_LIMIT = 50;
 const SYNC_DEFAULTS = {
-  excludedDomains: '',
-  excludedWords: '',
   tabLimit: 15,
   selectionStyle: 'classic-blue',
   highlightStyle: 'classic-yellow',
@@ -12,6 +10,8 @@ const SYNC_DEFAULTS = {
   showContextMenu: true,
 };
 const LOCAL_DEFAULTS = {
+  excludedDomains: '',
+  excludedWords: '',
   linkHistory: [],
   useHistory: true,
   checkDuplicatesOnCopy: true,

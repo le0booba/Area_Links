@@ -7,7 +7,7 @@
   "optionsOpenInNewWindow": { "message": "Открывать в новом окне" },
   "optionsReverseOrder": { "message": "Открывать в обратном порядке" },
   "optionsUseHistory": { "message": "Запоминать открытые ссылки" },
-  "optionsCheckDuplicatesOnCopy": { "message": "Убирать дубликаты при копир." },
+  "optionsCheckDuplicatesOnCopy": { "message": "Убирать дубликаты при копировании" },
   "optionsTitle": { "message": "Настройки" },
   "optionsLanguage": { "message": "Язык" },
   "optionsHeaderBehavior": { "message": "Поведение" },
@@ -38,6 +38,10 @@
   "optionsStatusTabLimitError": { "message": "Лимит вкладок должен быть от 1 до 50." },
   "popupOpenNextToParent": { "message": "Открывать рядом с текущей" },
   "optionsHighlightStyle": { "message": "Цвет выделения ссылок:" },
-  "optionsHighlightStyleClassicYellow": { "message": "Желтый" },
-  "optionsHighlightStyleDarkGray": { "message": "Темно-серый" }
+  "optionsHighlightStyleClassicYellow": { "message": "Классический Желтый" },
+  "optionsHighlightStyleDarkGray": { "message": "Темно-серый" },
+  "optionsImportExclusionsButton": { "message": "Импорт" },
+  "optionsExportExclusionsButton": { "message": "Экспорт" },
+  "optionsStatusImportSuccess": { "message": "Импорт успешно завершен." },
+  "optionsStatusImportError": { "message": "Ошибка импорта: Неверный формат файла." }
 }

@@ -1,6 +1,4 @@
 const SETTINGS_CONFIG = {
-    excludedDomains: { default: '', storage: 'sync' },
-    excludedWords: { default: '', storage: 'sync' },
     tabLimit: { default: 15, storage: 'sync' },
     selectionStyle: { default: 'classic-blue', storage: 'sync' },
     highlightStyle: { default: 'classic-yellow', storage: 'sync' },
@@ -9,6 +7,8 @@ const SETTINGS_CONFIG = {
     openNextToParent: { default: false, storage: 'sync' },
     language: { default: 'en', storage: 'sync' },
     showContextMenu: { default: true, storage: 'sync' },
+    excludedDomains: { default: '', storage: 'local' },
+    excludedWords: { default: '', storage: 'local' },
     useHistory: { default: true, storage: 'local' },
     checkDuplicatesOnCopy: { default: true, storage: 'local' },
 };
@@ -63,6 +63,12 @@ function updateClearButtonsState() {
     document.getElementById('clearExcludedWords').disabled = wordsTextarea.value.trim() === '';
 }
 
+function updateExportButtonState() {
+    const domainsTextarea = document.getElementById('excludedDomains');
+    const wordsTextarea = document.getElementById('excludedWords');
+    document.getElementById('exportExclusions').disabled = domainsTextarea.value.trim() === '' && wordsTextarea.value.trim() === '';
+}
+
 function updateSaveButtonState() {
     const saveButton = document.getElementById('saveExclusions');
     if (!saveButton) return;
@@ -70,6 +76,7 @@ function updateSaveButtonState() {
     const currentWords = document.getElementById('excludedWords').value;
     const hasUnsavedChanges = currentDomains.trim() !== savedExcludedDomains.trim() || currentWords.trim() !== savedExcludedWords.trim();
     saveButton.classList.toggle('has-unsaved-changes', hasUnsavedChanges);
+    saveButton.disabled = !hasUnsavedChanges;
 }
 
 async function restoreOptions() {
@@ -101,15 +108,31 @@ async function restoreOptions() {
 
     savedExcludedDomains = settings.excludedDomains;
     savedExcludedWords = settings.excludedWords;
-    document.getElementById('excludedDomains').value = savedExcludedDomains;
-    document.getElementById('excludedWords').value = savedExcludedWords;
+    const domainsTextarea = document.getElementById('excludedDomains');
+    const wordsTextarea = document.getElementById('excludedWords');
+    domainsTextarea.value = savedExcludedDomains;
+    wordsTextarea.value = savedExcludedWords;
 
-    if (localStorage.getItem('exclusionsOpen') === 'true') {
-        document.getElementById('exclusions-details').open = true;
+    const detailsEl = document.getElementById('exclusions-details');
+    if (domainsTextarea.value.trim() || wordsTextarea.value.trim()) {
+        if (localStorage.getItem('exclusionsOpen') === 'true') {
+            detailsEl.open = true;
+        }
+    } else {
+        detailsEl.open = false;
     }
+
+    chrome.storage.local.get('linkHistory', (items) => {
+        const clearHistoryButton = document.getElementById('clearHistory');
+        if (clearHistoryButton) {
+            clearHistoryButton.disabled = !items.linkHistory || items.linkHistory.length === 0;
+        }
+    });
+
     localizePage();
     updateClearButtonsState();
     updateSaveButtonState();
+    updateExportButtonState();
 
     document.body.classList.remove('loading-settings');
 }
@@ -122,31 +145,96 @@ function saveExclusions() {
     domainsTextarea.value = domainsToSave;
     wordsTextarea.value = wordsToSave;
     const settingsToSave = { excludedDomains: domainsToSave, excludedWords: wordsToSave };
-    chrome.storage.sync.set(settingsToSave).then(() => {
+    chrome.storage.local.set(settingsToSave).then(() => {
         showStatus('status-exclusions', messages.optionsStatusExclusionsSaved);
         savedExcludedDomains = domainsToSave;
         savedExcludedWords = wordsToSave;
         updateSaveButtonState();
+
+        const exclusionsDetails = document.getElementById('exclusions-details');
+        if (domainsToSave || wordsToSave) {
+            if (exclusionsDetails.open) {
+                localStorage.setItem('exclusionsOpen', 'true');
+            }
+        } else {
+            localStorage.removeItem('exclusionsOpen');
+        }
     });
 }
 
 function clearHistory() {
     chrome.storage.local.set({ linkHistory: [] })
-        .then(() => showStatus('status-history', messages.optionsStatusHistoryCleared, false, 3000));
+        .then(() => {
+            showStatus('status-history', messages.optionsStatusHistoryCleared, false, 3000);
+            document.getElementById('clearHistory').disabled = true;
+        });
+}
+
+function handleExport() {
+    const domains = document.getElementById('excludedDomains').value;
+    const words = document.getElementById('excludedWords').value;
+    const data = { excludedDomains: domains, excludedWords: words };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'area-links-exclusions.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
+function handleImport(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        try {
+            const data = JSON.parse(e.target.result);
+            if (typeof data.excludedDomains === 'string' && typeof data.excludedWords === 'string') {
+                document.getElementById('excludedDomains').value = data.excludedDomains;
+                document.getElementById('excludedWords').value = data.excludedWords;
+                saveExclusions();
+                updateExportButtonState();
+                showStatus('status-exclusions', messages.optionsStatusImportSuccess);
+            } else {
+                throw new Error('Invalid file format');
+            }
+        } catch (error) {
+            showStatus('status-exclusions', messages.optionsStatusImportError, true);
+        }
+    };
+    reader.readAsText(file);
+    event.target.value = '';
 }
 
 function setupEventListeners() {
     document.getElementById('saveExclusions').addEventListener('click', saveExclusions);
     document.getElementById('clearHistory').addEventListener('click', clearHistory);
-    document.getElementById('exclusions-details').addEventListener('toggle', (e) => {
-        localStorage.setItem('exclusionsOpen', e.target.open);
+    document.getElementById('exportExclusions').addEventListener('click', handleExport);
+    document.getElementById('importExclusions').addEventListener('click', () => {
+        document.getElementById('import-file-input').click();
     });
-
+    document.getElementById('import-file-input').addEventListener('change', handleImport);
+    
+    const exclusionsDetails = document.getElementById('exclusions-details');
     const domainsTextarea = document.getElementById('excludedDomains');
     const wordsTextarea = document.getElementById('excludedWords');
+
+    exclusionsDetails.addEventListener('toggle', (e) => {
+        if (domainsTextarea.value.trim() || wordsTextarea.value.trim()) {
+            localStorage.setItem('exclusionsOpen', e.target.open);
+        } else {
+            localStorage.removeItem('exclusionsOpen');
+        }
+    });
+
     const textareasHandler = () => {
         updateClearButtonsState();
         updateSaveButtonState();
+        updateExportButtonState();
     };
     domainsTextarea.addEventListener('input', textareasHandler);
     wordsTextarea.addEventListener('input', textareasHandler);
@@ -155,11 +243,13 @@ function setupEventListeners() {
         domainsTextarea.value = '';
         saveExclusions();
         updateClearButtonsState();
+        updateExportButtonState();
     });
     document.getElementById('clearExcludedWords').addEventListener('click', () => {
         wordsTextarea.value = '';
         saveExclusions();
         updateClearButtonsState();
+        updateExportButtonState();
     });
     document.getElementById('shortcutsLink').addEventListener('click', (e) => {
         e.preventDefault();
@@ -176,7 +266,7 @@ function setupEventListeners() {
     document.querySelector('main').addEventListener('change', (e) => {
         const el = e.target;
         const id = el.id;
-        if (id === 'language-select') return;
+        if (id === 'language-select' || el.id === 'import-file-input') return;
 
         const config = SETTINGS_CONFIG[id];
         if (!config || el.tagName === 'TEXTAREA') return;

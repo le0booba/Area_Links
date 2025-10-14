@@ -39,5 +39,9 @@
   "popupOpenNextToParent": { "message": "Open next to current" },
   "optionsHighlightStyle": { "message": "Link Highlight Style:" },
   "optionsHighlightStyleClassicYellow": { "message": "Classic Yellow" },
-  "optionsHighlightStyleDarkGray": { "message": "Dark Gray" }
+  "optionsHighlightStyleDarkGray": { "message": "Dark Gray" },
+  "optionsImportExclusionsButton": { "message": "Import" },
+  "optionsExportExclusionsButton": { "message": "Export" },
+  "optionsStatusImportSuccess": { "message": "Import successful." },
+  "optionsStatusImportError": { "message": "Import failed: Invalid file format." }
 }

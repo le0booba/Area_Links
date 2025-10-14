@@ -85,11 +85,24 @@
                         </div>
                     </div>
                     <div class="card-footer">
-                        <div id="status-exclusions" class="status-message"></div>
-                        <button id="saveExclusions" class="button-primary">
-                            <span class="unsaved-indicator">!</span>
-                            <span class="button-text" data-i18n="optionsSaveExclusionsButton">Save Exclusions</span>
-                        </button>
+                        <div class="control-wrapper">
+                             <button id="importExclusions" class="button-secondary">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5V19m7-7l-7 7-7-7"/></svg>
+                                <span data-i18n="optionsImportExclusionsButton"></span>
+                             </button>
+                             <button id="exportExclusions" class="button-secondary">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5m-7 7l7-7 7 7"/></svg>
+                                <span data-i18n="optionsExportExclusionsButton"></span>
+                             </button>
+                             <input type="file" id="import-file-input" accept=".json" style="display: none;">
+                        </div>
+                        <div class="control-wrapper">
+                            <div id="status-exclusions" class="status-message"></div>
+                            <button id="saveExclusions" class="button-primary">
+                                <span class="unsaved-indicator">!</span>
+                                <span class="button-text" data-i18n="optionsSaveExclusionsButton">Save Exclusions</span>
+                            </button>
+                        </div>
                     </div>
                 </div>
             </details>

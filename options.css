@@ -282,7 +282,12 @@ button {
     font-weight: 600;
     font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
     letter-spacing: 0.5px;
-    transition: background-color 0.2s;
+    transition: all 0.2s;
+}
+
+button:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
 }
 
 .button-primary {
@@ -293,7 +298,7 @@ button {
     color: var(--primary-text);
 }
 
-.button-primary:hover {
+.button-primary:hover:not(:disabled) {
     background-color: var(--primary-hover);
 }
 
@@ -302,8 +307,26 @@ button {
     color: var(--primary-text);
 }
 
-.button-danger:hover {
+.button-danger:hover:not(:disabled) {
     background-color: var(--danger-hover);
+}
+
+.button-secondary {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+}
+
+.button-secondary:hover:not(:disabled) {
+    color: var(--text-color);
+    border-color: var(--primary-color);
+}
+
+.button-secondary:disabled {
+    opacity: 0.5;
 }
 
 .unsaved-indicator {
