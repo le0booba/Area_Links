@@ -1,12 +1,14 @@
 const svgCursor = `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32"><line x1="16" y1="0" x2="16" y2="32" stroke="black" stroke-width="1.5"/><line x1="0" y1="16" x2="32" y2="16" stroke="black" stroke-width="1.5"/><rect x="20" y="20" width="10" height="10" fill="white" /><line x1="25" y1="21" x2="25" y2="29" stroke="black" stroke-width="2"/><line x1="21" y1="25" x2="29" y2="25" stroke="black" stroke-width="2"/></svg>`;
 const customCopyCursor = `url('data:image/svg+xml;utf8,${encodeURIComponent(svgCursor)}') 16 16, copy`;
 const HIGHLIGHT_CLASS = 'link-opener-highlighted-link';
+const PREPARE_ANIMATION_CLASS = 'link-opener-prepare-animation';
 
 const selectionState = {
     isActive: false,
     isSelecting: false,
     isCopyMode: false,
     isUpdateScheduled: false,
+    hasScannedLinks: false,
     style: 'classic-blue',
     highlightStyle: 'classic-yellow',
     startCoords: { x: 0, y: 0 },
@@ -18,14 +20,21 @@ const selectionState = {
 };
 
 let selectionBox = null;
+let selectionOverlay = null;
 let highlightedElements = new Set();
 let linkDataCache = [];
 
-function createSelectionBox() {
-    if (selectionBox) return;
-    selectionBox = document.createElement('div');
-    selectionBox.id = 'link-opener-selection-box';
-    document.body.appendChild(selectionBox);
+function createSelectionElements() {
+    if (!selectionOverlay) {
+        selectionOverlay = document.createElement('div');
+        selectionOverlay.id = 'link-opener-selection-overlay';
+        document.body.appendChild(selectionOverlay);
+    }
+    if (!selectionBox) {
+        selectionBox = document.createElement('div');
+        selectionBox.id = 'link-opener-selection-box';
+        document.body.appendChild(selectionBox);
+    }
 }
 
 function getSelectionRectangle(start, end) {
@@ -103,19 +112,21 @@ function resetSelection() {
         selectionBox.remove();
         selectionBox = null;
     }
+    if (selectionOverlay) {
+        selectionOverlay.remove();
+        selectionOverlay = null;
+    }
     clearHighlights();
+    document.body.classList.remove(PREPARE_ANIMATION_CLASS);
     delete document.body.dataset.linkOpenerHighlightStyle;
     document.body.style.cursor = 'default';
-    document.removeEventListener('mousedown', handleMouseDown, true);
-    document.removeEventListener('mousemove', handleMouseMove, true);
-    document.removeEventListener('mouseup', handleMouseUp, true);
     document.removeEventListener('keydown', handleKeyDown, true);
     document.removeEventListener('scroll', handleScroll, true);
 
     Object.assign(selectionState, {
         isActive: false,
         isSelecting: false,
-        isCopyMode: false,
+        hasScannedLinks: false,
         isUpdateScheduled: false,
         startCoords: { x: 0, y: 0 },
         currentCoords: { x: 0, y: 0 },
@@ -162,8 +173,10 @@ function runScheduledUpdate() {
         return;
     }
     updateSelectionBox();
-    const rect = getSelectionRectangle(selectionState.startCoords, selectionState.currentCoords);
-    updateLinkHighlights(rect);
+    if (selectionState.hasScannedLinks) {
+        const rect = getSelectionRectangle(selectionState.startCoords, selectionState.currentCoords);
+        updateLinkHighlights(rect);
+    }
     selectionState.isUpdateScheduled = false;
 }
 
@@ -207,10 +220,13 @@ function populateLinkDataCache() {
             }
         };
     }).filter(Boolean);
+    selectionState.hasScannedLinks = true;
 }
 
 function handleMouseMove(e) {
-    if (!selectionState.isSelecting) return;
+    if (!selectionState.hasScannedLinks) {
+        populateLinkDataCache();
+    }
     selectionState.currentCoords = { x: e.pageX, y: e.pageY };
     scheduleUpdate();
 }
@@ -240,15 +256,17 @@ function handleMouseDown(e) {
     if (e.button !== 0) return;
     e.preventDefault();
     e.stopPropagation();
+    
     selectionState.isSelecting = true;
     selectionState.startCoords = { x: e.pageX, y: e.pageY };
     selectionState.currentCoords = { x: e.pageX, y: e.pageY };
-    createSelectionBox();
+    
+    createSelectionElements();
     selectionBox.className = selectionState.style;
     updateSelectionBox();
-    setTimeout(populateLinkDataCache, 0);
-    document.addEventListener('mousemove', handleMouseMove, true);
-    document.addEventListener('mouseup', handleMouseUp, true);
+    
+    selectionOverlay.addEventListener('mousemove', handleMouseMove, true);
+    selectionOverlay.addEventListener('mouseup', handleMouseUp, true);
     document.addEventListener('scroll', handleScroll, true);
 }
 
@@ -261,6 +279,10 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (!isInitiate) {
         return true;
     }
+    if (selectionState.isActive) {
+        resetSelection();
+    }
+    
     const isCopyMode = request.type === "initiateSelectionCopy";
     selectionState.isCopyMode = isCopyMode;
     selectionState.checkDuplicatesOnCopy = request.checkDuplicatesOnCopy;
@@ -268,16 +290,18 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     selectionState.linkHistory = request.linkHistory || [];
     selectionState.historySet = new Set(selectionState.linkHistory);
     selectionState.highlightStyle = request.highlightStyle;
+    
     document.body.dataset.linkOpenerHighlightStyle = selectionState.highlightStyle;
+    document.body.classList.add(PREPARE_ANIMATION_CLASS);
     document.body.style.cursor = isCopyMode ? customCopyCursor : 'crosshair';
-    if (selectionState.isActive) {
-        sendResponse({ success: true, message: "Mode switched" });
-        return true;
-    }
+    
     selectionState.isActive = true;
     selectionState.style = request.style;
-    document.addEventListener('mousedown', handleMouseDown, true);
+    
+    createSelectionElements();
+    selectionOverlay.addEventListener('mousedown', handleMouseDown, true);
     document.addEventListener('keydown', handleKeyDown, true);
+    
     sendResponse({ success: true, message: "Selection initiated" });
     return true;
 });

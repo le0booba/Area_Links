@@ -28,11 +28,18 @@ function localizePage() {
             el.textContent = messages[key];
         }
     });
+     document.querySelectorAll('[data-i18n-title]').forEach(el => {
+        const key = el.getAttribute('data-i18n-title');
+        if (messages[key]) {
+            el.title = messages[key];
+        }
+    });
 }
 
-function showStatus() {
+function showStatus(messageKey = "popupStatusSaved") {
     const statusEl = document.getElementById('status-message');
     if (!statusEl) return;
+    statusEl.textContent = messages[messageKey] || '';
     statusEl.style.opacity = '1';
     setTimeout(() => {
         statusEl.style.opacity = '0';
@@ -59,13 +66,47 @@ async function loadCommands() {
     });
 }
 
+async function establishConnection() {
+    return new Promise((resolve) => {
+        let retries = 0;
+        const maxRetries = 5;
+        const interval = 100;
+
+        const attempt = () => {
+            chrome.runtime.sendMessage({ type: 'ping' }, (response) => {
+                if (response && response.type === 'pong') {
+                    resolve(true);
+                } else {
+                    retries++;
+                    if (retries < maxRetries) {
+                        setTimeout(attempt, interval);
+                    } else {
+                        resolve(false);
+                    }
+                }
+            });
+        };
+        attempt();
+    });
+}
+
 async function initialize() {
+    const isConnected = await establishConnection();
+    const openBtn = document.getElementById('action-open-links');
+    const copyBtn = document.getElementById('action-copy-links');
+    const clearHistoryBtn = document.getElementById('clear-history-popup');
+
+    if (isConnected) {
+        openBtn.disabled = false;
+        copyBtn.disabled = false;
+    }
+
     const syncKeys = QUICK_SETTINGS_CONFIG.filter(c => c.storage === 'sync').map(c => c.key);
     const localKeys = QUICK_SETTINGS_CONFIG.filter(c => c.storage === 'local').map(c => c.key);
 
     const [syncItems, localItems] = await Promise.all([
         chrome.storage.sync.get([...syncKeys, 'language']),
-        chrome.storage.local.get(localKeys)
+        chrome.storage.local.get([...localKeys, 'linkHistory'])
     ]);
 
     const allSettings = { ...syncItems, ...localItems };
@@ -73,6 +114,8 @@ async function initialize() {
     await loadLanguage(allSettings.language || 'en');
     localizePage();
     loadCommands();
+
+    clearHistoryBtn.disabled = !localItems.linkHistory || localItems.linkHistory.length === 0;
 
     QUICK_SETTINGS_CONFIG.forEach(config => {
         const el = document.getElementById(config.id);
@@ -85,19 +128,25 @@ async function initialize() {
         }
     });
 
-    document.getElementById('action-open-links').addEventListener('click', () => {
+    openBtn.addEventListener('click', () => {
         chrome.runtime.sendMessage({
             type: 'triggerSelectionFromPopup',
             commandType: 'initiateSelection'
         });
         window.close();
     });
-    document.getElementById('action-copy-links').addEventListener('click', () => {
+    copyBtn.addEventListener('click', () => {
         chrome.runtime.sendMessage({
             type: 'triggerSelectionFromPopup',
             commandType: 'initiateSelectionCopy'
         });
         window.close();
+    });
+    clearHistoryBtn.addEventListener('click', () => {
+        chrome.storage.local.set({ linkHistory: [] }).then(() => {
+            clearHistoryBtn.disabled = true;
+            showStatus('optionsStatusHistoryCleared');
+        });
     });
     document.getElementById('open-options').addEventListener('click', () => chrome.runtime.openOptionsPage());
 }

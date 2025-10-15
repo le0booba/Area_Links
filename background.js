@@ -166,6 +166,11 @@ chrome.commands.onCommand.addListener((command, tab) => {
 });
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    if (request.type === 'ping') {
+        sendResponse({ type: 'pong' });
+        return true;
+    }
+    
     if (request.type === "openLinks") {
         processLinks(request.urls, sender.tab);
         return false;
@@ -179,7 +184,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         });
         return false;
     }
-    return false;
+    return true;
 });
 
 async function processLinks(urls, tab) {

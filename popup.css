@@ -51,9 +51,16 @@ h1 {
     font-weight: 300;
 }
 
+.header-controls {
+    display: flex;
+    align-items: center;
+    gap: 0;
+}
+
 #status-message {
-    margin-top: 2px;
-    margin-right: 10px;
+    min-width: 60px;
+    margin-right: 6px;
+    text-align: right;
     color: var(--primary-color);
     font-size: 0.9em;
     font-weight: bold;
@@ -132,20 +139,32 @@ footer {
     border-color: var(--primary-color);
 }
 
+.action-btn-popup:disabled {
+    cursor: default;
+    opacity: 0.5;
+}
+
 .action-btn-popup .shortcut {
     font-size: 0.75em;
     font-weight: 500;
     font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace;
 }
 
-#open-options {
+.secondary-actions-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-right: 4px;
+}
+
+#open-options,
+#clear-history-popup {
     display: flex;
     align-items: center;
     justify-content: center;
     width: 30px;
     height: 30px;
-    margin-left: 3px;
-    margin-right: 3px;
+    margin: 0;
     padding: 0;
     background: transparent;
     border: none;
@@ -155,9 +174,20 @@ footer {
     transition: background-color 0.2s, color 0.2s;
 }
 
-#open-options:hover {
+#open-options {
+    margin-top: 2px;
+}
+
+#open-options:hover,
+#clear-history-popup:hover:not(:disabled) {
     background-color: var(--border-color);
     color: var(--text-color);
+}
+
+#clear-history-popup:disabled {
+    cursor: default;
+    opacity: 0.4;
+    cursor: default;
 }
 
 .switch {

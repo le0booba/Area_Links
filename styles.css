@@ -1,3 +1,13 @@
+#link-opener-selection-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 2147483646;
+    cursor: crosshair;
+}
+
 #link-opener-selection-box {
     position: fixed;
     z-index: 2147483647;
@@ -23,6 +33,10 @@
 #link-opener-selection-box.subtle-gray {
     background-color: rgba(108, 117, 125, 0.2);
     border: 1px solid rgba(52, 58, 64, 0.7);
+}
+
+body.link-opener-prepare-animation a {
+    will-change: background-color, outline, box-shadow, color;
 }
 
 body[data-link-opener-highlight-style='classic-yellow'] a.link-opener-highlighted-link {

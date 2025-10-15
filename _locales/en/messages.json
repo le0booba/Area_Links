@@ -32,7 +32,7 @@
   "optionsHowToUseShortcuts_part1": { "message": "Shortcuts can be changed." },
   "optionsHowToUseShortcuts_part2": { "message": "Go to:" },
   "optionsStatusExclusionsSaved": { "message": "Exclusions saved." },
-  "optionsStatusHistoryCleared": { "message": "History cleared." },
+  "optionsStatusHistoryCleared": { "message": "Cleared!" },
   "optionsStatusSettingSaved": { "message": "Setting saved." },
   "optionsStatusError": { "message": "Error:" },
   "optionsStatusTabLimitError": { "message": "Tab limit must be between 1 and 50." },
@@ -44,5 +44,6 @@
   "optionsExportExclusionsButton": { "message": "Export" },
   "optionsStatusImportSuccess": { "message": "Import successful." },
   "optionsStatusImportError": { "message": "Import failed: Invalid file format." },
-  "optionsImportConflictMessage": { "message": "The '[FIELD_NAME]' field has existing data. \n\n • Press OK to MERGE the new data with the existing data. \n • Press Cancel to REPLACE the existing data with the new data." }
+  "optionsImportConflictMessage": { "message": "The '[FIELD_NAME]' field has existing data. \n\n • Press OK to MERGE the new data with the existing data. \n • Press Cancel to REPLACE the existing data with the new data." },
+  "popupClearHistoryTitle": { "message": "Clear opened links history" }
 }
