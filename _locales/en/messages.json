@@ -3,7 +3,7 @@
   "extDescription": { "message": "Open or copy multiple links by selecting an area." },
   "cmdActivate": { "message": "Activate Selection (Open)" },
   "cmdActivateCopy": { "message": "Activate Selection (Copy)" },
-  "popupStatusSaved": { "message": "Saved!" },
+  "popupStatusSaved": { "message": "🗸" },
   "optionsOpenInNewWindow": { "message": "Open in new window" },
   "optionsReverseOrder": { "message": "Open in reverse order" },
   "optionsUseHistory": { "message": "Remember opened links" },
@@ -31,8 +31,8 @@
   "optionsHowToUseCopyDetail": { "message": "press the shortcut, then click and drag to select an area." },
   "optionsHowToUseShortcuts_part1": { "message": "Shortcuts can be changed." },
   "optionsHowToUseShortcuts_part2": { "message": "Shortcuts Config Page:" },
-  "optionsStatusExclusionsSaved": { "message": "Exclusions saved." },
-  "optionsStatusHistoryCleared": { "message": "Cleared!" },
+  "optionsStatusExclusionsSaved": { "message": "🗸" },
+  "optionsStatusHistoryCleared": { "message": "🗸" },
   "optionsStatusSettingSaved": { "message": "Setting saved." },
   "optionsStatusError": { "message": "Error:" },
   "optionsStatusTabLimitError": { "message": "Tab limit must be between 1 and 50." },
@@ -46,5 +46,8 @@
   "optionsStatusImportError": { "message": "Import failed: Invalid file format." },
   "optionsImportConflictMessage": { "message": "The '[FIELD_NAME]' field has existing data. \n\n • Press OK to MERGE the new data with the existing data. \n • Press Cancel to REPLACE the existing data with the new data." },
   "popupClearHistoryTitle": { "message": "Clear opened links history" },
-  "popupLogoTitle": { "message": "v$VERSION$", "placeholders": { "version": { "content": "$1" } } }
+  "popupLogoTitle": { "message": "v$VERSION$", "placeholders": { "version": { "content": "$1" } } },
+  "popupOpenTitle": { "message": "Activate area selection to open links" },
+  "popupCopyTitle": { "message": "Activate area selection to copy links" },
+  "popupSettingsTitle": { "message": "Open All Settings" }
 }

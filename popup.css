@@ -59,10 +59,11 @@ h1 {
 
 #status-message {
     margin-top: 3px;
+    margin-right: 4px;
     min-width: 50px;
     text-align: right;
     color: var(--primary-color);
-    font-size: 0.9em;
+    font-size: 1.2em;
     font-weight: bold;
     font-family: "Roboto", sans-serif;
     letter-spacing: 0.5px;
@@ -179,7 +180,7 @@ footer {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 38px;
+    width: 32px;
     height: 28px;
     margin: 0;
     padding: 0;
