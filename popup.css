@@ -58,8 +58,8 @@ h1 {
 }
 
 #status-message {
-    min-width: 60px;
-    margin-right: 6px;
+    margin-top: 3px;
+    min-width: 50px;
     text-align: right;
     color: var(--primary-color);
     font-size: 0.9em;
@@ -155,7 +155,7 @@ footer {
     display: flex;
     align-items: center;
     gap: 6px;
-    margin-right: 4px;
+    margin-right: 12px;
 }
 
 #open-options,
@@ -176,6 +176,19 @@ footer {
 }
 
 #open-options {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 28px;
+    margin: 0;
+    padding: 0;
+    background: transparent;
+    border: none;
+    border-radius: 6px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: background-color 0.2s, color 0.2s;
     margin-top: 2px;
 }
 
