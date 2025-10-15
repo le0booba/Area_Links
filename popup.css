@@ -68,6 +68,7 @@ h1 {
     letter-spacing: 0.5px;
     opacity: 0;
     transition: opacity 0.3s;
+    cursor: default;
 }
 
 .quick-settings-container {
