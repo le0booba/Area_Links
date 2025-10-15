@@ -115,6 +115,12 @@ async function initialize() {
     localizePage();
     loadCommands();
 
+    const logoEl = document.querySelector('.logo');
+    if (logoEl) {
+        const version = chrome.runtime.getManifest().version;
+        logoEl.title = chrome.i18n.getMessage('popupLogoTitle', version);
+    }
+
     clearHistoryBtn.disabled = !localItems.linkHistory || localItems.linkHistory.length === 0;
 
     QUICK_SETTINGS_CONFIG.forEach(config => {

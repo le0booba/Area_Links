@@ -30,7 +30,7 @@
   "optionsHowToUseCopy": { "message": "Чтобы скопировать ссылки," },
   "optionsHowToUseCopyDetail": { "message": "нажмите сочетание клавиш, затем выделите область с помощью мыши." },
   "optionsHowToUseShortcuts_part1": { "message": "Сочетания клавиш можно изменить." },
-  "optionsHowToUseShortcuts_part2": { "message": "Перейдите по адресу:" },
+  "optionsHowToUseShortcuts_part2": { "message": "Страница настройки Быстрых клавиш:" },
   "optionsStatusExclusionsSaved": { "message": "Исключения сохранены." },
   "optionsStatusHistoryCleared": { "message": "Очищено!" },
   "optionsStatusSettingSaved": { "message": "Настройка сохранена." },
@@ -45,5 +45,6 @@
   "optionsStatusImportSuccess": { "message": "Импорт успешно завершен." },
   "optionsStatusImportError": { "message": "Ошибка импорта: Неверный формат файла." },
   "optionsImportConflictMessage": { "message": "Поле '[FIELD_NAME]' уже содержит данные. \n\n • Нажмите ОК, чтобы ОБЪЕДИНИТЬ новые данные с существующими. \n • Нажмите Отмена, чтобы ЗАМЕНИТЬ существующие данные новыми." },
-  "popupClearHistoryTitle": { "message": "Очистить историю открытых ссылок" }
+  "popupClearHistoryTitle": { "message": "Очистить историю открытых ссылок" },
+  "popupLogoTitle": { "message": "v$VERSION$", "placeholders": { "version": { "content": "$1" } } }
 }

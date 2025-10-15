@@ -30,7 +30,7 @@
   "optionsHowToUseCopy": { "message": "To copy links," },
   "optionsHowToUseCopyDetail": { "message": "press the shortcut, then click and drag to select an area." },
   "optionsHowToUseShortcuts_part1": { "message": "Shortcuts can be changed." },
-  "optionsHowToUseShortcuts_part2": { "message": "Go to:" },
+  "optionsHowToUseShortcuts_part2": { "message": "Shortcuts Config Page:" },
   "optionsStatusExclusionsSaved": { "message": "Exclusions saved." },
   "optionsStatusHistoryCleared": { "message": "Cleared!" },
   "optionsStatusSettingSaved": { "message": "Setting saved." },
@@ -45,5 +45,6 @@
   "optionsStatusImportSuccess": { "message": "Import successful." },
   "optionsStatusImportError": { "message": "Import failed: Invalid file format." },
   "optionsImportConflictMessage": { "message": "The '[FIELD_NAME]' field has existing data. \n\n • Press OK to MERGE the new data with the existing data. \n • Press Cancel to REPLACE the existing data with the new data." },
-  "popupClearHistoryTitle": { "message": "Clear opened links history" }
+  "popupClearHistoryTitle": { "message": "Clear opened links history" },
+  "popupLogoTitle": { "message": "v$VERSION$", "placeholders": { "version": { "content": "$1" } } }
 }
