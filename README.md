@@ -120,51 +120,6 @@ The popup also provides quick action buttons to activate selection modes and cle
 
 ---
 
-## 🛠️ Troubleshooting
-
-<details>
-<summary><b>Extension doesn't work on certain pages (e.g., New Tab page)</b></summary>
-  
-**Cause:** For security reasons, Chrome extensions are not allowed to run on internal `chrome://` pages (like Settings, Bookmarks, or the Extensions page itself), the Chrome Web Store, or other protected browser pages.
-
-**Solution:** This is expected behavior. The extension will function correctly on standard websites.
-</details>
-
-<details>
-<summary><b>Keyboard shortcuts are not working</b></summary>
-  
-**Cause:** Another extension might be using the same shortcuts, or the shortcuts might have been changed.
-
-**Solution:**
-1.  Navigate to `chrome://extensions/shortcuts`.
-2.  Find "Area Links" in the list.
-3.  Check for any conflicts and reassign the shortcuts if needed.
-</details>
-
-<details>
-<summary><b>No links are opening even after I make a selection</b></summary>
-  
-**Cause:** The links might be filtered out by your settings, or the selection area might not contain valid links.
-
-**Solution:**
-1.  Ensure your selection box covers actual, clickable `<a>` links.
-2.  Check your **Options Page** to see if the links are being blocked by your **Excluded Domains** or **Excluded Words** filters.
-3.  If you have "Remember opened links" enabled, try clearing the history via the Options Page or popup.
-</details>
-
-<details>
-<summary><b>Selection box doesn't appear or behaves unexpectedly</b></summary>
-  
-**Cause:** The content script may not have loaded properly on the page.
-
-**Solution:**
-1. Try refreshing the page.
-2. If the issue persists, the extension will automatically inject scripts when you use the shortcut or context menu.
-3. Check if any other extensions might be interfering with page scripts.
-</details>
-
----
-
 ## 🔒 Permissions & Privacy
 
 This extension was built with your privacy as a top priority.
@@ -210,6 +165,51 @@ This extension was built with your privacy as a top priority.
 
 ---
 
+## 🛠️ Troubleshooting
+
+<details>
+<summary><b>Extension doesn't work on certain pages (e.g., New Tab page)</b></summary>
+  
+**Cause:** For security reasons, Chrome extensions are not allowed to run on internal `chrome://` pages (like Settings, Bookmarks, or the Extensions page itself), the Chrome Web Store, or other protected browser pages.
+
+**Solution:** This is expected behavior. The extension will function correctly on standard websites.
+</details>
+
+<details>
+<summary><b>Keyboard shortcuts are not working</b></summary>
+  
+**Cause:** Another extension might be using the same shortcuts, or the shortcuts might have been changed.
+
+**Solution:**
+1.  Navigate to `chrome://extensions/shortcuts`.
+2.  Find "Area Links" in the list.
+3.  Check for any conflicts and reassign the shortcuts if needed.
+</details>
+
+<details>
+<summary><b>No links are opening even after I make a selection</b></summary>
+  
+**Cause:** The links might be filtered out by your settings, or the selection area might not contain valid links.
+
+**Solution:**
+1.  Ensure your selection box covers actual, clickable `<a>` links.
+2.  Check your **Options Page** to see if the links are being blocked by your **Excluded Domains** or **Excluded Words** filters.
+3.  If you have "Remember opened links" enabled, try clearing the history via the Options Page or popup.
+</details>
+
+<details>
+<summary><b>Selection box doesn't appear or behaves unexpectedly</b></summary>
+  
+**Cause:** The content script may not have loaded properly on the page.
+
+**Solution:**
+1. Try refreshing the page.
+2. If the issue persists, the extension will automatically inject scripts when you use the shortcut or context menu.
+3. Check if any other extensions might be interfering with page scripts.
+</details>
+
+---
+
 ## 📁 Project Structure
 
 ```
@@ -234,21 +234,6 @@ Area_Links/
 ├── 📄 LICENSE                # MIT License
 └── ℹ️ README.md              # This documentation file
 ```
-
----
-
-## 🔄 Version History
-
-**Current Version: 2.3.1**
-
-### Recent Updates
-- Added "Open next to current tab" option for better tab management
-- Introduced two highlight color schemes (Classic Yellow and Dark Gray)
-- Implemented import/export functionality for exclusion lists
-- Enhanced link scanning performance with viewport-based optimization
-- Improved duplicate detection with Set-based history tracking
-- Added custom cursor indicators for different operation modes
-- Refined UI with better status messages and visual feedback
 
 ---
 
