@@ -12,7 +12,7 @@
 
   ![Chrome Extension](https://img.shields.io/badge/Chrome-Extension-blue?logo=googlechrome)
   ![Manifest V3](https://img.shields.io/badge/Manifest-V3-brightgreen)
-  ![License](https://img.shields.io/badge/License-MIT-yellow.svg)
+  ![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)
 </div>
 
 ---
