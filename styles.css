@@ -14,9 +14,9 @@
     pointer-events: none;
 }
 
-#link-opener-selection-box.classic-blue {
+#link-opener-selection-box.dashed-blue {
     background-color: rgba(0, 123, 255, 0.25);
-    border: 1px solid rgba(0, 123, 255, 0.8);
+    border: 2px dashed rgba(0, 123, 255, 0.9);
 }
 
 #link-opener-selection-box.dashed-red {
@@ -24,9 +24,9 @@
     border: 2px dashed rgba(220, 53, 69, 0.9);
 }
 
-#link-opener-selection-box.dashed-green {
+#link-opener-selection-box.solid-green {
     background-color: rgba(40, 167, 69, 0.15);
-    border: 2px dashed rgba(40, 167, 69, 0.9);
+    border: 1px solid rgba(40, 167, 69, 0.8);
 }
 
 #link-opener-selection-box.subtle-gray {

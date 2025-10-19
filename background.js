@@ -1,7 +1,7 @@
 const HISTORY_LIMIT = 50;
 const SYNC_DEFAULTS = {
   tabLimit: 15,
-  selectionStyle: 'classic-blue',
+  selectionStyle: 'dashed-blue',
   highlightStyle: 'classic-yellow',
   openInNewWindow: false,
   reverseOrder: false,

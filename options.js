@@ -1,6 +1,6 @@
 const SETTINGS_CONFIG = {
     tabLimit: { default: 15, storage: 'sync' },
-    selectionStyle: { default: 'classic-blue', storage: 'sync' },
+    selectionStyle: { default: 'dashed-blue', storage: 'sync' },
     highlightStyle: { default: 'classic-yellow', storage: 'sync' },
     openInNewWindow: { default: false, storage: 'sync' },
     reverseOrder: { default: false, storage: 'sync' },

@@ -173,6 +173,26 @@ details[open] > summary::after {
     text-decoration: underline;
 }
 
+#shortcutsLink {
+    display: inline-block;
+    padding: 4px 10px;
+    margin-left: 5px;
+    background-color: rgba(113, 128, 150, 0.25);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    color: var(--text-secondary);
+    font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace;
+    font-size: 0.95em;
+    transition: all 0.2s ease-in-out;
+}
+
+#shortcutsLink:hover {
+    color: var(--text-color);
+    border-color: var(--primary-color);
+    background-color: rgba(113, 128, 150, 0.4);
+    text-decoration: none;
+}
+
 .card-footer {
     display: flex;
     align-items: center;
