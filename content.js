@@ -72,17 +72,13 @@ function updateLinkHighlights(docRect) {
     const seenInSelection = new Set();
     intersectingData.forEach(({ element, href }) => {
         const isSeenInSelection = seenInSelection.has(href);
-        let isFiltered = false;
-        if (selectionState.isCopyMode) {
-            if (selectionState.checkDuplicatesOnCopy && isSeenInSelection) {
-                isFiltered = true;
-            }
-        } else {
-            if (isSeenInSelection || (selectionState.useHistory && selectionState.historySet.has(href))) {
-                isFiltered = true;
-            }
-        }
-        if (!isFiltered) {
+        const isSeenInHistory = selectionState.useHistory && selectionState.historySet.has(href);
+
+        const shouldBeFiltered = selectionState.isCopyMode
+            ? selectionState.checkDuplicatesOnCopy && isSeenInSelection
+            : isSeenInSelection || isSeenInHistory;
+
+        if (!shouldBeFiltered) {
             newHighlightedElements.add(element);
             if (!selectionState.isCopyMode || selectionState.checkDuplicatesOnCopy) {
                 seenInSelection.add(href);

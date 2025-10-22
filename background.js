@@ -18,7 +18,6 @@ const LOCAL_DEFAULTS = {
 };
 
 let settingsCache = null;
-let isMenuSetupRunning = false;
 
 async function initializeSettings() {
     const [syncSettings, localSettings] = await Promise.all([
@@ -38,47 +37,27 @@ function i18n(key) {
 }
 
 async function setupContextMenu() {
-    if (isMenuSetupRunning) {
+    await chrome.contextMenus.removeAll();
+    const settings = await getSettings();
+    if (!settings.showContextMenu) {
         return;
     }
-    isMenuSetupRunning = true;
-    try {
-        const settings = await getSettings();
-        if (settings.showContextMenu) {
-            const commands = await chrome.commands.getAll();
-            const activateShortcut = commands.find(c => c.name === 'activate-selection')?.shortcut || '';
-            const copyShortcut = commands.find(c => c.name === 'activate-selection-copy')?.shortcut || '';
 
-            const menus = [
-                {
-                    id: "activate-selection-menu",
-                    title: `${i18n("cmdActivate")}${activateShortcut ? ` (${activateShortcut})` : ''}`,
-                    contexts: ["page"]
-                },
-                {
-                    id: "activate-selection-copy-menu",
-                    title: `${i18n("cmdActivateCopy")}${copyShortcut ? ` (${copyShortcut})` : ''}`,
-                    contexts: ["page"]
-                }
-            ];
+    const commands = await chrome.commands.getAll();
+    const activateShortcut = commands.find(c => c.name === 'activate-selection')?.shortcut || '';
+    const copyShortcut = commands.find(c => c.name === 'activate-selection-copy')?.shortcut || '';
 
-            await Promise.all(menus.map(menu => {
-                return new Promise(resolve => {
-                    chrome.contextMenus.update(menu.id, { title: menu.title }, () => {
-                        if (chrome.runtime.lastError) {
-                            chrome.contextMenus.create(menu, resolve);
-                        } else {
-                            resolve();
-                        }
-                    });
-                });
-            }));
-        } else {
-             await chrome.contextMenus.removeAll();
-        }
-    } finally {
-        isMenuSetupRunning = false;
-    }
+    chrome.contextMenus.create({
+        id: "activate-selection-menu",
+        title: `${i18n("cmdActivate")}${activateShortcut ? ` (${activateShortcut})` : ''}`,
+        contexts: ["page"]
+    });
+
+    chrome.contextMenus.create({
+        id: "activate-selection-copy-menu",
+        title: `${i18n("cmdActivateCopy")}${copyShortcut ? ` (${copyShortcut})` : ''}`,
+        contexts: ["page"]
+    });
 }
 
 async function checkAndApplyBrowserLanguage() {
@@ -140,7 +119,7 @@ async function triggerSelection(tab, commandType) {
 
     try {
         const response = await chrome.tabs.sendMessage(tabId, { type: "ping" });
-        if (response && response.type === "pong") {
+        if (response?.type === "pong") {
             chrome.tabs.sendMessage(tabId, message);
         }
     } catch (e) {

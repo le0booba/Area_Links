@@ -67,27 +67,12 @@ async function loadCommands() {
 }
 
 async function establishConnection() {
-    return new Promise((resolve) => {
-        let retries = 0;
-        const maxRetries = 5;
-        const interval = 100;
-
-        const attempt = () => {
-            chrome.runtime.sendMessage({ type: 'ping' }, (response) => {
-                if (response && response.type === 'pong') {
-                    resolve(true);
-                } else {
-                    retries++;
-                    if (retries < maxRetries) {
-                        setTimeout(attempt, interval);
-                    } else {
-                        resolve(false);
-                    }
-                }
-            });
-        };
-        attempt();
-    });
+    try {
+        const response = await chrome.runtime.sendMessage({ type: 'ping' });
+        return response?.type === 'pong';
+    } catch (e) {
+        return false;
+    }
 }
 
 async function initialize() {
