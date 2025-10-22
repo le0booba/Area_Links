@@ -1,0 +1,236 @@
+<main>
+  <div class="min-h-screen bg-background text-foreground p-4 sm:p-6 lg:p-8 font-sans transition-colors duration-300">
+    <!-- Header -->
+    <header class="flex justify-between items-center mb-6">
+      <h1 class="text-2xl sm:text-3xl font-bold text-foreground-strong">± diff check</h1>
+      <div class="flex items-center space-x-4">
+        <button (click)="clearAllTexts()"
+                [disabled]="!isComparisonReady()"
+                class="text-sm font-medium text-muted hover:text-danger disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+          Clear All
+        </button>
+        <button (click)="toggleTheme()"
+                aria-label="Toggle theme"
+                class="p-2 rounded-full border border-border-default text-foreground hover:bg-border-default hover:text-foreground-strong focus:outline-none transition-all">
+          @switch(theme()) {
+            @case('dark') {
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+            }
+            @case('light') {
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" /></svg>
+            }
+            @case('mono') {
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zM12 20V4a8 8 0 0 1 0 16z"/></svg>
+            }
+            @case('mono-dark') {
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zM12 20V4a8 8 0 0 0 0 16z"/></svg>
+            }
+          }
+        </button>
+      </div>
+    </header>
+
+    <!-- Input Panes -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+      @for (pane of ['A', 'B']; track pane) {
+        <div class="flex flex-col bg-card rounded-lg shadow-md">
+          <div class="flex items-center justify-between p-3 border-b border-border-default">
+            <h2 class="font-semibold">{{ pane === 'A' ? '[DATA - 1]' : '[DATA - 2]' }}</h2>
+            <div class="flex items-center space-x-3">
+              <label [for]="'file-' + pane" class="cursor-pointer text-sm text-primary hover:underline">Upload File</label>
+              <input [id]="'file-' + pane" type="file" class="hidden" (change)="handleFileInput($event, pane)">
+              <button (click)="pasteFromClipboard(pane)" class="text-sm text-primary hover:underline">Paste</button>
+              <button (click)="clearText(pane)"
+                      class="text-sm text-muted-foreground hover:text-danger disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
+                      [disabled]="getTextValue(pane).length === 0">Clear</button>
+            </div>
+          </div>
+          <textarea class="flex-grow w-full p-3 bg-transparent font-mono text-sm resize-none focus:outline-none min-h-[250px] lg:min-h-[300px] focus:placeholder-transparent transition-colors"
+                    [placeholder]="'Paste or upload ' + (pane === 'A' ? 'original' : 'changed') + ' text/code here...'"
+                    [value]="getTextValue(pane)"
+                    (input)="handleTextInput($event, pane)"></textarea>
+        </div>
+      }
+    </div>
+
+    <!-- Options and Results -->
+    @if(isComparisonReady()){
+    <div class="bg-card rounded-lg shadow-md p-4">
+      <div class="flex flex-wrap items-center justify-between gap-4 mb-4 border-b border-border-default pb-4">
+        <div class="flex items-center gap-x-4 gap-y-2 flex-wrap">
+          <span class="font-semibold text-sm">Compare:</span>
+          <div class="flex items-center gap-1 bg-muted p-1 rounded-lg">
+            <button (click)="setDiffType('lines')" [class.bg-card]="diffOptions().diffType === 'lines'" class="px-3 py-1 text-sm rounded-md transition-colors">Lines</button>
+            <button (click)="setDiffType('words')" [class.bg-card]="diffOptions().diffType === 'words'" class="px-3 py-1 text-sm rounded-md transition-colors">Words</button>
+            <button (click)="setDiffType('chars')" [class.bg-card]="diffOptions().diffType === 'chars'" class="px-3 py-1 text-sm rounded-md transition-colors">Chars</button>
+          </div>
+        </div>
+        <div class="flex items-center gap-x-4 gap-y-2 flex-wrap">
+          <label class="flex items-center text-sm cursor-pointer"><input type="checkbox" [checked]="diffOptions().ignoreWhitespace" (change)="toggleOption('ignoreWhitespace')" class="h-4 w-4 rounded border-border-input accent-primary focus:ring-primary-focus bg-transparent"><span class="ml-2">Ignore Whitespace</span></label>
+          <label class="flex items-center text-sm cursor-pointer"><input type="checkbox" [checked]="!diffOptions().caseSensitive" (change)="toggleOption('caseSensitive')" class="h-4 w-4 rounded border-border-input accent-primary focus:ring-primary-focus bg-transparent"><span class="ml-2">Ignore Case</span></label>
+          <label class="flex items-center text-sm cursor-pointer"><input type="checkbox" [checked]="wrapNavigation()" (change)="toggleWrapNavigation()" class="h-4 w-4 rounded border-border-input accent-primary focus:ring-primary-focus bg-transparent"><span class="ml-2">Wrap Navigation</span></label>
+        </div>
+        <div class="flex items-center gap-x-2 gap-y-2 flex-wrap">
+          <div class="flex items-center gap-1 bg-muted p-1 rounded-lg">
+            <button (click)="setViewMode('side-by-side')" [class.bg-card]="viewMode() === 'side-by-side'" class="px-3 py-1 text-sm rounded-md transition-colors">Side-by-side</button>
+            <button (click)="setViewMode('unified')" [class.bg-card]="viewMode() === 'unified'" class="px-3 py-1 text-sm rounded-md transition-colors">Unified</button>
+          </div>
+          <div class="flex items-center gap-1 bg-muted p-1 rounded-lg">
+            <button (click)="setNavButtonLayout('horizontal')" [class.bg-card]="navButtonLayout() === 'horizontal'" title="Horizontal buttons layout" class="p-2 rounded-md transition-colors">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5"><rect x="3" y="9" width="6" height="6" rx="1"></rect><rect x="15" y="9" width="6" height="6" rx="1"></rect></svg>
+            </button>
+            <button (click)="setNavButtonLayout('vertical')" [class.bg-card]="navButtonLayout() === 'vertical'" title="Vertical buttons layout" class="p-2 rounded-md transition-colors">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5"><rect x="9" y="3" width="6" height="6" rx="1"></rect><rect x="9" y="15" width="6" height="6" rx="1"></rect></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+      
+      @if (diffStats(); as stats) {
+        <div class="flex items-center gap-6 mb-4 text-sm"><div class="flex items-center gap-2 text-danger"><span class="font-bold text-lg">-{{ stats.deletions }}</span><span>Deletions</span></div><div class="flex items-center gap-2 text-success"><span class="font-bold text-lg">+{{ stats.additions }}</span><span>Additions</span></div></div>
+      }
+
+      <div class="font-mono text-sm leading-relaxed overflow-x-auto">
+        @if (viewMode() === 'unified') {
+          @if(diffOptions().diffType === 'lines') {
+            <div>
+              @for(line of processedUnifiedDiff(); track $index) {
+                <div class="flex"
+                     [class.bg-diff-del]="line.type === 'removed'"
+                     [class.bg-diff-add]="line.type === 'added'"
+                     [class.diff-chunk]="line.type !== 'equal'">
+                  <span class="w-10 text-right shrink-0 pr-2 text-muted-foreground select-none">{{ line.leftNumber }}</span>
+                  <span class="w-10 text-right shrink-0 pr-2 text-muted-foreground select-none">{{ line.rightNumber }}</span>
+                  <span class="w-5 text-left shrink-0 pr-2 font-bold"
+                        [class.text-success-strong]="line.type === 'added'"
+                        [class.text-danger-strong]="line.type === 'removed'">
+                    @if(line.type === 'added') {+
+                    } @else if (line.type === 'removed') {-
+                    }
+                  </span>
+                  <pre class="flex-1 whitespace-pre-wrap break-words">{{ line.content }}</pre>
+                </div>
+              }
+            </div>
+          } @else {
+            <pre class="whitespace-pre-wrap break-words">@for(part of diffResult(); track $index){<span [class.bg-diff-del]="part.removed" [class.bg-diff-add]="part.added" [class.text-muted-foreground]="!part.added && !part.removed">{{ part.value }}</span>}</pre>
+          }
+        } @else {
+          @if(diffOptions().diffType === 'lines') {
+            <div class="grid grid-cols-2 gap-x-4">
+              <div class="border-r border-border-default select-none"
+                   [attr.contenteditable]="true"
+                   (beforeinput)="$event.preventDefault()">
+                @for(line of processedSideBySideDiff(); track $index) {
+                  <div class="flex pr-4 select-auto"
+                       [class.bg-diff-del]="line.left.type === 'removed'"
+                       [class.min-h-[24px]]="line.left.type === 'placeholder'"
+                       [class.diff-chunk]="line.left.type === 'removed' || line.right.type === 'added'">
+                    <span class="w-10 text-right shrink-0 pr-2 text-muted-foreground select-none">{{ line.left.number }}</span>
+                    <pre class="flex-1 whitespace-pre-wrap break-words">{{ line.left.content }}</pre>
+                  </div>
+                }
+              </div>
+              <div [attr.contenteditable]="true"
+                   (beforeinput)="$event.preventDefault()"
+                   class="select-none">
+                @for(line of processedSideBySideDiff(); track $index) {
+                  <div class="flex select-auto"
+                       [class.bg-diff-add]="line.right.type === 'added'"
+                       [class.min-h-[24px]]="line.right.type === 'placeholder'"
+                       [class.diff-chunk]="line.left.type === 'removed' || line.right.type === 'added'">
+                    <span class="w-10 text-right shrink-0 pr-2 text-muted-foreground select-none">{{ line.right.number }}</span>
+                    <pre class="flex-1 whitespace-pre-wrap break-words">{{ line.right.content }}</pre>
+                  </div>
+                }
+              </div>
+            </div>
+          } @else {
+            <div class="grid grid-cols-2 gap-x-4">
+              <pre class="whitespace-pre-wrap break-words border-r border-border-default pr-4"
+                   [attr.contenteditable]="true"
+                   (beforeinput)="$event.preventDefault()">@for(part of diffResult(); track $index){@if(!part.added){<span [class.bg-diff-del]="part.removed">{{ part.value }}</span>}}</pre>
+              <pre class="whitespace-pre-wrap break-words"
+                   [attr.contenteditable]="true"
+                   (beforeinput)="$event.preventDefault()">@for(part of diffResult(); track $index){@if(!part.removed){<span [class.bg-diff-add]="part.added">{{ part.value }}</span>}}</pre>
+            </div>
+          }
+        }
+      </div>
+    </div>
+    }
+    
+    @if(showScrollToTop()) {
+      <div class="fixed left-1/2 -translate-x-1/2 z-50 flex items-center gap-2"
+           [class.flex-col]="navButtonLayout() === 'vertical'"
+           [class.bottom-6]="navButtonLayout() === 'horizontal'"
+           [class.top-1/2]="navButtonLayout() === 'vertical'"
+           [class.-translate-y-1/2]="navButtonLayout() === 'vertical'">
+        @if(diffOptions().diffType === 'lines') {
+          <button (click)="navigateToDiff('previous')"
+                  aria-label="Previous difference (Alt + W)"
+                  [disabled]="(!wrapNavigation() && isAtFirstDiff()) || noDifferences()"
+                  class="flex items-center justify-center w-12 sm:w-20 h-12 rounded-full bg-primary text-primary-foreground shadow-lg hover:bg-primary-focus focus:outline-none transition-all disabled:opacity-50 disabled:cursor-not-allowed">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 sm:mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M5 15l7-7 7 7" />
+            </svg>
+            <span class="hidden sm:inline">Prev</span>
+          </button>
+        }
+
+        <button (click)="scrollToTop()"
+                aria-label="Scroll to top (Alt + `)"
+                class="flex items-center justify-center w-12 h-12 rounded-full bg-primary text-primary-foreground shadow-lg hover:bg-primary-focus focus:outline-none transition-all">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M5 10l7-7m0 0l7 7m-7-7v18" />
+          </svg>
+        </button>
+
+        @if(diffOptions().diffType === 'lines') {
+          <button (click)="navigateToDiff('next')"
+                  aria-label="Next difference (Alt + S)"
+                  [disabled]="(!wrapNavigation() && isAtLastDiff()) || noDifferences()"
+                  class="flex items-center justify-center w-12 sm:w-20 h-12 rounded-full bg-primary text-primary-foreground shadow-lg hover:bg-primary-focus focus:outline-none transition-all disabled:opacity-50 disabled:cursor-not-allowed">
+            <span class="hidden sm:inline">Next</span>
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 sm:ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+        }
+      </div>
+    }
+
+    @if(showScrollToTop()) {
+      <div class="fixed top-6 right-6 z-50 flex flex-col items-center gap-4">
+        <button (click)="toggleTheme()"
+                aria-label="Toggle theme"
+                class="flex items-center justify-center w-12 h-12 rounded-full bg-primary text-primary-foreground shadow-lg hover:bg-primary-focus focus:outline-none transition-all">
+          @switch(theme()) {
+            @case('dark') {
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+            }
+            @case('light') {
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" /></svg>
+            }
+            @case('mono') {
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zM12 20V4a8 8 0 0 1 0 16z"/></svg>
+            }
+            @case('mono-dark') {
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zM12 20V4a8 8 0 0 0 0 16z"/></svg>
+            }
+          }
+        </button>
+        <button (click)="toggleNavButtonLayout()"
+                [title]="'Switch to ' + (navButtonLayout() === 'horizontal' ? 'vertical' : 'horizontal') + ' layout'"
+                aria-label="Toggle navigation buttons layout"
+                class="flex items-center justify-center w-12 h-12 rounded-full bg-primary text-primary-foreground shadow-lg hover:bg-primary-focus focus:outline-none transition-all">
+          @if (navButtonLayout() === 'horizontal') {
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-6 w-6"><rect x="9" y="3" width="6" height="6" rx="1"></rect><rect x="9" y="15" width="6" height="6" rx="1"></rect></svg>
+          } @else {
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-6 w-6"><rect x="3" y="9" width="6" height="6" rx="1"></rect><rect x="15" y="9" width="6" height="6" rx="1"></rect></svg>
+          }
+        </button>
+      </div>
+    }
+  </div>
+</main>

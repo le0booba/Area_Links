@@ -1,0 +1,5 @@
+{
+  "name": "Text & Code Diff Checker",
+  "description": "A modern, responsive web application for comparing texts and code. It features a split-pane layout, dark/light themes, multiple comparison algorithms, and clear visualization of differences.",
+  "requestFramePermissions": []
+}
