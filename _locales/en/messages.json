@@ -49,5 +49,6 @@
   "popupLogoTitle": { "message": "v$VERSION$", "placeholders": { "version": { "content": "$1" } } },
   "popupOpenTitle": { "message": "Activate area selection to open links" },
   "popupCopyTitle": { "message": "Activate area selection to copy links" },
-  "popupSettingsTitle": { "message": "Open All Settings" }
+  "popupSettingsTitle": { "message": "Open All Settings" },
+  "optionsAllowMultiTabActivation": { "message": "Allow activation on multiple tabs" }
 }

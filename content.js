@@ -8,7 +8,6 @@ const selectionState = {
     isSelecting: false,
     isCopyMode: false,
     isUpdateScheduled: false,
-    hasScannedLinks: false,
     style: 'classic-blue',
     highlightStyle: 'classic-yellow',
     startCoords: { x: 0, y: 0 },
@@ -22,17 +21,46 @@ const selectionState = {
 let selectionBox = null;
 let selectionOverlay = null;
 let highlightedElements = new Set();
-let linkDataCache = [];
+let linkObserver = null;
+let visibleLinks = new Set();
+
+function handleLinkIntersection(entries) {
+    entries.forEach(entry => {
+        if (entry.isIntersecting) {
+            visibleLinks.add(entry.target);
+        } else {
+            visibleLinks.delete(entry.target);
+        }
+    });
+}
+
+function startLinkObserver() {
+    if (linkObserver) linkObserver.disconnect();
+    visibleLinks.clear();
+
+    linkObserver = new IntersectionObserver(handleLinkIntersection, {
+        rootMargin: '200px 0px 200px 0px'
+    });
+
+    document.querySelectorAll('a[href]').forEach(link => {
+        const { href } = link;
+        if (href && !href.startsWith('#') && !href.startsWith('javascript:')) {
+            linkObserver.observe(link);
+        }
+    });
+}
 
 function createSelectionElements() {
     if (!selectionOverlay) {
         selectionOverlay = document.createElement('div');
         selectionOverlay.id = 'link-opener-selection-overlay';
+        selectionOverlay.style.display = 'none';
         document.body.appendChild(selectionOverlay);
     }
     if (!selectionBox) {
         selectionBox = document.createElement('div');
         selectionBox.id = 'link-opener-selection-box';
+        selectionBox.style.display = 'none';
         document.body.appendChild(selectionBox);
     }
 }
@@ -53,24 +81,42 @@ function updateSelectionBox() {
         top: `${rect.y - window.scrollY}px`,
         width: `${rect.width}px`,
         height: `${rect.height}px`,
-        display: 'block',
     });
 }
 
-function getIntersectingLinkData(docRect) {
-    return linkDataCache.filter(linkData =>
-        linkData.docRect.left < docRect.right &&
-        linkData.docRect.right > docRect.left &&
-        linkData.docRect.top < docRect.bottom &&
-        linkData.docRect.bottom > docRect.top
-    );
+function getIntersectingLinks(selectionRect) {
+    const intersecting = [];
+    const scrollX = window.scrollX;
+    const scrollY = window.scrollY;
+
+    for (const link of visibleLinks) {
+        const linkRect = link.getBoundingClientRect();
+        if (linkRect.width === 0 || linkRect.height === 0) continue;
+
+        const linkDocRect = {
+            left: linkRect.left + scrollX,
+            right: linkRect.right + scrollX,
+            top: linkRect.top + scrollY,
+            bottom: linkRect.bottom + scrollY,
+        };
+
+        if (linkDocRect.left < selectionRect.right &&
+            linkDocRect.right > selectionRect.left &&
+            linkDocRect.top < selectionRect.bottom &&
+            linkDocRect.bottom > selectionRect.top) {
+            intersecting.push(link);
+        }
+    }
+    return intersecting;
 }
 
 function updateLinkHighlights(docRect) {
-    const intersectingData = getIntersectingLinkData(docRect);
+    const intersectingLinks = getIntersectingLinks(docRect);
     const newHighlightedElements = new Set();
     const seenInSelection = new Set();
-    intersectingData.forEach(({ element, href }) => {
+
+    intersectingLinks.forEach(element => {
+        const { href } = element;
         const isSeenInSelection = seenInSelection.has(href);
         const isSeenInHistory = selectionState.useHistory && selectionState.historySet.has(href);
 
@@ -85,6 +131,7 @@ function updateLinkHighlights(docRect) {
             }
         }
     });
+
     highlightedElements.forEach(el => {
         if (!newHighlightedElements.has(el)) {
             el.classList.remove(HIGHLIGHT_CLASS);
@@ -104,13 +151,15 @@ function clearHighlights() {
 }
 
 function resetSelection() {
+    if (linkObserver) {
+        linkObserver.disconnect();
+        linkObserver = null;
+    }
     if (selectionBox) {
-        selectionBox.remove();
-        selectionBox = null;
+        selectionBox.style.display = 'none';
     }
     if (selectionOverlay) {
-        selectionOverlay.remove();
-        selectionOverlay = null;
+        selectionOverlay.style.display = 'none';
     }
     clearHighlights();
     document.body.classList.remove(PREPARE_ANIMATION_CLASS);
@@ -122,15 +171,14 @@ function resetSelection() {
     Object.assign(selectionState, {
         isActive: false,
         isSelecting: false,
-        hasScannedLinks: false,
         isUpdateScheduled: false,
         startCoords: { x: 0, y: 0 },
         currentCoords: { x: 0, y: 0 },
         historySet: new Set(),
     });
     
-    linkDataCache = [];
-    highlightedElements = new Set();
+    visibleLinks.clear();
+    highlightedElements.clear();
 }
 
 function copyLinksToClipboard(links) {
@@ -169,10 +217,8 @@ function runScheduledUpdate() {
         return;
     }
     updateSelectionBox();
-    if (selectionState.hasScannedLinks) {
-        const rect = getSelectionRectangle(selectionState.startCoords, selectionState.currentCoords);
-        updateLinkHighlights(rect);
-    }
+    const rect = getSelectionRectangle(selectionState.startCoords, selectionState.currentCoords);
+    updateLinkHighlights(rect);
     selectionState.isUpdateScheduled = false;
 }
 
@@ -188,41 +234,7 @@ function handleScroll() {
     scheduleUpdate();
 }
 
-function populateLinkDataCache() {
-    const viewportTop = window.scrollY;
-    const viewportBottom = viewportTop + window.innerHeight;
-
-    linkDataCache = Array.from(document.querySelectorAll('a[href]')).map(link => {
-        const { href } = link;
-        if (!href || href.startsWith('#') || href.startsWith('javascript:')) return null;
-
-        const rect = link.getBoundingClientRect();
-        if (rect.width === 0 || rect.height === 0) return null;
-        
-        const elementTop = rect.top + viewportTop;
-        const elementBottom = rect.bottom + viewportTop;
-        if (elementBottom < viewportTop - 200 || elementTop > viewportBottom + 200) {
-            return null;
-        }
-
-        return {
-            element: link,
-            href: href,
-            docRect: {
-                top: elementTop,
-                left: rect.left + window.scrollX,
-                right: rect.left + window.scrollX + rect.width,
-                bottom: elementBottom,
-            }
-        };
-    }).filter(Boolean);
-    selectionState.hasScannedLinks = true;
-}
-
 function handleMouseMove(e) {
-    if (!selectionState.hasScannedLinks) {
-        populateLinkDataCache();
-    }
     selectionState.currentCoords = { x: e.pageX, y: e.pageY };
     scheduleUpdate();
 }
@@ -257,8 +269,8 @@ function handleMouseDown(e) {
     selectionState.startCoords = { x: e.pageX, y: e.pageY };
     selectionState.currentCoords = { x: e.pageX, y: e.pageY };
     
-    createSelectionElements();
     selectionBox.className = selectionState.style;
+    selectionBox.style.display = 'block';
     updateSelectionBox();
     
     selectionOverlay.addEventListener('mousemove', handleMouseMove, true);
@@ -271,6 +283,14 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         sendResponse({ type: "pong" });
         return true;
     }
+
+    if (request.type === "resetSelection") {
+        if (selectionState.isActive) {
+            resetSelection();
+        }
+        return false;
+    }
+
     const isInitiate = request.type === "initiateSelection" || request.type === "initiateSelectionCopy";
     if (!isInitiate) {
         return true;
@@ -279,8 +299,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         resetSelection();
     }
     
-    const isCopyMode = request.type === "initiateSelectionCopy";
-    selectionState.isCopyMode = isCopyMode;
+    selectionState.isCopyMode = request.type === "initiateSelectionCopy";
     selectionState.checkDuplicatesOnCopy = request.checkDuplicatesOnCopy;
     selectionState.useHistory = request.useHistory;
     selectionState.linkHistory = request.linkHistory || [];
@@ -289,12 +308,15 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     
     document.body.dataset.linkOpenerHighlightStyle = selectionState.highlightStyle;
     document.body.classList.add(PREPARE_ANIMATION_CLASS);
-    document.body.style.cursor = isCopyMode ? customCopyCursor : 'crosshair';
+    document.body.style.cursor = selectionState.isCopyMode ? customCopyCursor : 'crosshair';
     
     selectionState.isActive = true;
     selectionState.style = request.style;
     
+    startLinkObserver();
     createSelectionElements();
+    selectionOverlay.style.display = 'block';
+
     selectionOverlay.addEventListener('mousedown', handleMouseDown, true);
     document.addEventListener('keydown', handleKeyDown, true);
     

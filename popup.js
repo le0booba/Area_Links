@@ -76,6 +76,8 @@ async function establishConnection() {
 }
 
 async function initialize() {
+    chrome.runtime.sendMessage({ type: 'refreshContextMenu' });
+
     const isConnected = await establishConnection();
     const openBtn = document.getElementById('action-open-links');
     const copyBtn = document.getElementById('action-copy-links');

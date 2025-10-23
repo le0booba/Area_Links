@@ -49,5 +49,6 @@
   "popupLogoTitle": { "message": "v$VERSION$", "placeholders": { "version": { "content": "$1" } } },
   "popupOpenTitle": { "message": "Активировать выделение для открытия ссылок" },
   "popupCopyTitle": { "message": "Активировать выделение для копирования ссылок" },
-  "popupSettingsTitle": { "message": "Открыть все настройки" }
+  "popupSettingsTitle": { "message": "Открыть все настройки" },
+  "optionsAllowMultiTabActivation": { "message": "Разрешить активацию на нескольких вкладках" }
 }

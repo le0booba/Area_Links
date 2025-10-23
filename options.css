@@ -94,7 +94,7 @@ h1 {
 
 .card h2, .card-alt h2 {
     margin-top: 0;
-    margin-bottom: 20px;
+    margin-bottom: 15px;
     padding-bottom: 10px;
     border-bottom: 1px solid var(--border-color);
     color: var(--text-color);
@@ -111,7 +111,7 @@ details > .details-content {
 
 summary {
     position: relative;
-    padding: 20px 25px;
+    padding: 20px 25px 15px;
     list-style: none;
     cursor: pointer;
 }
@@ -273,6 +273,11 @@ input[type="number"] {
 
 select {
     font-size: 1.05em;
+}
+
+#selectionStyle,
+#highlightStyle {
+    width: 135px;
 }
 
 textarea {

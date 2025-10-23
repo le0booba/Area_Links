@@ -6,6 +6,7 @@ const SYNC_DEFAULTS = {
   openInNewWindow: false,
   reverseOrder: false,
   openNextToParent: false,
+  allowMultiTabActivation: false,
   language: 'en',
   showContextMenu: true,
 };
@@ -17,19 +18,22 @@ const LOCAL_DEFAULTS = {
   checkDuplicatesOnCopy: true,
 };
 
-let settingsCache = null;
-
 async function initializeSettings() {
     const [syncSettings, localSettings] = await Promise.all([
         chrome.storage.sync.get(SYNC_DEFAULTS),
         chrome.storage.local.get(LOCAL_DEFAULTS)
     ]);
-    settingsCache = { ...syncSettings, ...localSettings };
-    return settingsCache;
+    const settings = { ...syncSettings, ...localSettings };
+    await chrome.storage.session.set({ settingsCache: settings });
+    return settings;
 }
 
 async function getSettings() {
-    return settingsCache || await initializeSettings();
+    const result = await chrome.storage.session.get('settingsCache');
+    if (result.settingsCache && Object.keys(result.settingsCache).length > 0) {
+        return result.settingsCache;
+    }
+    return await initializeSettings();
 }
 
 function i18n(key) {
@@ -77,8 +81,9 @@ chrome.runtime.onInstalled.addListener(async (details) => {
         await chrome.storage.local.set(LOCAL_DEFAULTS);
         await initializeSettings();
         await checkAndApplyBrowserLanguage();
+    } else {
+        await initializeSettings();
     }
-    await initializeSettings();
     await setupContextMenu();
 });
 
@@ -108,6 +113,20 @@ async function triggerSelection(tab, commandType) {
     }
     const tabId = tab.id;
     const settings = await getSettings();
+
+    if (!settings.allowMultiTabActivation) {
+        const allTabs = await chrome.tabs.query({ url: ["http://*/*", "https://*/*"] });
+        for (const otherTab of allTabs) {
+            if (otherTab.id !== tabId) {
+                try {
+                    await chrome.tabs.sendMessage(otherTab.id, { type: "resetSelection" });
+                } catch (e) {
+                    // This is expected if the content script is not injected.
+                }
+            }
+        }
+    }
+
     const message = {
         type: commandType,
         style: settings.selectionStyle,
@@ -152,7 +171,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     
     if (request.type === "openLinks") {
         processLinks(request.urls, sender.tab);
-        return false;
     }
 
     if (request.type === 'triggerSelectionFromPopup') {
@@ -161,9 +179,11 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                 triggerSelection(tab, request.commandType);
             }
         });
-        return false;
     }
-    return true;
+
+    if (request.type === 'refreshContextMenu') {
+        setupContextMenu();
+    }
 });
 
 async function processLinks(urls, tab) {
