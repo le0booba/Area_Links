@@ -6,7 +6,6 @@ const SYNC_DEFAULTS = {
   openInNewWindow: false,
   reverseOrder: false,
   openNextToParent: false,
-  allowMultiTabActivation: false,
   language: 'en',
   showContextMenu: true,
 };
@@ -17,6 +16,8 @@ const LOCAL_DEFAULTS = {
   useHistory: true,
   checkDuplicatesOnCopy: true,
 };
+
+let activeSelectionTabId = null;
 
 async function initializeSettings() {
     const [syncSettings, localSettings] = await Promise.all([
@@ -107,26 +108,37 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
     }
 });
 
+chrome.tabs.onActivated.addListener(activeInfo => {
+    if (activeSelectionTabId && activeSelectionTabId !== activeInfo.tabId) {
+        chrome.tabs.sendMessage(activeSelectionTabId, { type: "resetSelection" }).catch(() => {
+            if (activeSelectionTabId) {
+                activeSelectionTabId = null;
+            }
+        });
+    }
+});
+
+chrome.tabs.onRemoved.addListener((tabId, removeInfo) => {
+    if (tabId === activeSelectionTabId) {
+        activeSelectionTabId = null;
+    }
+});
+
 async function triggerSelection(tab, commandType) {
     if (!tab.url?.startsWith('http') || !tab.id) {
         return;
     }
     const tabId = tab.id;
-    const settings = await getSettings();
 
-    if (!settings.allowMultiTabActivation) {
-        const allTabs = await chrome.tabs.query({ url: ["http://*/*", "https://*/*"] });
-        for (const otherTab of allTabs) {
-            if (otherTab.id !== tabId) {
-                try {
-                    await chrome.tabs.sendMessage(otherTab.id, { type: "resetSelection" });
-                } catch (e) {
-                    // This is expected if the content script is not injected.
-                }
-            }
+    if (activeSelectionTabId && activeSelectionTabId !== tabId) {
+        try {
+            await chrome.tabs.sendMessage(activeSelectionTabId, { type: "resetSelection" });
+        } catch (e) {
+            activeSelectionTabId = null;
         }
     }
 
+    const settings = await getSettings();
     const message = {
         type: commandType,
         style: settings.selectionStyle,
@@ -137,21 +149,21 @@ async function triggerSelection(tab, commandType) {
     };
 
     try {
-        const response = await chrome.tabs.sendMessage(tabId, { type: "ping" });
-        if (response?.type === "pong") {
-            chrome.tabs.sendMessage(tabId, message);
-        }
+        await chrome.tabs.sendMessage(tabId, { type: "ping" });
+        chrome.tabs.sendMessage(tabId, message, (response) => {
+            if (!chrome.runtime.lastError && response?.success) {
+                activeSelectionTabId = tabId;
+            }
+        });
     } catch (e) {
         try {
-            await chrome.scripting.insertCSS({
-                target: { tabId },
-                files: ['styles.css'],
+            await chrome.scripting.insertCSS({ target: { tabId }, files: ['styles.css'] });
+            await chrome.scripting.executeScript({ target: { tabId }, files: ['content.js'] });
+            chrome.tabs.sendMessage(tabId, message, (response) => {
+                if (!chrome.runtime.lastError && response?.success) {
+                    activeSelectionTabId = tabId;
+                }
             });
-            await chrome.scripting.executeScript({
-                target: { tabId },
-                files: ['content.js'],
-            });
-            chrome.tabs.sendMessage(tabId, message);
         } catch (injectError) {
             console.warn(`Area Links: Could not inject scripts into tab ${tabId}.`, injectError);
         }
@@ -167,6 +179,13 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.type === 'ping') {
         sendResponse({ type: 'pong' });
         return true;
+    }
+
+    if (request.type === 'selectionDeactivated') {
+        if (sender.tab && sender.tab.id === activeSelectionTabId) {
+            activeSelectionTabId = null;
+        }
+        return false;
     }
     
     if (request.type === "openLinks") {

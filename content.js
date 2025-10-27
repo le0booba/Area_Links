@@ -23,6 +23,15 @@ let selectionOverlay = null;
 let highlightedElements = new Set();
 let linkObserver = null;
 let visibleLinks = new Set();
+let selectionCandidateLinks = new Set();
+
+function getClientRectsForLink(element) {
+    // Используем getBoundingClientRect вместо getClientRects для более точного определения границ
+    // getClientRects возвращает множество rect'ов для разбитых inline-элементов,
+    // что вызывает ложные срабатывания на сложных сайтах (YouTube, Twitch)
+    const rect = element.getBoundingClientRect();
+    return [rect]; // Возвращаем массив для совместимости с существующим кодом
+}
 
 function handleLinkIntersection(entries) {
     entries.forEach(entry => {
@@ -34,19 +43,49 @@ function handleLinkIntersection(entries) {
     });
 }
 
-function startLinkObserver() {
-    if (linkObserver) linkObserver.disconnect();
-    visibleLinks.clear();
+function initializeObserver() {
+    if (!linkObserver) {
+        linkObserver = new IntersectionObserver(handleLinkIntersection, {
+            rootMargin: '200px 0px 200px 0px'
+        });
+    }
+}
 
-    linkObserver = new IntersectionObserver(handleLinkIntersection, {
-        rootMargin: '200px 0px 200px 0px'
+function findAllLinks(rootNode, links) {
+    const newLinks = links || [];
+
+    const linkElements = rootNode.querySelectorAll('a[href], [role="link"]');
+    linkElements.forEach(el => {
+        let href = el.href;
+        if (el.matches('[role="link"]') && !href) {
+            const nestedLink = el.querySelector('a[href]');
+            href = nestedLink ? nestedLink.href : null;
+        }
+        if (href && !href.startsWith('#') && !href.startsWith('javascript:')) {
+            if (!el.href) el.href = href;
+            newLinks.push(el);
+        }
     });
 
-    document.querySelectorAll('a[href]').forEach(link => {
-        const { href } = link;
-        if (href && !href.startsWith('#') && !href.startsWith('javascript:')) {
-            linkObserver.observe(link);
+    const allElements = rootNode.querySelectorAll('*');
+    allElements.forEach(element => {
+        if (element.shadowRoot) {
+            findAllLinks(element.shadowRoot, newLinks);
         }
+    });
+
+    return newLinks;
+}
+
+
+function startLinkObserver() {
+    initializeObserver();
+    linkObserver.disconnect();
+    visibleLinks.clear();
+    
+    const allLinksOnPage = findAllLinks(document.body);
+    allLinksOnPage.forEach(link => {
+        linkObserver.observe(link);
     });
 }
 
@@ -85,26 +124,30 @@ function updateSelectionBox() {
 }
 
 function getIntersectingLinks(selectionRect) {
+    visibleLinks.forEach(link => selectionCandidateLinks.add(link));
+    
     const intersecting = [];
     const scrollX = window.scrollX;
     const scrollY = window.scrollY;
 
-    for (const link of visibleLinks) {
-        const linkRect = link.getBoundingClientRect();
-        if (linkRect.width === 0 || linkRect.height === 0) continue;
+    for (const link of selectionCandidateLinks) {
+        const clientRects = getClientRectsForLink(link);
+        for (let i = 0; i < clientRects.length; i++) {
+            const rect = clientRects[i];
+            const linkDocRect = {
+                left: rect.left + scrollX,
+                right: rect.right + scrollX,
+                top: rect.top + scrollY,
+                bottom: rect.bottom + scrollY,
+            };
 
-        const linkDocRect = {
-            left: linkRect.left + scrollX,
-            right: linkRect.right + scrollX,
-            top: linkRect.top + scrollY,
-            bottom: linkRect.bottom + scrollY,
-        };
-
-        if (linkDocRect.left < selectionRect.right &&
-            linkDocRect.right > selectionRect.left &&
-            linkDocRect.top < selectionRect.bottom &&
-            linkDocRect.bottom > selectionRect.top) {
-            intersecting.push(link);
+            if (linkDocRect.left < selectionRect.right &&
+                linkDocRect.right > selectionRect.left &&
+                linkDocRect.top < selectionRect.bottom &&
+                linkDocRect.bottom > selectionRect.top) {
+                intersecting.push(link);
+                break;
+            }
         }
     }
     return intersecting;
@@ -151,9 +194,10 @@ function clearHighlights() {
 }
 
 function resetSelection() {
+    const wasActive = selectionState.isActive;
+
     if (linkObserver) {
         linkObserver.disconnect();
-        linkObserver = null;
     }
     if (selectionBox) {
         selectionBox.style.display = 'none';
@@ -179,6 +223,11 @@ function resetSelection() {
     
     visibleLinks.clear();
     highlightedElements.clear();
+    selectionCandidateLinks.clear();
+
+    if (wasActive) {
+        chrome.runtime.sendMessage({ type: 'selectionDeactivated' });
+    }
 }
 
 function copyLinksToClipboard(links) {
@@ -199,7 +248,11 @@ function copyLinksToClipboard(links) {
         return;
     }
     navigator.clipboard.writeText(text).catch(err => {
-        console.error('Area Links: Could not copy text.', err);
+        if (err && err.name === 'NotAllowedError') {
+            alert(chrome.i18n.getMessage('copyFailedPermissionError'));
+        } else {
+            console.error('Area Links: Could not copy text.', err);
+        }
     });
 }
 
@@ -268,6 +321,8 @@ function handleMouseDown(e) {
     selectionState.isSelecting = true;
     selectionState.startCoords = { x: e.pageX, y: e.pageY };
     selectionState.currentCoords = { x: e.pageX, y: e.pageY };
+    
+    selectionCandidateLinks.clear();
     
     selectionBox.className = selectionState.style;
     selectionBox.style.display = 'block';

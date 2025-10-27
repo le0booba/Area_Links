@@ -5,7 +5,6 @@ const SETTINGS_CONFIG = {
     openInNewWindow: { default: false, storage: 'sync' },
     reverseOrder: { default: false, storage: 'sync' },
     openNextToParent: { default: false, storage: 'sync' },
-    allowMultiTabActivation: { default: false, storage: 'sync' },
     language: { default: 'en', storage: 'sync' },
     showContextMenu: { default: true, storage: 'sync' },
     excludedDomains: { default: '', storage: 'local' },
@@ -100,7 +99,7 @@ async function restoreOptions() {
     document.getElementById('highlightStyle').value = settings.highlightStyle;
     document.getElementById('language-select').value = settings.language;
     
-    ['openInNewWindow', 'reverseOrder', 'openNextToParent', 'allowMultiTabActivation', 'useHistory', 'checkDuplicatesOnCopy', 'showContextMenu'].forEach(id => {
+    ['openInNewWindow', 'reverseOrder', 'openNextToParent', 'useHistory', 'checkDuplicatesOnCopy', 'showContextMenu'].forEach(id => {
         const el = document.getElementById(id);
         if (el) {
             el.checked = settings[id];
@@ -212,13 +211,20 @@ function handleImport(event) {
             const wordsTextarea = document.getElementById('excludedWords');
             let changesMade = false;
 
+            const lang = document.getElementById('language-select').value;
+            const fieldDisplayNames = {
+                excludedDomains: lang === 'ru' ? 'ИСКЛЮЧЕННЫЕ ДОМЕНЫ' : 'EXCLUDED DOMAINS',
+                excludedWords: lang === 'ru' ? 'ИСКЛЮЧЕННЫЕ СЛОВА' : 'EXCLUDED WORDS'
+            };
+
             const processField = (fieldName, textarea) => {
                 if (fieldName in data && typeof data[fieldName] === 'string') {
                     const newData = data[fieldName].trim();
                     const oldData = textarea.value.trim();
 
                     if (oldData && newData) {
-                        const message = messages.optionsImportConflictMessage.replace('[FIELD_NAME]', fieldName);
+                        const displayName = fieldDisplayNames[fieldName] || fieldName;
+                        const message = messages.optionsImportConflictMessage.replace('[FIELD_NAME]', displayName);
                         if (confirm(message)) {
                             textarea.value = oldData + ',' + newData;
                         } else {
