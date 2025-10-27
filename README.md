@@ -2,8 +2,8 @@
 
 <div align="center">
   <div style="display: flex; justify-content: center; align-items: center; gap: 10px; flex-wrap: wrap;">
-    <img src="https://raw.githubusercontent.com/le0booba/Area_Links/refs/heads/main/screen-options-popup.png" alt="Area Links Screenshot 1" width="280"/>
-    <img src="https://raw.githubusercontent.com/le0booba/Area_Links/refs/heads/main/screen-options.png" alt="Area Links Screenshot 2" width="400"/>
+    <img src="https://raw.githubusercontent.com/le0booba/Area_Links/refs/heads/main/screen-options-popup-1.png" alt="Area Links Screenshot 1" width="280"/>
+    <img src="https://raw.githubusercontent.com/le0booba/Area_Links/refs/heads/main/screen-options-2.png" alt="Area Links Screenshot 2" width="400"/>
   </div>
   
   **Select. Open. Done**
@@ -52,9 +52,13 @@
 - 🖱️ **Context Menu Integration**: Activate selection using the right-click menu on any page.
 
 ### Customization Options
-- 🎨 **4 Selection Box Styles**: Choose from Classic Blue, Dashed Red, Dashed Green, or a Subtle Gray theme.
+- 🎨 **4 Selection Box Styles**: Choose from Dashed Blue, Dashed Red, Solid Green, or Subtle Gray theme.
 - 🌈 **2 Highlight Styles**: Select between Classic Yellow or Dark Gray highlighting for selected links.
-- 📂 **Flexible Opening Behavior**: Open links in new tabs, a completely new window, next to the current tab, or even in reverse order.
+- 📂 **Flexible Opening Behavior**: 
+  - Open links in new tabs or a completely new window
+  - Position new tabs next to the current tab or at the end
+  - Open links in reverse order
+  - Allow simultaneous selection on multiple tabs
 - 🚫 **Advanced Exclusion Filters**: Exclude links from specific domains or URLs containing certain keywords with import/export functionality.
 - ⚙️ **Configurable Tab Limit**: Set a maximum number of tabs to open at once to prevent browser overload (from 1 to 50).
 - 🧠 **Duplicate Prevention**: Option to remember recently opened links to avoid opening the same ones again (stores up to 50 URLs).
@@ -67,8 +71,9 @@
 - 💾 **Cross-Device Sync**: Your core settings are synced to your Chrome account, providing a consistent experience everywhere.
 - 🗑️ **History Management**: Easily clear the list of "remembered" links directly from the options page or popup.
 - 📥📤 **Import/Export Exclusions**: Backup and restore your exclusion lists with JSON file support.
-- 😌 **Lightweight & Fast**: Built to be efficient with optimized link scanning and rendering performance.
+- 😌 **Lightweight & Fast**: Built to be efficient with optimized link scanning and rendering performance using IntersectionObserver API.
 - 🎭 **Custom Cursors**: Dedicated cursor styles for copy and open modes for clear visual feedback.
+- 🎬 **Smooth Animations**: Optimized rendering with requestAnimationFrame for smooth performance.
 
 </details>
 
@@ -105,11 +110,17 @@ The popup also provides quick action buttons to activate selection modes and cle
 | Setting | Description | Default |
 |---|---|---|
 | **Tab Limit** | Set the maximum number of tabs to open in a single action. | `15` |
-| **Selection Style** | Changes the visual appearance of the selection box. | `Classic Blue` |
-| **Highlight Style** | Changes the color scheme for highlighted links within selection. | `Classic Yellow` |
+| **Selection Style** | Changes the visual appearance of the selection box. Options: Dashed Blue, Dashed Red, Solid Green, Subtle Gray. | `Dashed Blue` |
+| **Highlight Style** | Changes the color scheme for highlighted links within selection. Options: Classic Yellow, Dark Gray. | `Classic Yellow` |
+| **Open in new window** | Opens all selected links in a new browser window instead of tabs. | `Off` |
+| **Open in reverse order** | Opens links in reverse order (bottom to top). | `Off` |
+| **Open next to current** | Opens new tabs immediately after the current tab instead of at the end. | `Off` |
+| **Allow activation on multiple tabs** | Permits selection mode to be active on multiple tabs simultaneously. | `Off` |
+| **Remember opened links** | Prevents re-opening of previously opened links (stores last 50 URLs). | `On` |
+| **Remove duplicates on copy** | Removes duplicate URLs when copying links to clipboard. | `On` |
 | **Excluded Domains** | Comma-separated list of domains to ignore (e.g., `google.com, twitter.com`). | `(empty)` |
 | **Excluded Words** | Comma-separated list of keywords to ignore in link URLs (e.g., `logout, unsubscribe`). | `(empty)` |
-| **Import/Export Exclusions** | Backup and restore your exclusion lists via JSON files. | `N/A` |
+| **Import/Export Exclusions** | Backup and restore your exclusion lists via JSON files with conflict resolution. | `N/A` |
 | **Show in context menu** | Toggles the "Open/Copy Links" options in the right-click menu. | `On` |
 | **Language** | Switch the extension's display language between supported locales. | `Auto-detect` |
 | **Clear History** | A button to clear the list of links remembered by the "Remember opened links" feature. | `N/A` |
@@ -143,7 +154,13 @@ This extension was built with your privacy as a top priority.
 <details>
 <summary><strong>☁️ Sync Storage (<code>chrome.storage.sync</code>)</strong> - These settings are synced across all browsers where you are logged into your Chrome account.</summary>
 
--   Core settings including `tabLimit`, `selectionStyle`, `highlightStyle`, `openInNewWindow`, `openNextToParent`, `reverseOrder`, `language`, and `showContextMenu`.
+-   Core settings including `tabLimit`, `selectionStyle`, `highlightStyle`, `openInNewWindow`, `openNextToParent`, `reverseOrder`, `allowMultiTabActivation`, `language`, and `showContextMenu`.
+</details>
+
+<details>
+<summary><strong>⚡ Session Storage (<code>chrome.storage.session</code>)</strong> - Temporary cache cleared when browser closes.</summary>
+
+-   `settingsCache`: Performance optimization cache for frequently accessed settings.
 </details>
 
 ### Required Permissions
@@ -208,6 +225,17 @@ This extension was built with your privacy as a top priority.
 3. Check if any other extensions might be interfering with page scripts.
 </details>
 
+<details>
+<summary><b>Performance issues on pages with many links</b></summary>
+  
+**Cause:** Pages with thousands of links may experience slower performance during selection.
+
+**Solution:**
+1. The extension uses IntersectionObserver to optimize performance by only tracking visible links.
+2. On extremely large pages, consider selecting smaller areas.
+3. Close unnecessary tabs to free up browser resources.
+</details>
+
 ---
 
 ## 📁 Project Structure
@@ -234,6 +262,21 @@ Area_Links/
 ├── 📄 LICENSE                # MIT License
 └── ℹ️ README.md              # This documentation file
 ```
+
+---
+
+## 🔧 Technical Details
+
+### Performance Optimizations
+- **IntersectionObserver API**: Efficiently tracks only visible links on the page, reducing memory usage on large pages.
+- **RequestAnimationFrame**: Smooth selection box rendering and link highlighting updates.
+- **Settings Cache**: Session storage cache minimizes repeated storage API calls.
+- **Lazy Script Injection**: Content scripts are injected on-demand only when needed.
+
+### Browser Compatibility
+- Built with **Manifest V3** for modern Chrome extensions
+- Requires Chrome/Chromium-based browsers (Chrome, Edge, Brave, etc.)
+- Minimum Chrome version: 88+
 
 ---
 
