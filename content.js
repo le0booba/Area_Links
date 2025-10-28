@@ -23,14 +23,9 @@ let selectionOverlay = null;
 let highlightedElements = new Set();
 let linkObserver = null;
 let visibleLinks = new Set();
-let selectionCandidateLinks = new Set();
 
 function getClientRectsForLink(element) {
-    // Используем getBoundingClientRect вместо getClientRects для более точного определения границ
-    // getClientRects возвращает множество rect'ов для разбитых inline-элементов,
-    // что вызывает ложные срабатывания на сложных сайтах (YouTube, Twitch)
-    const rect = element.getBoundingClientRect();
-    return [rect]; // Возвращаем массив для совместимости с существующим кодом
+    return element.getClientRects();
 }
 
 function handleLinkIntersection(entries) {
@@ -77,7 +72,6 @@ function findAllLinks(rootNode, links) {
     return newLinks;
 }
 
-
 function startLinkObserver() {
     initializeObserver();
     linkObserver.disconnect();
@@ -123,17 +117,127 @@ function updateSelectionBox() {
     });
 }
 
-function getIntersectingLinks(selectionRect) {
-    visibleLinks.forEach(link => selectionCandidateLinks.add(link));
+function isElementActuallyVisible(element) {
+    const style = window.getComputedStyle(element);
+    if (style.opacity === '0' || style.visibility === 'hidden' || style.display === 'none') {
+        return false;
+    }
+    return true;
+}
+
+function getVisibleContentRect(element) {
+    const elementRect = element.getBoundingClientRect();
+    const style = window.getComputedStyle(element);
+    const hasOverflowHidden = style.overflow === 'hidden' || style.overflowX === 'hidden' || style.overflowY === 'hidden';
     
+    const range = document.createRange();
+    const textNodes = [];
+    
+    function collectTextNodes(node) {
+        if (node.nodeType === Node.TEXT_NODE && node.textContent.trim()) {
+            textNodes.push(node);
+        } else {
+            for (let child of node.childNodes) {
+                collectTextNodes(child);
+            }
+        }
+    }
+    
+    collectTextNodes(element);
+    
+    function isRectWithinBounds(rect) {
+        if (!hasOverflowHidden) {
+            const margin = 5;
+            return (
+                rect.left >= elementRect.left - margin &&
+                rect.right <= elementRect.right + margin &&
+                rect.top >= elementRect.top - margin &&
+                rect.bottom <= elementRect.bottom + margin
+            );
+        }
+        return true;
+    }
+    
+    if (textNodes.length === 0) {
+        const children = element.querySelectorAll('img, svg, [role="img"], video');
+        if (children.length > 0) {
+            const rects = [];
+            children.forEach(child => {
+                const childStyle = window.getComputedStyle(child);
+                if (childStyle.position === 'absolute' || childStyle.position === 'fixed') {
+                    return;
+                }
+                const rect = child.getBoundingClientRect();
+                if (rect.width > 0 && rect.height > 0 && isRectWithinBounds(rect)) {
+                    rects.push(rect);
+                }
+            });
+            return rects.length > 0 ? rects : null;
+        }
+        return null;
+    }
+    
+    const rects = [];
+    textNodes.forEach(textNode => {
+        try {
+            const parent = textNode.parentElement;
+            if (parent) {
+                const parentStyle = window.getComputedStyle(parent);
+                if (parentStyle.position === 'absolute' || parentStyle.position === 'fixed') {
+                    const parentRect = parent.getBoundingClientRect();
+                    if (!isRectWithinBounds(parentRect)) {
+                        return;
+                    }
+                }
+            }
+            
+            range.selectNodeContents(textNode);
+            const textRects = range.getClientRects();
+            for (let i = 0; i < textRects.length; i++) {
+                const rect = textRects[i];
+                if (rect.width > 0 && rect.height > 0 && isRectWithinBounds(rect)) {
+                    rects.push(rect);
+                }
+            }
+        } catch (e) {}
+    });
+    
+    return rects.length > 0 ? rects : null;
+}
+
+function getIntersectingLinks(selectionRect) {
     const intersecting = [];
     const scrollX = window.scrollX;
     const scrollY = window.scrollY;
+    const viewport = {
+        left: 0,
+        top: 0,
+        right: window.innerWidth,
+        bottom: window.innerHeight
+    };
 
-    for (const link of selectionCandidateLinks) {
-        const clientRects = getClientRectsForLink(link);
-        for (let i = 0; i < clientRects.length; i++) {
-            const rect = clientRects[i];
+    for (const link of visibleLinks) {
+        if (!isElementActuallyVisible(link)) continue;
+        
+        const contentRects = getVisibleContentRect(link);
+        const rectsToCheck = contentRects || getClientRectsForLink(link);
+        
+        if (!rectsToCheck || rectsToCheck.length === 0) continue;
+        
+        for (let i = 0; i < rectsToCheck.length; i++) {
+            const rect = rectsToCheck[i];
+            if (rect.width <= 0 || rect.height <= 0) continue;
+
+            const isVisibleInViewport =
+                rect.right > viewport.left &&
+                rect.left < viewport.right &&
+                rect.bottom > viewport.top &&
+                rect.top < viewport.bottom;
+            
+            if (!isVisibleInViewport) {
+                continue;
+            }
+
             const linkDocRect = {
                 left: rect.left + scrollX,
                 right: rect.right + scrollX,
@@ -153,64 +257,39 @@ function getIntersectingLinks(selectionRect) {
     return intersecting;
 }
 
-function updateLinkHighlights(docRect) {
-    const intersectingLinks = getIntersectingLinks(docRect);
-    const newHighlightedElements = new Set();
-    const seenInSelection = new Set();
-
-    intersectingLinks.forEach(element => {
-        const { href } = element;
-        const isSeenInSelection = seenInSelection.has(href);
-        const isSeenInHistory = selectionState.useHistory && selectionState.historySet.has(href);
-
-        const shouldBeFiltered = selectionState.isCopyMode
-            ? selectionState.checkDuplicatesOnCopy && isSeenInSelection
-            : isSeenInSelection || isSeenInHistory;
-
-        if (!shouldBeFiltered) {
-            newHighlightedElements.add(element);
-            if (!selectionState.isCopyMode || selectionState.checkDuplicatesOnCopy) {
-                seenInSelection.add(href);
-            }
-        }
-    });
+function updateLinkHighlights(selectionRect) {
+    const intersectingLinks = getIntersectingLinks(selectionRect);
+    const newHighlighted = new Set(intersectingLinks);
 
     highlightedElements.forEach(el => {
-        if (!newHighlightedElements.has(el)) {
+        if (!newHighlighted.has(el)) {
             el.classList.remove(HIGHLIGHT_CLASS);
+            highlightedElements.delete(el);
         }
     });
-    newHighlightedElements.forEach(el => {
+
+    newHighlighted.forEach(el => {
         if (!highlightedElements.has(el)) {
             el.classList.add(HIGHLIGHT_CLASS);
+            highlightedElements.add(el);
         }
     });
-    highlightedElements = newHighlightedElements;
 }
 
-function clearHighlights() {
-    highlightedElements.forEach(el => el.classList.remove(HIGHLIGHT_CLASS));
-    highlightedElements.clear();
-}
-
-function resetSelection() {
-    const wasActive = selectionState.isActive;
-
-    if (linkObserver) {
-        linkObserver.disconnect();
-    }
+function resetSelection(wasActive = selectionState.isActive) {
     if (selectionBox) {
         selectionBox.style.display = 'none';
     }
     if (selectionOverlay) {
         selectionOverlay.style.display = 'none';
+        selectionOverlay.removeEventListener('mousedown', handleMouseDown, true);
+        selectionOverlay.removeEventListener('mousemove', handleMouseMove, true);
+        selectionOverlay.removeEventListener('mouseup', handleMouseUp, true);
     }
-    clearHighlights();
-    document.body.classList.remove(PREPARE_ANIMATION_CLASS);
-    delete document.body.dataset.linkOpenerHighlightStyle;
-    document.body.style.cursor = 'default';
     document.removeEventListener('keydown', handleKeyDown, true);
     document.removeEventListener('scroll', handleScroll, true);
+    document.removeEventListener('visibilitychange', handleVisibilityChange, true);
+    document.body.style.cursor = '';
 
     Object.assign(selectionState, {
         isActive: false,
@@ -221,9 +300,10 @@ function resetSelection() {
         historySet: new Set(),
     });
     
-    visibleLinks.clear();
+    highlightedElements.forEach(el => el.classList.remove(HIGHLIGHT_CLASS));
     highlightedElements.clear();
-    selectionCandidateLinks.clear();
+    
+    visibleLinks.clear();
 
     if (wasActive) {
         chrome.runtime.sendMessage({ type: 'selectionDeactivated' });
@@ -254,6 +334,12 @@ function copyLinksToClipboard(links) {
             console.error('Area Links: Could not copy text.', err);
         }
     });
+}
+
+function handleVisibilityChange() {
+    if (document.hidden && selectionState.isActive) {
+        resetSelection();
+    }
 }
 
 function handleKeyDown(e) {
@@ -322,8 +408,6 @@ function handleMouseDown(e) {
     selectionState.startCoords = { x: e.pageX, y: e.pageY };
     selectionState.currentCoords = { x: e.pageX, y: e.pageY };
     
-    selectionCandidateLinks.clear();
-    
     selectionBox.className = selectionState.style;
     selectionBox.style.display = 'block';
     updateSelectionBox();
@@ -374,6 +458,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
     selectionOverlay.addEventListener('mousedown', handleMouseDown, true);
     document.addEventListener('keydown', handleKeyDown, true);
+    document.addEventListener('visibilitychange', handleVisibilityChange, true);
     
     sendResponse({ success: true, message: "Selection initiated" });
     return true;
