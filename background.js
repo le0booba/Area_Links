@@ -6,6 +6,7 @@ const SYNC_DEFAULTS = {
   openInNewWindow: false,
   reverseOrder: false,
   openNextToParent: false,
+  applyExclusionsOnCopy: false,
   language: 'en',
   showContextMenu: true,
 };
@@ -144,8 +145,11 @@ async function triggerSelection(tab, commandType) {
         style: settings.selectionStyle,
         highlightStyle: settings.highlightStyle,
         checkDuplicatesOnCopy: settings.checkDuplicatesOnCopy,
+        applyExclusionsOnCopy: settings.applyExclusionsOnCopy,
         useHistory: settings.useHistory,
-        linkHistory: settings.useHistory ? settings.linkHistory : []
+        linkHistory: settings.useHistory ? settings.linkHistory : [],
+        excludedDomains: settings.excludedDomains.split(',').map(d => d.trim().toLowerCase()).filter(Boolean),
+        excludedWords: settings.excludedWords.split(',').map(w => w.trim().toLowerCase()).filter(Boolean),
     };
 
     try {

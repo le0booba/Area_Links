@@ -5,6 +5,7 @@ const SETTINGS_CONFIG = {
     openInNewWindow: { default: false, storage: 'sync' },
     reverseOrder: { default: false, storage: 'sync' },
     openNextToParent: { default: false, storage: 'sync' },
+    applyExclusionsOnCopy: { default: false, storage: 'sync' },
     language: { default: 'en', storage: 'sync' },
     showContextMenu: { default: true, storage: 'sync' },
     excludedDomains: { default: '', storage: 'local' },
@@ -99,7 +100,7 @@ async function restoreOptions() {
     document.getElementById('highlightStyle').value = settings.highlightStyle;
     document.getElementById('language-select').value = settings.language;
     
-    ['openInNewWindow', 'reverseOrder', 'openNextToParent', 'useHistory', 'checkDuplicatesOnCopy', 'showContextMenu'].forEach(id => {
+    ['openInNewWindow', 'reverseOrder', 'openNextToParent', 'applyExclusionsOnCopy', 'useHistory', 'checkDuplicatesOnCopy', 'showContextMenu'].forEach(id => {
         const el = document.getElementById(id);
         if (el) {
             el.checked = settings[id];
@@ -213,8 +214,8 @@ function handleImport(event) {
 
             const lang = document.getElementById('language-select').value;
             const fieldDisplayNames = {
-                excludedDomains: lang === 'ru' ? 'ИСКЛЮЧЕННЫЕ ДОМЕНЫ' : 'EXCLUDED DOMAINS',
-                excludedWords: lang === 'ru' ? 'ИСКЛЮЧЕННЫЕ СЛОВА' : 'EXCLUDED WORDS'
+                excludedDomains: lang === 'ru' ? 'Исключенные домены' : 'Excluded Domains',
+                excludedWords: lang === 'ru' ? 'Исключенные слова' : 'Excluded Words'
             };
 
             const processField = (fieldName, textarea) => {
@@ -343,6 +344,8 @@ function setupEventListeners() {
             if (id.startsWith('popup-')) return;
             if (['selectionStyle', 'showContextMenu', 'highlightStyle'].includes(id)) {
                 statusId = 'status-appearance';
+            } else if (id === 'applyExclusionsOnCopy') {
+                statusId = 'status-exclusions';
             } else {
                 statusId = 'status-behavior';
             }

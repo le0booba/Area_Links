@@ -1,6 +1,7 @@
 const svgCursor = `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32"><line x1="16" y1="0" x2="16" y2="32" stroke="black" stroke-width="1.5"/><line x1="0" y1="16" x2="32" y2="16" stroke="black" stroke-width="1.5"/><rect x="20" y="20" width="10" height="10" fill="white" /><line x1="25" y1="21" x2="25" y2="29" stroke="black" stroke-width="2"/><line x1="21" y1="25" x2="29" y2="25" stroke="black" stroke-width="2"/></svg>`;
 const customCopyCursor = `url('data:image/svg+xml;utf8,${encodeURIComponent(svgCursor)}') 16 16, copy`;
 const HIGHLIGHT_CLASS = 'link-opener-highlighted-link';
+const DUPLICATE_CLASS = 'link-opener-duplicate-link';
 const PREPARE_ANIMATION_CLASS = 'link-opener-prepare-animation';
 
 const selectionState = {
@@ -13,19 +14,43 @@ const selectionState = {
     startCoords: { x: 0, y: 0 },
     currentCoords: { x: 0, y: 0 },
     checkDuplicatesOnCopy: true,
+    applyExclusionsOnCopy: false,
     useHistory: false,
     linkHistory: [],
     historySet: new Set(),
+    excludedDomains: [],
+    excludedWords: [],
 };
 
 let selectionBox = null;
 let selectionOverlay = null;
 let highlightedElements = new Set();
+let duplicateElements = new Set();
 let linkObserver = null;
 let visibleLinks = new Set();
+let selectionCandidateLinks = new Set();
 
-function getClientRectsForLink(element) {
-    return element.getClientRects();
+function isValidLink(element) {
+    const { href } = element;
+    if (!href || href.startsWith('#') || href.startsWith('javascript:')) {
+        return false;
+    }
+
+    const rect = element.getBoundingClientRect();
+    if (rect.width === 0 || rect.height === 0) {
+        return false;
+    }
+
+    const style = window.getComputedStyle(element);
+    if (style.visibility !== 'visible' || style.display === 'none' || style.pointerEvents === 'none') {
+        return false;
+    }
+    
+    if (element.innerText.trim() === '' && !element.querySelector('img, svg')) {
+        return false;
+    }
+
+    return true;
 }
 
 function handleLinkIntersection(entries) {
@@ -46,40 +71,15 @@ function initializeObserver() {
     }
 }
 
-function findAllLinks(rootNode, links) {
-    const newLinks = links || [];
-
-    const linkElements = rootNode.querySelectorAll('a[href], [role="link"]');
-    linkElements.forEach(el => {
-        let href = el.href;
-        if (el.matches('[role="link"]') && !href) {
-            const nestedLink = el.querySelector('a[href]');
-            href = nestedLink ? nestedLink.href : null;
-        }
-        if (href && !href.startsWith('#') && !href.startsWith('javascript:')) {
-            if (!el.href) el.href = href;
-            newLinks.push(el);
-        }
-    });
-
-    const allElements = rootNode.querySelectorAll('*');
-    allElements.forEach(element => {
-        if (element.shadowRoot) {
-            findAllLinks(element.shadowRoot, newLinks);
-        }
-    });
-
-    return newLinks;
-}
-
 function startLinkObserver() {
     initializeObserver();
     linkObserver.disconnect();
     visibleLinks.clear();
     
-    const allLinksOnPage = findAllLinks(document.body);
-    allLinksOnPage.forEach(link => {
-        linkObserver.observe(link);
+    document.querySelectorAll('a[href]').forEach(link => {
+        if (isValidLink(link)) {
+            linkObserver.observe(link);
+        }
     });
 }
 
@@ -117,179 +117,128 @@ function updateSelectionBox() {
     });
 }
 
-function isElementActuallyVisible(element) {
-    const style = window.getComputedStyle(element);
-    if (style.opacity === '0' || style.visibility === 'hidden' || style.display === 'none') {
-        return false;
-    }
-    return true;
-}
+function isExcluded(url) {
+    if (!url) return false;
+    try {
+        const lowerCaseUrl = url.toLowerCase();
+        const urlHostname = new URL(url).hostname.toLowerCase();
 
-function getVisibleContentRect(element) {
-    const elementRect = element.getBoundingClientRect();
-    const style = window.getComputedStyle(element);
-    const hasOverflowHidden = style.overflow === 'hidden' || style.overflowX === 'hidden' || style.overflowY === 'hidden';
-    
-    const range = document.createRange();
-    const textNodes = [];
-    
-    function collectTextNodes(node) {
-        if (node.nodeType === Node.TEXT_NODE && node.textContent.trim()) {
-            textNodes.push(node);
-        } else {
-            for (let child of node.childNodes) {
-                collectTextNodes(child);
-            }
+        if (selectionState.excludedDomains.some(domain => urlHostname.includes(domain))) {
+            return true;
         }
-    }
-    
-    collectTextNodes(element);
-    
-    function isRectWithinBounds(rect) {
-        if (!hasOverflowHidden) {
-            const margin = 5;
-            return (
-                rect.left >= elementRect.left - margin &&
-                rect.right <= elementRect.right + margin &&
-                rect.top >= elementRect.top - margin &&
-                rect.bottom <= elementRect.bottom + margin
-            );
+        if (selectionState.excludedWords.some(word => lowerCaseUrl.includes(word))) {
+            return true;
         }
+    } catch {
         return true;
     }
-    
-    if (textNodes.length === 0) {
-        const children = element.querySelectorAll('img, svg, [role="img"], video');
-        if (children.length > 0) {
-            const rects = [];
-            children.forEach(child => {
-                const childStyle = window.getComputedStyle(child);
-                if (childStyle.position === 'absolute' || childStyle.position === 'fixed') {
-                    return;
-                }
-                const rect = child.getBoundingClientRect();
-                if (rect.width > 0 && rect.height > 0 && isRectWithinBounds(rect)) {
-                    rects.push(rect);
-                }
-            });
-            return rects.length > 0 ? rects : null;
-        }
-        return null;
-    }
-    
-    const rects = [];
-    textNodes.forEach(textNode => {
-        try {
-            const parent = textNode.parentElement;
-            if (parent) {
-                const parentStyle = window.getComputedStyle(parent);
-                if (parentStyle.position === 'absolute' || parentStyle.position === 'fixed') {
-                    const parentRect = parent.getBoundingClientRect();
-                    if (!isRectWithinBounds(parentRect)) {
-                        return;
-                    }
-                }
-            }
-            
-            range.selectNodeContents(textNode);
-            const textRects = range.getClientRects();
-            for (let i = 0; i < textRects.length; i++) {
-                const rect = textRects[i];
-                if (rect.width > 0 && rect.height > 0 && isRectWithinBounds(rect)) {
-                    rects.push(rect);
-                }
-            }
-        } catch (e) {}
-    });
-    
-    return rects.length > 0 ? rects : null;
+    return false;
 }
 
 function getIntersectingLinks(selectionRect) {
+    visibleLinks.forEach(link => selectionCandidateLinks.add(link));
+    
     const intersecting = [];
     const scrollX = window.scrollX;
     const scrollY = window.scrollY;
-    const viewport = {
-        left: 0,
-        top: 0,
-        right: window.innerWidth,
-        bottom: window.innerHeight
-    };
 
-    for (const link of visibleLinks) {
-        if (!isElementActuallyVisible(link)) continue;
-        
-        const contentRects = getVisibleContentRect(link);
-        const rectsToCheck = contentRects || getClientRectsForLink(link);
-        
-        if (!rectsToCheck || rectsToCheck.length === 0) continue;
-        
-        for (let i = 0; i < rectsToCheck.length; i++) {
-            const rect = rectsToCheck[i];
-            if (rect.width <= 0 || rect.height <= 0) continue;
+    for (const link of selectionCandidateLinks) {
+        const linkRect = link.getBoundingClientRect();
+        if (linkRect.width === 0 || linkRect.height === 0) continue;
 
-            const isVisibleInViewport =
-                rect.right > viewport.left &&
-                rect.left < viewport.right &&
-                rect.bottom > viewport.top &&
-                rect.top < viewport.bottom;
-            
-            if (!isVisibleInViewport) {
-                continue;
-            }
+        const linkDocRect = {
+            left: linkRect.left + scrollX,
+            right: linkRect.right + scrollX,
+            top: linkRect.top + scrollY,
+            bottom: linkRect.bottom + scrollY,
+        };
 
-            const linkDocRect = {
-                left: rect.left + scrollX,
-                right: rect.right + scrollX,
-                top: rect.top + scrollY,
-                bottom: rect.bottom + scrollY,
-            };
-
-            if (linkDocRect.left < selectionRect.right &&
-                linkDocRect.right > selectionRect.left &&
-                linkDocRect.top < selectionRect.bottom &&
-                linkDocRect.bottom > selectionRect.top) {
-                intersecting.push(link);
-                break;
-            }
+        if (linkDocRect.left < selectionRect.right &&
+            linkDocRect.right > selectionRect.left &&
+            linkDocRect.top < selectionRect.bottom &&
+            linkDocRect.bottom > selectionRect.top) {
+            intersecting.push(link);
         }
     }
     return intersecting;
 }
 
-function updateLinkHighlights(selectionRect) {
-    const intersectingLinks = getIntersectingLinks(selectionRect);
-    const newHighlighted = new Set(intersectingLinks);
+function updateLinkHighlights(docRect) {
+    const intersectingLinks = getIntersectingLinks(docRect);
+    const currentlyIntersecting = new Set(intersectingLinks);
 
-    highlightedElements.forEach(el => {
-        if (!newHighlighted.has(el)) {
-            el.classList.remove(HIGHLIGHT_CLASS);
-            highlightedElements.delete(el);
+    const toRemoveHighlight = new Set([...highlightedElements, ...duplicateElements].filter(el => !currentlyIntersecting.has(el)));
+    toRemoveHighlight.forEach(el => {
+        el.classList.remove(HIGHLIGHT_CLASS, DUPLICATE_CLASS);
+    });
+
+    const seenInSelection = new Set();
+    const newHighlighted = new Set();
+    const newDuplicates = new Set();
+
+    intersectingLinks.forEach(element => {
+        const { href } = element;
+        const isSeenInSelection = seenInSelection.has(href);
+        const isSeenInHistory = selectionState.useHistory && selectionState.historySet.has(href);
+        
+        let isLinkExcluded = false;
+        if (!selectionState.isCopyMode || selectionState.applyExclusionsOnCopy) {
+            isLinkExcluded = isExcluded(href);
+        }
+
+        const shouldBeFiltered = (selectionState.isCopyMode
+            ? selectionState.checkDuplicatesOnCopy && isSeenInSelection
+            : isSeenInSelection || isSeenInHistory) || isLinkExcluded;
+
+        if (shouldBeFiltered) {
+            newDuplicates.add(element);
+        } else {
+            newHighlighted.add(element);
+            if (!selectionState.isCopyMode || selectionState.checkDuplicatesOnCopy) {
+                seenInSelection.add(href);
+            }
         }
     });
 
     newHighlighted.forEach(el => {
-        if (!highlightedElements.has(el)) {
-            el.classList.add(HIGHLIGHT_CLASS);
-            highlightedElements.add(el);
-        }
+        el.classList.add(HIGHLIGHT_CLASS);
+        el.classList.remove(DUPLICATE_CLASS);
     });
+    newDuplicates.forEach(el => {
+        el.classList.add(DUPLICATE_CLASS);
+        el.classList.remove(HIGHLIGHT_CLASS);
+    });
+    
+    highlightedElements = newHighlighted;
+    duplicateElements = newDuplicates;
 }
 
-function resetSelection(wasActive = selectionState.isActive) {
+function clearHighlights() {
+    [...highlightedElements, ...duplicateElements].forEach(el => {
+        el.classList.remove(HIGHLIGHT_CLASS, DUPLICATE_CLASS);
+    });
+    highlightedElements.clear();
+    duplicateElements.clear();
+}
+
+function resetSelection() {
+    const wasActive = selectionState.isActive;
+
+    if (linkObserver) {
+        linkObserver.disconnect();
+    }
     if (selectionBox) {
         selectionBox.style.display = 'none';
     }
     if (selectionOverlay) {
         selectionOverlay.style.display = 'none';
-        selectionOverlay.removeEventListener('mousedown', handleMouseDown, true);
-        selectionOverlay.removeEventListener('mousemove', handleMouseMove, true);
-        selectionOverlay.removeEventListener('mouseup', handleMouseUp, true);
     }
+    clearHighlights();
+    document.body.classList.remove(PREPARE_ANIMATION_CLASS);
+    delete document.body.dataset.linkOpenerHighlightStyle;
+    document.body.style.cursor = 'default';
     document.removeEventListener('keydown', handleKeyDown, true);
     document.removeEventListener('scroll', handleScroll, true);
-    document.removeEventListener('visibilitychange', handleVisibilityChange, true);
-    document.body.style.cursor = '';
 
     Object.assign(selectionState, {
         isActive: false,
@@ -298,12 +247,14 @@ function resetSelection(wasActive = selectionState.isActive) {
         startCoords: { x: 0, y: 0 },
         currentCoords: { x: 0, y: 0 },
         historySet: new Set(),
+        excludedDomains: [],
+        excludedWords: [],
     });
     
-    highlightedElements.forEach(el => el.classList.remove(HIGHLIGHT_CLASS));
-    highlightedElements.clear();
-    
     visibleLinks.clear();
+    highlightedElements.clear();
+    duplicateElements.clear();
+    selectionCandidateLinks.clear();
 
     if (wasActive) {
         chrome.runtime.sendMessage({ type: 'selectionDeactivated' });
@@ -334,12 +285,6 @@ function copyLinksToClipboard(links) {
             console.error('Area Links: Could not copy text.', err);
         }
     });
-}
-
-function handleVisibilityChange() {
-    if (document.hidden && selectionState.isActive) {
-        resetSelection();
-    }
 }
 
 function handleKeyDown(e) {
@@ -408,6 +353,8 @@ function handleMouseDown(e) {
     selectionState.startCoords = { x: e.pageX, y: e.pageY };
     selectionState.currentCoords = { x: e.pageX, y: e.pageY };
     
+    selectionCandidateLinks.clear();
+    
     selectionBox.className = selectionState.style;
     selectionBox.style.display = 'block';
     updateSelectionBox();
@@ -440,10 +387,13 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     
     selectionState.isCopyMode = request.type === "initiateSelectionCopy";
     selectionState.checkDuplicatesOnCopy = request.checkDuplicatesOnCopy;
+    selectionState.applyExclusionsOnCopy = request.applyExclusionsOnCopy;
     selectionState.useHistory = request.useHistory;
     selectionState.linkHistory = request.linkHistory || [];
     selectionState.historySet = new Set(selectionState.linkHistory);
     selectionState.highlightStyle = request.highlightStyle;
+    selectionState.excludedDomains = request.excludedDomains || [];
+    selectionState.excludedWords = request.excludedWords || [];
     
     document.body.dataset.linkOpenerHighlightStyle = selectionState.highlightStyle;
     document.body.classList.add(PREPARE_ANIMATION_CLASS);
@@ -458,7 +408,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
     selectionOverlay.addEventListener('mousedown', handleMouseDown, true);
     document.addEventListener('keydown', handleKeyDown, true);
-    document.addEventListener('visibilitychange', handleVisibilityChange, true);
     
     sendResponse({ success: true, message: "Selection initiated" });
     return true;

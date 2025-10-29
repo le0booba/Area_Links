@@ -50,5 +50,6 @@
   "popupOpenTitle": { "message": "Activate area selection to open links" },
   "popupCopyTitle": { "message": "Activate area selection to copy links" },
   "popupSettingsTitle": { "message": "Open All Settings" },
-  "copyFailedPermissionError": { "message": "Copying to clipboard failed. On some sites (like YouTube), this can happen if you deny the Clipboard permission prompt. Please try again and allow access." }
+  "copyFailedPermissionError": { "message": "Copying to clipboard failed. On some sites (like YouTube), this can happen if you deny the Clipboard permission prompt. Please try again and allow access." },
+  "optionsApplyExclusionsOnCopy": { "message": "Apply exclusions for copy mode" }
 }

@@ -36,6 +36,7 @@
 
 body.link-opener-prepare-animation a {
     will-change: background-color, outline, box-shadow, color;
+    transition: background-color 0.15s ease-in-out, outline 0.15s ease-in-out, box-shadow 0.15s ease-in-out, color 0.15s ease-in-out;
 }
 
 body[data-link-opener-highlight-style='classic-yellow'] a.link-opener-highlighted-link {
@@ -52,5 +53,12 @@ body[data-link-opener-highlight-style='dark-gray'] a.link-opener-highlighted-lin
     border-radius: 3px;
     outline: 1px solid rgba(120, 120, 120, 0.9);
     box-shadow: none;
+    outline-offset: 1px;
+}
+
+a.link-opener-duplicate-link {
+    background-color: rgba(108, 117, 125, 0.4) !important;
+    outline: 1px dashed rgba(80, 80, 80, 0.7) !important;
+    box-shadow: none !important;
     outline-offset: 1px;
 }
