@@ -2,6 +2,7 @@ const svgCursor = `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32
 const customCopyCursor = `url('data:image/svg+xml;utf8,${encodeURIComponent(svgCursor)}') 16 16, copy`;
 const HIGHLIGHT_CLASS = 'link-opener-highlighted-link';
 const DUPLICATE_CLASS = 'link-opener-duplicate-link';
+const LIMIT_EXCEEDED_CLASS = 'link-opener-limit-exceeded';
 const PREPARE_ANIMATION_CLASS = 'link-opener-prepare-animation';
 
 const selectionState = {
@@ -13,6 +14,7 @@ const selectionState = {
     highlightStyle: 'classic-yellow',
     startCoords: { x: 0, y: 0 },
     currentCoords: { x: 0, y: 0 },
+    tabLimit: 15,
     checkDuplicatesOnCopy: true,
     applyExclusionsOnCopy: false,
     useHistory: false,
@@ -26,6 +28,7 @@ let selectionBox = null;
 let selectionOverlay = null;
 let highlightedElements = new Set();
 let duplicateElements = new Set();
+let limitExceededElements = new Set();
 let linkObserver = null;
 let visibleLinks = new Set();
 let selectionCandidateLinks = new Set();
@@ -167,14 +170,15 @@ function updateLinkHighlights(docRect) {
     const intersectingLinks = getIntersectingLinks(docRect);
     const currentlyIntersecting = new Set(intersectingLinks);
 
-    const toRemoveHighlight = new Set([...highlightedElements, ...duplicateElements].filter(el => !currentlyIntersecting.has(el)));
+    const toRemoveHighlight = new Set([...highlightedElements, ...duplicateElements, ...limitExceededElements].filter(el => !currentlyIntersecting.has(el)));
     toRemoveHighlight.forEach(el => {
-        el.classList.remove(HIGHLIGHT_CLASS, DUPLICATE_CLASS);
+        el.classList.remove(HIGHLIGHT_CLASS, DUPLICATE_CLASS, LIMIT_EXCEEDED_CLASS);
     });
 
     const seenInSelection = new Set();
     const newHighlighted = new Set();
     const newDuplicates = new Set();
+    const newLimitExceeded = new Set();
 
     intersectingLinks.forEach(element => {
         const { href } = element;
@@ -190,8 +194,12 @@ function updateLinkHighlights(docRect) {
             ? selectionState.checkDuplicatesOnCopy && isSeenInSelection
             : isSeenInSelection || isSeenInHistory) || isLinkExcluded;
 
+        const limitReached = !selectionState.isCopyMode && newHighlighted.size >= selectionState.tabLimit;
+
         if (shouldBeFiltered) {
             newDuplicates.add(element);
+        } else if (limitReached) {
+            newLimitExceeded.add(element);
         } else {
             newHighlighted.add(element);
             if (!selectionState.isCopyMode || selectionState.checkDuplicatesOnCopy) {
@@ -202,23 +210,29 @@ function updateLinkHighlights(docRect) {
 
     newHighlighted.forEach(el => {
         el.classList.add(HIGHLIGHT_CLASS);
-        el.classList.remove(DUPLICATE_CLASS);
+        el.classList.remove(DUPLICATE_CLASS, LIMIT_EXCEEDED_CLASS);
     });
     newDuplicates.forEach(el => {
         el.classList.add(DUPLICATE_CLASS);
-        el.classList.remove(HIGHLIGHT_CLASS);
+        el.classList.remove(HIGHLIGHT_CLASS, LIMIT_EXCEEDED_CLASS);
+    });
+    newLimitExceeded.forEach(el => {
+        el.classList.add(LIMIT_EXCEEDED_CLASS);
+        el.classList.remove(HIGHLIGHT_CLASS, DUPLICATE_CLASS);
     });
     
     highlightedElements = newHighlighted;
     duplicateElements = newDuplicates;
+    limitExceededElements = newLimitExceeded;
 }
 
 function clearHighlights() {
-    [...highlightedElements, ...duplicateElements].forEach(el => {
-        el.classList.remove(HIGHLIGHT_CLASS, DUPLICATE_CLASS);
+    [...highlightedElements, ...duplicateElements, ...limitExceededElements].forEach(el => {
+        el.classList.remove(HIGHLIGHT_CLASS, DUPLICATE_CLASS, LIMIT_EXCEEDED_CLASS);
     });
     highlightedElements.clear();
     duplicateElements.clear();
+    limitExceededElements.clear();
 }
 
 function resetSelection() {
@@ -246,6 +260,7 @@ function resetSelection() {
         isUpdateScheduled: false,
         startCoords: { x: 0, y: 0 },
         currentCoords: { x: 0, y: 0 },
+        tabLimit: 15,
         historySet: new Set(),
         excludedDomains: [],
         excludedWords: [],
@@ -254,6 +269,7 @@ function resetSelection() {
     visibleLinks.clear();
     highlightedElements.clear();
     duplicateElements.clear();
+    limitExceededElements.clear();
     selectionCandidateLinks.clear();
 
     if (wasActive) {
@@ -386,6 +402,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     }
     
     selectionState.isCopyMode = request.type === "initiateSelectionCopy";
+    selectionState.tabLimit = request.tabLimit;
     selectionState.checkDuplicatesOnCopy = request.checkDuplicatesOnCopy;
     selectionState.applyExclusionsOnCopy = request.applyExclusionsOnCopy;
     selectionState.useHistory = request.useHistory;

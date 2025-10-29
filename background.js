@@ -144,6 +144,7 @@ async function triggerSelection(tab, commandType) {
         type: commandType,
         style: settings.selectionStyle,
         highlightStyle: settings.highlightStyle,
+        tabLimit: settings.tabLimit,
         checkDuplicatesOnCopy: settings.checkDuplicatesOnCopy,
         applyExclusionsOnCopy: settings.applyExclusionsOnCopy,
         useHistory: settings.useHistory,
