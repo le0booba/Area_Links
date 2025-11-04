@@ -5,6 +5,8 @@
     --text-secondary: #a0aec0;
     --border-color: #718096;
     --primary-color: #4299e1;
+    --danger-color: #e53e3e;
+    --danger-hover: #c53030;
     --slider-bg: #718096;
     --slider-checked-bg: #4299e1;
 }
@@ -159,24 +161,7 @@ footer {
     margin-right: 12px;
 }
 
-#open-options,
 #clear-history-popup {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 30px;
-    height: 30px;
-    margin: 0;
-    padding: 0;
-    background: transparent;
-    border: none;
-    border-radius: 50%;
-    color: var(--text-secondary);
-    cursor: pointer;
-    transition: background-color 0.2s, color 0.2s;
-}
-
-#open-options {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -185,18 +170,46 @@ footer {
     margin: 0;
     padding: 0;
     background: transparent;
-    border: none;
+    border: 1px solid var(--border-color);
     border-radius: 6px;
-    color: var(--text-secondary);
+    color: var(--danger-color);
     cursor: pointer;
-    transition: background-color 0.2s, color 0.2s;
+    transition: all 0.2s;
     margin-top: 2px;
 }
 
-#open-options:hover,
-#clear-history-popup:hover:not(:disabled) {
-    background-color: var(--border-color);
+#open-options {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 26px;
+    margin: 0;
+    padding: 0;
+    background: transparent;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-top: 2px;
+    margin-right: 6px;
+}
+
+#open-options svg {
+    width: 16px;
+    height: 16px;
+}
+
+#open-options:hover {
     color: var(--text-color);
+    border-color: var(--primary-color);
+}
+
+#clear-history-popup:hover:not(:disabled) {
+    color: #f56565;
+    border-color: var(--primary-color);
+    border: 1px solid var(--danger-hover);
 }
 
 #clear-history-popup:disabled {
@@ -209,8 +222,8 @@ footer {
     position: relative;
     display: inline-block;
     flex-shrink: 0;
-    width: 38px;
-    height: 22px;
+    width: 32px;
+    height: 18px;
 }
 
 .switch input {
@@ -224,7 +237,7 @@ footer {
     right: 0;
     bottom: 0;
     background-color: var(--slider-bg);
-    border-radius: 22px;
+    border-radius: 18px;
     cursor: pointer;
     transition: .4s;
 }
@@ -232,10 +245,10 @@ footer {
 .slider:before {
     position: absolute;
     content: "";
-    height: 16px;
-    width: 16px;
-    left: 3px;
-    bottom: 3px;
+    height: 14px;
+    width: 14px;
+    left: 2px;
+    bottom: 2px;
     background-color: white;
     border-radius: 50%;
     transition: .4s;
@@ -246,5 +259,5 @@ input:checked+.slider {
 }
 
 input:checked+.slider:before {
-    transform: translateX(16px);
+    transform: translateX(14px);
 }

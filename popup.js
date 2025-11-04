@@ -102,10 +102,17 @@ async function initialize() {
     localizePage();
     loadCommands();
 
+    const version = chrome.runtime.getManifest().version;
+    const versionTitle = chrome.i18n.getMessage('popupLogoTitle', version);
+
     const logoEl = document.querySelector('.logo');
     if (logoEl) {
-        const version = chrome.runtime.getManifest().version;
-        logoEl.title = chrome.i18n.getMessage('popupLogoTitle', version);
+        logoEl.title = versionTitle;
+    }
+
+    const titleEl = document.querySelector('.title-group h1');
+    if (titleEl) {
+        titleEl.title = versionTitle;
     }
 
     clearHistoryBtn.disabled = !localItems.linkHistory || localItems.linkHistory.length === 0;
