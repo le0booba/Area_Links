@@ -2,8 +2,8 @@
 
 <div align="center">
   <div style="display: flex; justify-content: center; align-items: center; gap: 10px; flex-wrap: wrap;">
-    <img src="https://raw.githubusercontent.com/le0booba/Area_Links/refs/heads/main/screen-options-popup-1.png" alt="Area Links Screenshot 1" width="280"/>
-    <img src="https://raw.githubusercontent.com/le0booba/Area_Links/refs/heads/main/screen-options-2.png" alt="Area Links Screenshot 2" width="400"/>
+    <img src="https://raw.githubusercontent.com/le0booba/Area_Links/refs/heads/main/screen-options-popup.png" alt="Area Links Screenshot 1" width="280"/>
+    <img src="https://raw.githubusercontent.com/le0booba/Area_Links/refs/heads/main/screen-options.png" alt="Area Links Screenshot 2" width="400"/>
   </div>
   
   **Select. Open. Done**
@@ -48,7 +48,7 @@
 - 🎯 **Visual Area Selection**: An intuitive drag-and-drop interface to select links.
 - 🚀 **Dual Operation Modes**: Seamlessly switch between opening links in new tabs or copying them to your clipboard.
 - ✨ **Visual Highlighting**: Instantly see which links are inside your selection box before you commit with two color themes.
-- 🔗 **Smart Filtering**: Automatically ignores non-http, anchor (`#`), and javascript links.
+- 🔗 **Smart Filtering**: Automatically ignores non-http, anchor (`#`), and javascript links, as well as hidden or zero-size elements.
 - 🖱️ **Context Menu Integration**: Activate selection using the right-click menu on any page.
 
 ### Customization Options
@@ -58,11 +58,10 @@
   - Open links in new tabs or a completely new window
   - Position new tabs next to the current tab or at the end
   - Open links in reverse order
-  - Allow simultaneous selection on multiple tabs
 - 🚫 **Advanced Exclusion Filters**: Exclude links from specific domains or URLs containing certain keywords with import/export functionality.
 - ⚙️ **Configurable Tab Limit**: Set a maximum number of tabs to open at once to prevent browser overload (from 1 to 50).
 - 🧠 **Duplicate Prevention**: Option to remember recently opened links to avoid opening the same ones again (stores up to 50 URLs).
-- 🌍 **Multi-Language Support**: Full UI localization in English and Russian with automatic language detection.
+- 🌐 **Multi-Language Support**: Full UI localization in English and Russian with automatic language detection.
 
 <details>
 <summary><b>User Experience Enhancements</b></summary>
@@ -70,10 +69,12 @@
 - 📱 **Quick Settings Popup**: Click the toolbar icon for a compact menu to toggle common settings on the fly.
 - 💾 **Cross-Device Sync**: Your core settings are synced to your Chrome account, providing a consistent experience everywhere.
 - 🗑️ **History Management**: Easily clear the list of "remembered" links directly from the options page or popup.
-- 📥📤 **Import/Export Exclusions**: Backup and restore your exclusion lists with JSON file support.
+- 📥📤 **Import/Export Exclusions**: Backup and restore your exclusion lists with JSON file support and automatic conflict resolution.
 - 😌 **Lightweight & Fast**: Built to be efficient with optimized link scanning and rendering performance using IntersectionObserver API.
 - 🎭 **Custom Cursors**: Dedicated cursor styles for copy and open modes for clear visual feedback.
 - 🎬 **Smooth Animations**: Optimized rendering with requestAnimationFrame for smooth performance.
+- 🔄 **Settings Cache**: Session storage cache for faster access to frequently used settings.
+- 📋 **Smart Clipboard Handling**: Fallback mechanism for copying links on non-secure contexts.
 
 </details>
 
@@ -115,12 +116,12 @@ The popup also provides quick action buttons to activate selection modes and cle
 | **Open in new window** | Opens all selected links in a new browser window instead of tabs. | `Off` |
 | **Open in reverse order** | Opens links in reverse order (bottom to top). | `Off` |
 | **Open next to current** | Opens new tabs immediately after the current tab instead of at the end. | `Off` |
-| **Allow activation on multiple tabs** | Permits selection mode to be active on multiple tabs simultaneously. | `Off` |
 | **Remember opened links** | Prevents re-opening of previously opened links (stores last 50 URLs). | `On` |
 | **Remove duplicates on copy** | Removes duplicate URLs when copying links to clipboard. | `On` |
+| **Apply exclusions on copy** | Applies domain and keyword exclusion filters when copying links (normally only applied when opening). | `Off` |
 | **Excluded Domains** | Comma-separated list of domains to ignore (e.g., `google.com, twitter.com`). | `(empty)` |
 | **Excluded Words** | Comma-separated list of keywords to ignore in link URLs (e.g., `logout, unsubscribe`). | `(empty)` |
-| **Import/Export Exclusions** | Backup and restore your exclusion lists via JSON files with conflict resolution. | `N/A` |
+| **Import/Export Exclusions** | Backup and restore your exclusion lists via JSON files with automatic conflict resolution. | `N/A` |
 | **Show in context menu** | Toggles the "Open/Copy Links" options in the right-click menu. | `On` |
 | **Language** | Switch the extension's display language between supported locales. | `Auto-detect` |
 | **Clear History** | A button to clear the list of links remembered by the "Remember opened links" feature. | `N/A` |
@@ -154,7 +155,7 @@ This extension was built with your privacy as a top priority.
 <details>
 <summary><strong>☁️ Sync Storage (<code>chrome.storage.sync</code>)</strong> - These settings are synced across all browsers where you are logged into your Chrome account.</summary>
 
--   Core settings including `tabLimit`, `selectionStyle`, `highlightStyle`, `openInNewWindow`, `openNextToParent`, `reverseOrder`, `allowMultiTabActivation`, `language`, and `showContextMenu`.
+-   Core settings including `tabLimit`, `selectionStyle`, `highlightStyle`, `openInNewWindow`, `openNextToParent`, `reverseOrder`, `applyExclusionsOnCopy`, `language`, and `showContextMenu`.
 </details>
 
 <details>
@@ -212,6 +213,7 @@ This extension was built with your privacy as a top priority.
 1.  Ensure your selection box covers actual, clickable `<a>` links.
 2.  Check your **Options Page** to see if the links are being blocked by your **Excluded Domains** or **Excluded Words** filters.
 3.  If you have "Remember opened links" enabled, try clearing the history via the Options Page or popup.
+4.  Verify that links are visible (not hidden with CSS) and have non-zero dimensions.
 </details>
 
 <details>
@@ -223,6 +225,7 @@ This extension was built with your privacy as a top priority.
 1. Try refreshing the page.
 2. If the issue persists, the extension will automatically inject scripts when you use the shortcut or context menu.
 3. Check if any other extensions might be interfering with page scripts.
+4. Verify that the page URL starts with `http://` or `https://`.
 </details>
 
 <details>
@@ -236,15 +239,26 @@ This extension was built with your privacy as a top priority.
 3. Close unnecessary tabs to free up browser resources.
 </details>
 
+<details>
+<summary><b>Clipboard copy operation fails</b></summary>
+  
+**Cause:** Modern browsers require secure contexts (HTTPS) for clipboard access, or permissions may be denied.
+
+**Solution:**
+1. Ensure you're on an HTTPS page (the extension includes a fallback for HTTP pages).
+2. If you see a permission error, allow clipboard access in your browser settings.
+3. The extension uses a fallback mechanism with `document.execCommand('copy')` for compatibility.
+</details>
+
 ---
 
 ## 📁 Project Structure
 
 ```
 Area_Links/
-├── 🌍 _locales/              # Language files for internationalization (i18n)
-│   ├── 🔤 en/messages.json   # English localization strings
-│   └── 🔤 ru/messages.json   # Russian localization strings
+├── 🌐 _locales/              # Language files for internationalization (i18n)
+│   ├── 📦 en/messages.json   # English localization strings
+│   └── 📦 ru/messages.json   # Russian localization strings
 ├── 🖼️ icons/                 # Application and branding icons
 │   ├── 🖼️ icon16.png         # Icon for browser toolbar (16x16)
 │   ├── 🖼️ icon48.png         # Icon for extensions management page (48x48)
@@ -268,15 +282,25 @@ Area_Links/
 ## 🔧 Technical Details
 
 ### Performance Optimizations
-- **IntersectionObserver API**: Efficiently tracks only visible links on the page, reducing memory usage on large pages.
-- **RequestAnimationFrame**: Smooth selection box rendering and link highlighting updates.
-- **Settings Cache**: Session storage cache minimizes repeated storage API calls.
-- **Lazy Script Injection**: Content scripts are injected on-demand only when needed.
+- **IntersectionObserver API**: Efficiently tracks only visible links on the page with a 200px margin, reducing memory usage on large pages.
+- **RequestAnimationFrame**: Smooth selection box rendering and link highlighting updates for optimal 60fps performance.
+- **Settings Cache**: Session storage cache minimizes repeated storage API calls and improves response time.
+- **Lazy Script Injection**: Content scripts are injected on-demand only when needed, reducing initial load impact.
+- **Efficient Link Caching**: Pre-calculates bounding rectangles during mousedown to avoid layout thrashing during selection.
+- **Smart Updates**: Debounced update scheduling prevents excessive DOM operations during mouse movement.
 
 ### Browser Compatibility
 - Built with **Manifest V3** for modern Chrome extensions
 - Requires Chrome/Chromium-based browsers (Chrome, Edge, Brave, etc.)
 - Minimum Chrome version: 88+
+- Fully compatible with the latest Chrome security requirements
+
+### Smart Behaviors
+- **Automatic Tab Switching Prevention**: Automatically resets selection when switching to a different tab
+- **Link Validation**: Filters out invalid links (anchors, javascript:, hidden elements, zero-size elements)
+- **Duplicate Detection**: Multiple mechanisms to prevent duplicate link opening/copying
+- **Context Awareness**: Different cursor styles and behaviors for open vs. copy modes
+- **Graceful Degradation**: Fallback clipboard copy method for non-secure contexts
 
 ---
 
