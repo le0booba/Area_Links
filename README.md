@@ -53,7 +53,7 @@
 
 ### Customization Options
 - 🎨 **4 Selection Box Styles**: Choose from Dashed Blue, Dashed Red, Solid Green, or Subtle Gray theme.
-- 🌈 **2 Highlight Styles**: Select between Classic Yellow or Dark Gray highlighting for selected links.
+- 🌈 **3 Highlight Styles**: Select between Classic Yellow, Dark Gray or Green highlighting for selected links.
 - 📂 **Flexible Opening Behavior**: 
   - Open links in new tabs or a completely new window
   - Position new tabs next to the current tab or at the end
