@@ -5,6 +5,11 @@ const DUPLICATE_CLASS = 'link-opener-duplicate-link';
 const LIMIT_EXCEEDED_CLASS = 'link-opener-limit-exceeded';
 const PREPARE_ANIMATION_CLASS = 'link-opener-prepare-animation';
 
+if (window.hasRunAreaLinks) {
+    throw new Error('Area Links content script already injected');
+}
+window.hasRunAreaLinks = true;
+
 const selectionState = {
     isActive: false,
     isSelecting: false,
@@ -18,8 +23,12 @@ const selectionState = {
     checkDuplicatesOnCopy: true,
     applyExclusionsOnCopy: false,
     useHistory: false,
+    useCopyHistory: false,
+    removeDuplicatesInSelection: true,
     linkHistory: [],
+    copyHistory: [],
     historySet: new Set(),
+    copyHistorySet: new Set(),
     excludedDomains: [],
     excludedWords: [],
 };
@@ -29,9 +38,7 @@ let selectionOverlay = null;
 let highlightedElements = new Set();
 let duplicateElements = new Set();
 let limitExceededElements = new Set();
-let linkObserver = null;
-let visibleLinks = new Set();
-let selectionCandidateLinks = new Set();
+let cachedLinks = [];
 
 function isValidLink(element) {
     const { href } = element;
@@ -49,41 +56,11 @@ function isValidLink(element) {
         return false;
     }
     
-    if (element.innerText.trim() === '' && !element.querySelector('img, svg')) {
+    if (element.textContent.trim() === '' && !element.querySelector('img, svg')) {
         return false;
     }
 
     return true;
-}
-
-function handleLinkIntersection(entries) {
-    entries.forEach(entry => {
-        if (entry.isIntersecting) {
-            visibleLinks.add(entry.target);
-        } else {
-            visibleLinks.delete(entry.target);
-        }
-    });
-}
-
-function initializeObserver() {
-    if (!linkObserver) {
-        linkObserver = new IntersectionObserver(handleLinkIntersection, {
-            rootMargin: '200px 0px 200px 0px'
-        });
-    }
-}
-
-function startLinkObserver() {
-    initializeObserver();
-    linkObserver.disconnect();
-    visibleLinks.clear();
-    
-    document.querySelectorAll('a[href]').forEach(link => {
-        if (isValidLink(link)) {
-            linkObserver.observe(link);
-        }
-    });
 }
 
 function createSelectionElements() {
@@ -123,13 +100,25 @@ function updateSelectionBox() {
 function isExcluded(url) {
     if (!url) return false;
     try {
-        const lowerCaseUrl = url.toLowerCase();
-        const urlHostname = new URL(url).hostname.toLowerCase();
+        const urlObj = new URL(url);
+        const urlHostname = urlObj.hostname.toLowerCase();
+        const decodedUrl = decodeURI(url).toLowerCase();
 
-        if (selectionState.excludedDomains.some(domain => urlHostname.includes(domain))) {
+        // Проверка доменов с учетом Punycode
+        if (selectionState.excludedDomains.some(domain => {
+            try {
+                // Конвертируем правило (например, "пример.рф") в Punycode ("xn--...") используя браузер
+                const domainPuny = new URL('http://' + domain).hostname.toLowerCase();
+                return urlHostname.includes(domainPuny);
+            } catch {
+                return urlHostname.includes(domain);
+            }
+        })) {
             return true;
         }
-        if (selectionState.excludedWords.some(word => lowerCaseUrl.includes(word))) {
+
+        // Проверка слов (с приведением к нижнему регистру)
+        if (selectionState.excludedWords.some(word => decodedUrl.includes(word.toLowerCase()))) {
             return true;
         }
     } catch {
@@ -139,28 +128,13 @@ function isExcluded(url) {
 }
 
 function getIntersectingLinks(selectionRect) {
-    visibleLinks.forEach(link => selectionCandidateLinks.add(link));
-    
     const intersecting = [];
-    const scrollX = window.scrollX;
-    const scrollY = window.scrollY;
-
-    for (const link of selectionCandidateLinks) {
-        const linkRect = link.getBoundingClientRect();
-        if (linkRect.width === 0 || linkRect.height === 0) continue;
-
-        const linkDocRect = {
-            left: linkRect.left + scrollX,
-            right: linkRect.right + scrollX,
-            top: linkRect.top + scrollY,
-            bottom: linkRect.bottom + scrollY,
-        };
-
-        if (linkDocRect.left < selectionRect.right &&
-            linkDocRect.right > selectionRect.left &&
-            linkDocRect.top < selectionRect.bottom &&
-            linkDocRect.bottom > selectionRect.top) {
-            intersecting.push(link);
+    for (const item of cachedLinks) {
+        if (item.left < selectionRect.right &&
+            item.right > selectionRect.left &&
+            item.top < selectionRect.bottom &&
+            item.bottom > selectionRect.top) {
+            intersecting.push(item.element);
         }
     }
     return intersecting;
@@ -184,15 +158,24 @@ function updateLinkHighlights(docRect) {
         const { href } = element;
         const isSeenInSelection = seenInSelection.has(href);
         const isSeenInHistory = selectionState.useHistory && selectionState.historySet.has(href);
+        const isSeenInCopyHistory = selectionState.useCopyHistory && selectionState.copyHistorySet.has(href);
         
         let isLinkExcluded = false;
         if (!selectionState.isCopyMode || selectionState.applyExclusionsOnCopy) {
             isLinkExcluded = isExcluded(href);
         }
 
-        const shouldBeFiltered = (selectionState.isCopyMode
-            ? selectionState.checkDuplicatesOnCopy && isSeenInSelection
-            : isSeenInSelection || isSeenInHistory) || isLinkExcluded;
+        let shouldBeFiltered = false;
+
+        if (selectionState.isCopyMode) {
+             shouldBeFiltered = (selectionState.checkDuplicatesOnCopy && isSeenInSelection) || 
+                                (selectionState.useCopyHistory && isSeenInCopyHistory) || 
+                                isLinkExcluded;
+        } else {
+             shouldBeFiltered = (selectionState.removeDuplicatesInSelection && isSeenInSelection) || 
+                                (selectionState.useHistory && isSeenInHistory) || 
+                                isLinkExcluded;
+        }
 
         const limitReached = !selectionState.isCopyMode && newHighlighted.size >= selectionState.tabLimit;
 
@@ -202,7 +185,7 @@ function updateLinkHighlights(docRect) {
             newLimitExceeded.add(element);
         } else {
             newHighlighted.add(element);
-            if (!selectionState.isCopyMode || selectionState.checkDuplicatesOnCopy) {
+            if (!selectionState.isCopyMode || selectionState.checkDuplicatesOnCopy || selectionState.removeDuplicatesInSelection) {
                 seenInSelection.add(href);
             }
         }
@@ -238,9 +221,6 @@ function clearHighlights() {
 function resetSelection() {
     const wasActive = selectionState.isActive;
 
-    if (linkObserver) {
-        linkObserver.disconnect();
-    }
     if (selectionBox) {
         selectionBox.style.display = 'none';
     }
@@ -262,15 +242,15 @@ function resetSelection() {
         currentCoords: { x: 0, y: 0 },
         tabLimit: 15,
         historySet: new Set(),
+        copyHistorySet: new Set(),
         excludedDomains: [],
         excludedWords: [],
     });
     
-    visibleLinks.clear();
+    cachedLinks = [];
     highlightedElements.clear();
     duplicateElements.clear();
     limitExceededElements.clear();
-    selectionCandidateLinks.clear();
 
     if (wasActive) {
         chrome.runtime.sendMessage({ type: 'selectionDeactivated' });
@@ -279,6 +259,10 @@ function resetSelection() {
 
 function copyLinksToClipboard(links) {
     const text = links.join('\n');
+    if (selectionState.useCopyHistory && links.length > 0) {
+        chrome.runtime.sendMessage({ type: "saveCopyHistory", urls: links });
+    }
+
     if (!navigator.clipboard || !window.isSecureContext) {
         const textarea = document.createElement('textarea');
         textarea.value = text;
@@ -335,6 +319,15 @@ function handleScroll() {
 }
 
 function handleMouseMove(e) {
+    if (selectionState.isSelecting && (e.buttons & 1) === 0) {
+        handleMouseUp({
+            button: 0,
+            preventDefault: () => {},
+            stopPropagation: () => {}
+        });
+        return;
+    }
+
     selectionState.currentCoords = { x: e.pageX, y: e.pageY };
     scheduleUpdate();
 }
@@ -369,7 +362,23 @@ function handleMouseDown(e) {
     selectionState.startCoords = { x: e.pageX, y: e.pageY };
     selectionState.currentCoords = { x: e.pageX, y: e.pageY };
     
-    selectionCandidateLinks.clear();
+    cachedLinks = [];
+    const scrollX = window.scrollX;
+    const scrollY = window.scrollY;
+
+    const allLinks = document.querySelectorAll('a[href]');
+    for (const link of allLinks) {
+        if (isValidLink(link)) {
+            const rect = link.getBoundingClientRect();
+            cachedLinks.push({
+                element: link,
+                left: rect.left + scrollX,
+                right: rect.right + scrollX,
+                top: rect.top + scrollY,
+                bottom: rect.bottom + scrollY
+            });
+        }
+    }
     
     selectionBox.className = selectionState.style;
     selectionBox.style.display = 'block';
@@ -406,8 +415,12 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     selectionState.checkDuplicatesOnCopy = request.checkDuplicatesOnCopy;
     selectionState.applyExclusionsOnCopy = request.applyExclusionsOnCopy;
     selectionState.useHistory = request.useHistory;
+    selectionState.useCopyHistory = request.useCopyHistory;
+    selectionState.removeDuplicatesInSelection = request.removeDuplicatesInSelection;
     selectionState.linkHistory = request.linkHistory || [];
+    selectionState.copyHistory = request.copyHistory || [];
     selectionState.historySet = new Set(selectionState.linkHistory);
+    selectionState.copyHistorySet = new Set(selectionState.copyHistory);
     selectionState.highlightStyle = request.highlightStyle;
     selectionState.excludedDomains = request.excludedDomains || [];
     selectionState.excludedWords = request.excludedWords || [];
@@ -419,7 +432,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     selectionState.isActive = true;
     selectionState.style = request.style;
     
-    startLinkObserver();
     createSelectionElements();
     selectionOverlay.style.display = 'block';
 
@@ -429,3 +441,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     sendResponse({ success: true, message: "Selection initiated" });
     return true;
 });
+
+window.addEventListener('popstate', resetSelection);
+window.addEventListener('hashchange', resetSelection);
+window.addEventListener('pagehide', resetSelection);

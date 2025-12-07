@@ -1,7 +1,8 @@
 const QUICK_SETTINGS_CONFIG = [
-    { id: 'popup-openInNewWindow', key: 'openInNewWindow', default: false, storage: 'sync' },
     { id: 'popup-openNextToParent', key: 'openNextToParent', default: false, storage: 'sync' },
+    { id: 'popup-removeDuplicatesInSelection', key: 'removeDuplicatesInSelection', default: true, storage: 'sync' },
     { id: 'popup-useHistory', key: 'useHistory', default: true, storage: 'local' },
+    { id: 'popup-useCopyHistory', key: 'useCopyHistory', default: false, storage: 'local' },
     { id: 'popup-checkDuplicatesOnCopy', key: 'checkDuplicatesOnCopy', default: true, storage: 'local' },
 ];
 
@@ -93,7 +94,7 @@ async function initialize() {
 
     const [syncItems, localItems] = await Promise.all([
         chrome.storage.sync.get([...syncKeys, 'language']),
-        chrome.storage.local.get([...localKeys, 'linkHistory'])
+        chrome.storage.local.get([...localKeys, 'linkHistory', 'copyHistory'])
     ]);
 
     const allSettings = { ...syncItems, ...localItems };
@@ -115,7 +116,7 @@ async function initialize() {
         titleEl.title = versionTitle;
     }
 
-    clearHistoryBtn.disabled = !localItems.linkHistory || localItems.linkHistory.length === 0;
+    clearHistoryBtn.disabled = (!localItems.linkHistory || localItems.linkHistory.length === 0) && (!localItems.copyHistory || localItems.copyHistory.length === 0);
 
     QUICK_SETTINGS_CONFIG.forEach(config => {
         const el = document.getElementById(config.id);
@@ -143,7 +144,7 @@ async function initialize() {
         window.close();
     });
     clearHistoryBtn.addEventListener('click', () => {
-        chrome.storage.local.set({ linkHistory: [] }).then(() => {
+        chrome.storage.local.set({ linkHistory: [], copyHistory: [] }).then(() => {
             clearHistoryBtn.disabled = true;
             showStatus('optionsStatusHistoryCleared');
         });

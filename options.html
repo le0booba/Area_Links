@@ -28,6 +28,7 @@
         <main>
             <section class="card">
                 <h2 data-i18n="optionsHeaderBehavior">Behavior</h2>
+                
                 <div class="setting-row">
                     <label for="tabLimit" data-i18n="optionsTabLimit">Maximum Tabs to Open at Once:</label>
                     <input type="number" id="tabLimit" min="1" max="50">
@@ -44,14 +45,40 @@
                     <label for="openNextToParent" data-i18n="popupOpenNextToParent"></label>
                     <label class="switch"><input type="checkbox" id="openNextToParent"><span class="slider"></span></label>
                 </div>
-                <div class="setting-row toggle-row">
-                    <label for="useHistory" data-i18n="optionsUseHistory">Remember opened links</label>
-                    <label class="switch"><input type="checkbox" id="useHistory"><span class="slider"></span></label>
+
+                <div class="settings-divider"></div>
+
+                <div class="settings-columns">
+                    <div class="settings-column">
+                        <div class="column-header">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                            <span data-i18n="optionsColumnOpen">[OPEN]</span>
+                        </div>
+                        <div class="setting-row toggle-row">
+                            <label for="useHistory" data-i18n="optionsUseHistory">Remember opened links</label>
+                            <label class="switch"><input type="checkbox" id="useHistory"><span class="slider"></span></label>
+                        </div>
+                        <div class="setting-row toggle-row">
+                            <label for="removeDuplicatesInSelection" data-i18n="optionsRemoveDuplicatesInSelection">Remove duplicates when opening</label>
+                            <label class="switch"><input type="checkbox" id="removeDuplicatesInSelection"><span class="slider"></span></label>
+                        </div>
+                    </div>
+                    <div class="settings-column">
+                        <div class="column-header">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                            <span data-i18n="optionsColumnCopy">[COPY]</span>
+                        </div>
+                        <div class="setting-row toggle-row">
+                            <label for="useCopyHistory" data-i18n="optionsUseCopyHistory">Remember copied links</label>
+                            <label class="switch"><input type="checkbox" id="useCopyHistory"><span class="slider"></span></label>
+                        </div>
+                        <div class="setting-row toggle-row">
+                            <label for="checkDuplicatesOnCopy" data-i18n="optionsCheckDuplicatesOnCopy">Remove duplicates when copying</label>
+                            <label class="switch"><input type="checkbox" id="checkDuplicatesOnCopy"><span class="slider"></span></label>
+                        </div>
+                    </div>
                 </div>
-                <div class="setting-row toggle-row">
-                    <label for="checkDuplicatesOnCopy" data-i18n="optionsCheckDuplicatesOnCopy">Remove duplicates on copy</label>
-                    <label class="switch"><input type="checkbox" id="checkDuplicatesOnCopy"><span class="slider"></span></label>
-                </div>
+
                 <div class="card-footer">
                     <div id="status-behavior" class="status-message"></div>
                     <div class="control-wrapper">
@@ -126,6 +153,7 @@
                     <label for="highlightStyle" data-i18n="optionsHighlightStyle"></label>
                     <select id="highlightStyle">
                         <option value="classic-yellow" data-i18n="optionsHighlightStyleClassicYellow"></option>
+                        <option value="green-highlighter" data-i18n="optionsHighlightStyleGreenHighlighter"></option>
                         <option value="dark-gray" data-i18n="optionsHighlightStyleDarkGray"></option>
                     </select>
                 </div>
@@ -142,8 +170,7 @@
                 <h2 data-i18n="optionsHowToUseTitle">How to Use</h2>
                 <p><span data-i18n="optionsHowToUseOpen"></span> <kbd>Alt + Z</kbd> <span data-i18n="optionsHowToUseOpenDetail"></span></p>
                 <p><span data-i18n="optionsHowToUseCopy"></span> <kbd>Alt + X</kbd> <span data-i18n="optionsHowToUseCopyDetail"></span></p>
-                <p><i><span data-i18n="optionsHowToUseShortcuts_part1"></span></i></p>
-                <p><span data-i18n="optionsHowToUseShortcuts_part2"></span> <a href="chrome://extensions/shortcuts" id="shortcutsLink" target="_blank">chrome://extensions/shortcuts</a></p>
+                <p><span data-i18n="optionsHowToUseShortcuts"></span> <a href="chrome://extensions/shortcuts" id="shortcutsLink" target="_blank">chrome://extensions/shortcuts</a></p>
             </section>
         </main>
         <footer>

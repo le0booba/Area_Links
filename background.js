@@ -9,12 +9,15 @@ const SYNC_DEFAULTS = {
   applyExclusionsOnCopy: false,
   language: 'en',
   showContextMenu: true,
+  removeDuplicatesInSelection: true,
 };
 const LOCAL_DEFAULTS = {
   excludedDomains: '',
   excludedWords: '',
   linkHistory: [],
+  copyHistory: [],
   useHistory: true,
+  useCopyHistory: false,
   checkDuplicatesOnCopy: true,
 };
 
@@ -57,13 +60,13 @@ async function setupContextMenu() {
         id: "activate-selection-menu",
         title: `${i18n("cmdActivate")}${activateShortcut ? ` (${activateShortcut})` : ''}`,
         contexts: ["page"]
-    });
+    }, () => chrome.runtime.lastError);
 
     chrome.contextMenus.create({
         id: "activate-selection-copy-menu",
         title: `${i18n("cmdActivateCopy")}${copyShortcut ? ` (${copyShortcut})` : ''}`,
         contexts: ["page"]
-    });
+    }, () => chrome.runtime.lastError);
 }
 
 async function checkAndApplyBrowserLanguage() {
@@ -148,7 +151,10 @@ async function triggerSelection(tab, commandType) {
         checkDuplicatesOnCopy: settings.checkDuplicatesOnCopy,
         applyExclusionsOnCopy: settings.applyExclusionsOnCopy,
         useHistory: settings.useHistory,
+        useCopyHistory: settings.useCopyHistory,
+        removeDuplicatesInSelection: settings.removeDuplicatesInSelection,
         linkHistory: settings.useHistory ? settings.linkHistory : [],
+        copyHistory: settings.useCopyHistory ? settings.copyHistory : [],
         excludedDomains: settings.excludedDomains.split(',').map(d => d.trim().toLowerCase()).filter(Boolean),
         excludedWords: settings.excludedWords.split(',').map(w => w.trim().toLowerCase()).filter(Boolean),
     };
@@ -196,6 +202,15 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.type === "openLinks") {
         processLinks(request.urls, sender.tab);
     }
+    
+    if (request.type === "saveCopyHistory") {
+        getSettings().then(settings => {
+            if (settings.useCopyHistory) {
+                const newHistory = [...request.urls, ...settings.copyHistory].slice(0, HISTORY_LIMIT);
+                chrome.storage.local.set({ copyHistory: newHistory });
+            }
+        });
+    }
 
     if (request.type === 'triggerSelectionFromPopup') {
          chrome.tabs.query({ active: true, currentWindow: true }).then(([tab]) => {
@@ -214,11 +229,16 @@ async function processLinks(urls, tab) {
     const settings = await getSettings();
     const excludedDomains = settings.excludedDomains.split(',').map(d => d.trim().toLowerCase()).filter(Boolean);
     const excludedWords = settings.excludedWords.split(',').map(w => w.trim().toLowerCase()).filter(Boolean);
-    let uniqueUrls = [...new Set(urls)];
-    if (settings.reverseOrder) {
-        uniqueUrls.reverse();
+    
+    let urlsToProcess = urls;
+    if (settings.removeDuplicatesInSelection) {
+        urlsToProcess = [...new Set(urls)];
     }
-    const filteredUrls = uniqueUrls.filter(url => {
+    
+    if (settings.reverseOrder) {
+        urlsToProcess.reverse();
+    }
+    const filteredUrls = urlsToProcess.filter(url => {
         if (settings.useHistory && settings.linkHistory.includes(url)) {
             return false;
         }

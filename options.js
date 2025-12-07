@@ -8,15 +8,18 @@ const SETTINGS_CONFIG = {
     applyExclusionsOnCopy: { default: false, storage: 'sync' },
     language: { default: 'en', storage: 'sync' },
     showContextMenu: { default: true, storage: 'sync' },
+    removeDuplicatesInSelection: { default: true, storage: 'sync' },
     excludedDomains: { default: '', storage: 'local' },
     excludedWords: { default: '', storage: 'local' },
     useHistory: { default: true, storage: 'local' },
+    useCopyHistory: { default: false, storage: 'local' },
     checkDuplicatesOnCopy: { default: true, storage: 'local' },
 };
 
 let messages = {};
 let savedExcludedDomains = '';
 let savedExcludedWords = '';
+const saveTimers = {};
 
 async function loadLanguage(lang) {
     try {
@@ -100,7 +103,7 @@ async function restoreOptions() {
     document.getElementById('highlightStyle').value = settings.highlightStyle;
     document.getElementById('language-select').value = settings.language;
     
-    ['openInNewWindow', 'reverseOrder', 'openNextToParent', 'applyExclusionsOnCopy', 'useHistory', 'checkDuplicatesOnCopy', 'showContextMenu'].forEach(id => {
+    ['openInNewWindow', 'reverseOrder', 'openNextToParent', 'applyExclusionsOnCopy', 'useHistory', 'checkDuplicatesOnCopy', 'showContextMenu', 'removeDuplicatesInSelection', 'useCopyHistory'].forEach(id => {
         const el = document.getElementById(id);
         if (el) {
             el.checked = settings[id];
@@ -123,10 +126,11 @@ async function restoreOptions() {
         detailsEl.open = false;
     }
 
-    chrome.storage.local.get('linkHistory', (items) => {
+    chrome.storage.local.get(['linkHistory', 'copyHistory'], (items) => {
         const clearHistoryButton = document.getElementById('clearHistory');
         if (clearHistoryButton) {
-            clearHistoryButton.disabled = !items.linkHistory || items.linkHistory.length === 0;
+            const hasLinks = (items.linkHistory && items.linkHistory.length > 0) || (items.copyHistory && items.copyHistory.length > 0);
+            clearHistoryButton.disabled = !hasLinks;
         }
     });
 
@@ -142,18 +146,34 @@ function saveExclusions() {
     const domainsTextarea = document.getElementById('excludedDomains');
     const wordsTextarea = document.getElementById('excludedWords');
 
-    const processExclusionString = (str) => {
-        return str.split(',')
+    const sanitizeDomains = (str) => {
+        let cleaned = str.replace(/[\r\n\s]+/g, ',');
+        cleaned = cleaned.replace(/https?:\/\//gi, '');
+        cleaned = cleaned.replace(/[^\p{L}\p{N}\.\-,]/gu, '');
+        
+        return cleaned.split(',')
+            .map(item => item.trim())
+            .filter(item => item)
+            .join(',');
+    };
+
+    const sanitizeWords = (str) => {
+        let cleaned = str.replace(/[\r\n\s]+/g, ',');
+        cleaned = cleaned.replace(/[^\p{L}\p{N}\.\-_~!$&'()*+,;=:@%\/]/gu, '');
+        return cleaned.split(',')
             .map(item => item.trim())
             .filter(item => item)
             .join(',');
     };
     
-    const domainsToSave = processExclusionString(domainsTextarea.value);
-    const wordsToSave = processExclusionString(wordsTextarea.value);
+    const domainsToSave = sanitizeDomains(domainsTextarea.value);
+    const wordsToSave = sanitizeWords(wordsTextarea.value);
 
     domainsTextarea.value = domainsToSave;
     wordsTextarea.value = wordsToSave;
+
+    updateClearButtonsState();
+    updateExportButtonState();
 
     const settingsToSave = { excludedDomains: domainsToSave, excludedWords: wordsToSave };
     chrome.storage.local.set(settingsToSave).then(() => {
@@ -174,7 +194,7 @@ function saveExclusions() {
 }
 
 function clearHistory() {
-    chrome.storage.local.set({ linkHistory: [] })
+    chrome.storage.local.set({ linkHistory: [], copyHistory: [] })
         .then(() => {
             showStatus('status-history', messages.optionsStatusHistoryCleared, false, 3000);
             document.getElementById('clearHistory').disabled = true;
@@ -340,17 +360,25 @@ function setupEventListeners() {
         }
 
         const storageArea = chrome.storage[config.storage];
-        storageArea.set({ [id]: value }).then(() => {
-            if (id.startsWith('popup-')) return;
-            if (['selectionStyle', 'showContextMenu', 'highlightStyle'].includes(id)) {
-                statusId = 'status-appearance';
-            } else if (id === 'applyExclusionsOnCopy') {
-                statusId = 'status-exclusions';
-            } else {
-                statusId = 'status-behavior';
-            }
-            if(statusId) showStatus(statusId, messages.optionsStatusSettingSaved);
-        });
+        
+        if (saveTimers[id]) {
+            clearTimeout(saveTimers[id]);
+        }
+
+        saveTimers[id] = setTimeout(() => {
+            storageArea.set({ [id]: value }).then(() => {
+                if (id.startsWith('popup-')) return;
+                if (['selectionStyle', 'showContextMenu', 'highlightStyle'].includes(id)) {
+                    statusId = 'status-appearance';
+                } else if (id === 'applyExclusionsOnCopy') {
+                    statusId = 'status-exclusions';
+                } else {
+                    statusId = 'status-behavior';
+                }
+                if(statusId) showStatus(statusId, messages.optionsStatusSettingSaved);
+            });
+            delete saveTimers[id];
+        }, 400);
     });
 }
 

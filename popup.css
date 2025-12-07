@@ -12,16 +12,16 @@
 }
 
 body {
-    width: 250px;
+    width: 240px;
     margin: 0;
     box-sizing: border-box;
     background-color: var(--bg-color);
     color: var(--text-color);
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
 
 .container {
-    padding: 6px;
+    padding: 4px;
 }
 
 header {
@@ -50,19 +50,20 @@ h1 {
     margin: 0;
     margin-top: 4px;
     font-size: 1.25em;
-    font-weight: 300;
+    font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace;
 }
 
 .header-controls {
     display: flex;
     align-items: center;
-    gap: 0;
+    gap: 12px;
+    margin-right: 6px;
 }
 
 #status-message {
     margin-top: 3px;
     margin-right: 4px;
-    min-width: 50px;
+    min-width: 20px;
     text-align: right;
     color: var(--primary-color);
     font-size: 1.2em;
@@ -74,11 +75,102 @@ h1 {
     cursor: default;
 }
 
-.quick-settings-container {
-    padding: 6px 10px;
+.header-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 28px;
+    margin: 0;
+    padding: 0;
+    background: transparent;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: color 0.2s, border-color 0.2s, opacity 0.2s;
+    margin-top: 2px;
+}
+
+.header-btn:hover:not(:disabled) {
+    color: var(--text-color);
+    border-color: var(--primary-color);
+}
+
+.header-btn:disabled {
+    cursor: default;
+    opacity: 0.4;
+}
+
+#clear-history-popup {
+    color: var(--danger-color);
+}
+
+#clear-history-popup:hover:not(:disabled) {
+    color: #f56565;
+    border: 1px solid var(--danger-hover);
+}
+
+.mode-row {
+    display: flex;
+    align-items: stretch;
     background-color: var(--card-bg);
     border: 1px solid var(--border-color);
     border-radius: 8px;
+    overflow: hidden;
+}
+
+.action-btn-popup {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    width: 60px;
+    padding: 6px 4px;
+    box-sizing: border-box;
+    background: rgba(0, 0, 0, 0.1);
+    border: none;
+    border-right: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: color 0.2s, background-color 0.2s, opacity 0.2s;
+}
+
+.action-btn-popup:hover:not(:disabled) {
+    color: var(--text-color);
+    background: rgba(0, 0, 0, 0.2);
+}
+
+.action-btn-popup:disabled {
+    cursor: default;
+    opacity: 0.5;
+}
+
+.mode-label {
+    font-size: 0.65em;
+    font-weight: 700;
+    margin-bottom: 2px;
+    text-transform: uppercase;
+    text-align: center;
+    letter-spacing: 1px;
+}
+
+.action-btn-popup .shortcut {
+    font-size: 0.7em;
+    font-weight: 500;
+    font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace;
+    text-align: center;
+    line-height: 1.2;
+}
+
+.settings-group {
+    flex-grow: 1;
+    padding: 6px 10px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-width: 0;
 }
 
 .setting-row {
@@ -95,7 +187,7 @@ h1 {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    font-size: 0.95em;
+    font-size: 1.05em;
     color: var(--text-color);
 }
 
@@ -103,127 +195,19 @@ h1 {
     height: 1px;
     margin: 4px 0;
     background-color: var(--border-color);
+    opacity: 0.3;
 }
 
-footer {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    height: 45px;
-    margin-top: 6px;
-}
-
-.action-buttons-group {
-    display: flex;
-    gap: 6px;
-    width: min-content;
-}
-
-.action-btn-popup {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 3px;
-    width: 85px;
-    height: 45px;
-    margin: 0 0 2px 0;
-    padding: 4px;
-    box-sizing: border-box;
-    background: transparent;
-    border: 1px solid var(--border-color);
-    border-radius: 6px;
-    color: var(--text-secondary);
-    cursor: pointer;
-    transition: all 0.2s;
-}
-
-.action-btn-popup:hover {
-    color: var(--text-color);
-    border-color: var(--primary-color);
-}
-
-.action-btn-popup:disabled {
-    cursor: default;
-    opacity: 0.5;
-}
-
-.action-btn-popup .shortcut {
-    font-size: 0.75em;
-    font-weight: 500;
-    font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace;
-}
-
-.secondary-actions-group {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    margin-right: 12px;
-}
-
-#clear-history-popup {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 32px;
-    height: 28px;
-    margin: 0;
-    padding: 0;
-    background: transparent;
-    border: 1px solid var(--border-color);
-    border-radius: 6px;
-    color: var(--danger-color);
-    cursor: pointer;
-    transition: all 0.2s;
-    margin-top: 2px;
-}
-
-#open-options {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 30px;
-    height: 26px;
-    margin: 0;
-    padding: 0;
-    background: transparent;
-    border: 1px solid var(--border-color);
-    border-radius: 6px;
-    color: var(--text-secondary);
-    cursor: pointer;
-    transition: all 0.2s;
-    margin-top: 2px;
-    margin-right: 6px;
-}
-
-#open-options svg {
-    width: 16px;
-    height: 16px;
-}
-
-#open-options:hover {
-    color: var(--text-color);
-    border-color: var(--primary-color);
-}
-
-#clear-history-popup:hover:not(:disabled) {
-    color: #f56565;
-    border-color: var(--primary-color);
-    border: 1px solid var(--danger-hover);
-}
-
-#clear-history-popup:disabled {
-    cursor: default;
-    opacity: 0.4;
-    cursor: default;
+.section-spacer {
+    height: 4px;
 }
 
 .switch {
     position: relative;
     display: inline-block;
     flex-shrink: 0;
-    width: 32px;
-    height: 18px;
+    width: 28px;
+    height: 16px;
 }
 
 .switch input {
@@ -237,21 +221,21 @@ footer {
     right: 0;
     bottom: 0;
     background-color: var(--slider-bg);
-    border-radius: 18px;
+    border-radius: 16px;
     cursor: pointer;
-    transition: .4s;
+    transition: background-color 0.4s;
 }
 
 .slider:before {
     position: absolute;
     content: "";
-    height: 14px;
-    width: 14px;
+    height: 12px;
+    width: 12px;
     left: 2px;
     bottom: 2px;
     background-color: white;
     border-radius: 50%;
-    transition: .4s;
+    transition: transform 0.4s;
 }
 
 input:checked+.slider {
@@ -259,5 +243,5 @@ input:checked+.slider {
 }
 
 input:checked+.slider:before {
-    transform: translateX(14px);
+    transform: translateX(12px);
 }
