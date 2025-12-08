@@ -2,8 +2,8 @@
 
 <div align="center">
   <div style="display: flex; justify-content: center; align-items: center; gap: 10px; flex-wrap: wrap;">
-    <img src="https://raw.githubusercontent.com/le0booba/Area_Links/refs/heads/main/screen-options-popup.png" alt="Area Links Screenshot 1" width="280"/>
-    <img src="https://raw.githubusercontent.com/le0booba/Area_Links/refs/heads/main/screen-options.png" alt="Area Links Screenshot 2" width="400"/>
+    <img src="https://raw.githubusercontent.com/le0booba/Area_Links/refs/heads/main/screen-options-popup-1.png" alt="Area Links Screenshot 1" width="280"/>
+    <img src="https://raw.githubusercontent.com/le0booba/Area_Links/refs/heads/main/screen-options-2.png" alt="Area Links Screenshot 2" width="400"/>
   </div>
   
   **Select. Open. Done**
@@ -47,26 +47,26 @@
 ### Core Functionality
 - 🎯 **Visual Area Selection**: An intuitive drag-and-drop interface to select links.
 - 🚀 **Dual Operation Modes**: Seamlessly switch between opening links in new tabs or copying them to your clipboard.
-- ✨ **Visual Highlighting**: Instantly see which links are inside your selection box before you commit with two color themes.
+- ✨ **Visual Highlighting**: Instantly see which links are inside your selection box before you commit with three color themes.
 - 🔗 **Smart Filtering**: Automatically ignores non-http, anchor (`#`), and javascript links, as well as hidden or zero-size elements.
 - 🖱️ **Context Menu Integration**: Activate selection using the right-click menu on any page.
 
 ### Customization Options
 - 🎨 **4 Selection Box Styles**: Choose from Dashed Blue, Dashed Red, Solid Green, or Subtle Gray theme.
-- 🌈 **3 Highlight Styles**: Select between Classic Yellow, Dark Gray or Green highlighting for selected links.
+- 🌈 **3 Highlight Styles**: Select between Classic Yellow, Green Highlighter or Dark Gray highlighting for selected links.
 - 📂 **Flexible Opening Behavior**: 
   - Open links in new tabs or a completely new window
   - Position new tabs next to the current tab or at the end
   - Open links in reverse order
 - 🚫 **Advanced Exclusion Filters**: Exclude links from specific domains or URLs containing certain keywords with import/export functionality.
 - ⚙️ **Configurable Tab Limit**: Set a maximum number of tabs to open at once to prevent browser overload (from 1 to 50).
-- 🧠 **Duplicate Prevention**: Option to remember recently opened links to avoid opening the same ones again (stores up to 50 URLs).
+- 🧠 **Separate History Tracking**: Independent history for opened and copied links with option to remember up to 50 URLs for each mode.
 - 🌐 **Multi-Language Support**: Full UI localization in English and Russian with automatic language detection.
 
 <details>
 <summary><b>User Experience Enhancements</b></summary>
 
-- 📱 **Quick Settings Popup**: Click the toolbar icon for a compact menu to toggle common settings on the fly.
+- 📱 **Quick Settings Popup**: Click the toolbar icon for a compact menu to toggle common settings on the fly with separate controls for Open and Copy modes.
 - 💾 **Cross-Device Sync**: Your core settings are synced to your Chrome account, providing a consistent experience everywhere.
 - 🗑️ **History Management**: Easily clear the list of "remembered" links directly from the options page or popup.
 - 📥📤 **Import/Export Exclusions**: Backup and restore your exclusion lists with JSON file support and automatic conflict resolution.
@@ -96,10 +96,15 @@ This extension is perfect for:
 
 ### Quick Settings (Extension Popup)
 Click the extension icon in your toolbar for instant access to toggle:
--   `Open in new window`
+
+**Open Mode Settings:**
 -   `Open next to current`
 -   `Remember opened links`
--   `Remove duplicates on copy`
+-   `Remove duplicates`
+
+**Copy Mode Settings:**
+-   `Remember copied links`
+-   `Remove duplicates`
 
 The popup also provides quick action buttons to activate selection modes and clear link history.
 
@@ -112,19 +117,21 @@ The popup also provides quick action buttons to activate selection modes and cle
 |---|---|---|
 | **Tab Limit** | Set the maximum number of tabs to open in a single action. | `15` |
 | **Selection Style** | Changes the visual appearance of the selection box. Options: Dashed Blue, Dashed Red, Solid Green, Subtle Gray. | `Dashed Blue` |
-| **Highlight Style** | Changes the color scheme for highlighted links within selection. Options: Classic Yellow, Dark Gray. | `Classic Yellow` |
+| **Highlight Style** | Changes the color scheme for highlighted links within selection. Options: Classic Yellow, Green Highlighter, Dark Gray. | `Classic Yellow` |
 | **Open in new window** | Opens all selected links in a new browser window instead of tabs. | `Off` |
 | **Open in reverse order** | Opens links in reverse order (bottom to top). | `Off` |
 | **Open next to current** | Opens new tabs immediately after the current tab instead of at the end. | `Off` |
 | **Remember opened links** | Prevents re-opening of previously opened links (stores last 50 URLs). | `On` |
-| **Remove duplicates on copy** | Removes duplicate URLs when copying links to clipboard. | `On` |
+| **Remember copied links** | Prevents re-copying of previously copied links (stores last 50 URLs). | `Off` |
+| **Remove duplicates (Open)** | Removes duplicate URLs within the current selection when opening. | `On` |
+| **Remove duplicates (Copy)** | Removes duplicate URLs within the current selection when copying. | `On` |
 | **Apply exclusions on copy** | Applies domain and keyword exclusion filters when copying links (normally only applied when opening). | `Off` |
-| **Excluded Domains** | Comma-separated list of domains to ignore (e.g., `google.com, twitter.com`). | `(empty)` |
+| **Excluded Domains** | Comma-separated list of domains to ignore (e.g., `google.com, twitter.com`). Supports international domains with Punycode conversion. | `(empty)` |
 | **Excluded Words** | Comma-separated list of keywords to ignore in link URLs (e.g., `logout, unsubscribe`). | `(empty)` |
 | **Import/Export Exclusions** | Backup and restore your exclusion lists via JSON files with automatic conflict resolution. | `N/A` |
 | **Show in context menu** | Toggles the "Open/Copy Links" options in the right-click menu. | `On` |
 | **Language** | Switch the extension's display language between supported locales. | `Auto-detect` |
-| **Clear History** | A button to clear the list of links remembered by the "Remember opened links" feature. | `N/A` |
+| **Clear History** | A button to clear the list of links remembered by both "Remember opened links" and "Remember copied links" features. | `N/A` |
 
 ###### HISTORY_LIMIT = 50 (const)
 
@@ -146,16 +153,18 @@ This extension was built with your privacy as a top priority.
 <summary><strong>🏠 Local Storage (<code>chrome.storage.local</code>)</strong> - This data is stored only on your computer and is NOT synced to your Google Account.</summary>
 
 -   `linkHistory`: Stores a list of the last 50 unique URLs you opened using the extension, if `useHistory` is enabled.
+-   `copyHistory`: Stores a list of the last 50 unique URLs you copied using the extension, if `useCopyHistory` is enabled.
 -   `excludedDomains`: Comma-separated list of domains to exclude from link operations.
 -   `excludedWords`: Comma-separated list of keywords to exclude from link URLs.
 -   `useHistory`: A true/false setting for whether to remember opened links.
+-   `useCopyHistory`: A true/false setting for whether to remember copied links.
 -   `checkDuplicatesOnCopy`: A true/false setting for whether to remove duplicate links when copying.
 </details>
 
 <details>
 <summary><strong>☁️ Sync Storage (<code>chrome.storage.sync</code>)</strong> - These settings are synced across all browsers where you are logged into your Chrome account.</summary>
 
--   Core settings including `tabLimit`, `selectionStyle`, `highlightStyle`, `openInNewWindow`, `openNextToParent`, `reverseOrder`, `applyExclusionsOnCopy`, `language`, and `showContextMenu`.
+-   Core settings including `tabLimit`, `selectionStyle`, `highlightStyle`, `openInNewWindow`, `openNextToParent`, `reverseOrder`, `applyExclusionsOnCopy`, `removeDuplicatesInSelection`, `language`, and `showContextMenu`.
 </details>
 
 <details>
@@ -298,9 +307,10 @@ Area_Links/
 ### Smart Behaviors
 - **Automatic Tab Switching Prevention**: Automatically resets selection when switching to a different tab
 - **Link Validation**: Filters out invalid links (anchors, javascript:, hidden elements, zero-size elements)
-- **Duplicate Detection**: Multiple mechanisms to prevent duplicate link opening/copying
+- **Duplicate Detection**: Multiple mechanisms to prevent duplicate link opening/copying with separate history tracking for each mode
 - **Context Awareness**: Different cursor styles and behaviors for open vs. copy modes
 - **Graceful Degradation**: Fallback clipboard copy method for non-secure contexts
+- **International Domain Support**: Proper handling of international domains with automatic Punycode conversion for exclusion filters
 
 ---
 
