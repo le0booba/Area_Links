@@ -1,2 +1,234 @@
-# Area_Links
-Area Links (Chrome Extension)
+# Area Links
+
+<div align="center">
+  <div style="display: flex; justify-content: center; align-items: center; gap: 10px; flex-wrap: wrap;">
+    <img src="https://raw.githubusercontent.com/le0booba/Area_Links/refs/heads/main/screen-options-popup.png" alt="Area Links Screenshot 1" width="280"/>
+    <img src="https://raw.githubusercontent.com/le0booba/Area_Links/refs/heads/main/screen-options.png" alt="Area Links Screenshot 2" width="400"/>
+  </div>
+  
+  **Select. Open. Done**
+  
+  Select any area on a webpage and open or copy all links inside with one action.
+
+  ![Chrome Extension](https://img.shields.io/badge/Chrome-Extension-blue?logo=googlechrome)
+  ![Manifest V3](https://img.shields.io/badge/Manifest-V3-brightgreen)
+  ![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
+</div>
+
+---
+
+## 🚀 Quick Start
+
+### Installation
+
+1.  **Download** the [LATEST RELEASE](https://github.com/le0booba/Area_Links/releases/latest) from GitHub.
+2.  **Extract** the ZIP file to a permanent folder on your computer.
+3.  **Open Chrome** and navigate to the extensions page: `chrome://extensions/`.
+4.  **Enable "Developer mode"** using the toggle switch in the top-right corner.
+5.  **Click "Load unpacked"** and select the folder where you extracted the files.
+6.  **Done!** The Area Links icon will now be available in your browser's toolbar.
+
+### Basic Usage
+
+| Action             | Default Shortcut | Mouse Action                             |
+| ------------------ | ---------------- | ---------------------------------------- |
+| **Open Links**     | `Alt+Z`          | Hold shortcut, drag a box, then release. |
+| **Copy Links**     | `Alt+X`          | Hold shortcut, drag a box, then release. |
+| **Cancel Selection** | `Esc`            | Press `Esc` key during an active selection. |
+
+> **Tip:** You can customize keyboard shortcuts anytime at `chrome://extensions/shortcuts`.
+
+> **Note:** The extension does not work on Chrome system pages (New Tab page, Settings, Extensions page, etc.).
+
+---
+
+## 🌟 Features
+
+### Core Features
+- 🎯 **Visual Area Selection**: Drag-and-drop interface to select links on any webpage.
+- 🚀 **Dual Operation Modes**: Open links in new tabs or copy them to your clipboard.
+- ✨ **Visual Highlighting**: See which links are inside your selection box with three color themes (Classic Yellow, Green Highlighter, Dark Gray).
+- 🎨 **4 Selection Box Styles**: Choose from Dashed Blue, Dashed Red, Solid Green, or Subtle Gray.
+- 🔗 **Smart Filtering**: Automatically ignores non-http, anchor (`#`), and javascript links, as well as hidden or zero-size elements.
+- 🖱️ **Context Menu Integration**: Activate selection using the right-click menu on any page.
+- 📂 **Flexible Opening Behavior**: Open links in new tabs or a completely new window, position new tabs next to the current tab or at the end, open links in reverse order.
+- ⚙️ **Configurable Tab Limit**: Set a maximum number of tabs to open at once (from 1 to 50).
+
+### Advanced Options
+- 🚫 **Exclusion Filters**: Exclude links from specific domains or URLs containing certain keywords.
+- 📥📤 **Import/Export Exclusions**: Backup and restore your exclusion lists with JSON file support and automatic conflict resolution.
+- 🧠 **History Tracking**: Separate history for opened and copied links with option to remember up to 50 URLs for each mode.
+- 🗑️ **Duplicate Detection**: Remove duplicate URLs within the current selection or prevent re-opening previously opened links.
+- 💾 **Cross-Device Sync**: Your core settings are synced to your Chrome account.
+- 📱 **Quick Settings Popup**: Click the toolbar icon for instant access to common settings with separate controls for Open and Copy modes.
+- 🌐 **Multi-Language Support**: Full UI localization in English and Russian with automatic language detection.
+- 🎭 **Custom Cursors**: Dedicated cursor styles for copy and open modes for clear visual feedback.
+- 🎬 **Smooth Animations**: CSS transitions for visual feedback when highlighting links.
+- 📋 **Smart Clipboard Handling**: Fallback mechanism for copying links on non-secure contexts.
+
+---
+
+## ⚙️ Configuration
+
+### Quick Settings (Extension Popup)
+Click the extension icon in your toolbar for instant access to toggle:
+
+**Open Mode Settings:**
+-   `Open next to current`
+-   `Remember opened links`
+-   `Remove duplicates`
+
+**Copy Mode Settings:**
+-   `Remember copied links`
+-   `Remove duplicates`
+
+The popup also provides quick action buttons to activate selection modes and clear link history.
+
+### Advanced Settings (Options Page)
+
+<details>
+<summary><b>View All Advanced Settings</b></summary>
+
+| Setting | Description | Default |
+|---|---|---|
+| **Tab Limit** | Set the maximum number of tabs to open in a single action. | `15` |
+| **Selection Style** | Changes the visual appearance of the selection box. Options: Dashed Blue, Dashed Red, Solid Green, Subtle Gray. | `Dashed Blue` |
+| **Highlight Style** | Changes the color scheme for highlighted links within selection. Options: Classic Yellow, Green Highlighter, Dark Gray. | `Classic Yellow` |
+| **Open in new window** | Opens all selected links in a new browser window instead of tabs. | `Off` |
+| **Open in reverse order** | Opens links in reverse order (bottom to top). | `Off` |
+| **Open next to current** | Opens new tabs immediately after the current tab instead of at the end. | `Off` |
+| **Remember opened links** | Prevents re-opening of previously opened links (stores last 50 URLs). | `On` |
+| **Remember copied links** | Prevents re-copying of previously copied links (stores last 50 URLs). | `Off` |
+| **Remove duplicates (Open)** | Removes duplicate URLs within the current selection when opening. | `On` |
+| **Remove duplicates (Copy)** | Removes duplicate URLs within the current selection when copying. | `On` |
+| **Apply exclusions on copy** | Applies domain and keyword exclusion filters when copying links (normally only applied when opening). | `Off` |
+| **Excluded Domains** | Comma-separated list of domains to ignore (e.g., `google.com, twitter.com`). Supports international domains with Punycode conversion. | `(empty)` |
+| **Excluded Words** | Comma-separated list of keywords to ignore in link URLs (e.g., `logout, unsubscribe`). | `(empty)` |
+| **Import/Export Exclusions** | Backup and restore your exclusion lists via JSON files with automatic conflict resolution. | `N/A` |
+| **Show in context menu** | Toggles the "Open/Copy Links" options in the right-click menu. | `On` |
+| **Language** | Switch the extension's display language between supported locales. | `Auto-detect` |
+| **Clear History** | A button to clear the list of links remembered by both "Remember opened links" and "Remember copied links" features. | `N/A` |
+
+###### HISTORY_LIMIT = 50 (const)
+
+</details>
+
+---
+
+## 🔧 Technical Details
+
+### Performance Optimizations
+
+1. **Link Position Caching**: All link bounding rectangles are pre-calculated once during `mousedown` and cached in memory. This eliminates expensive DOM queries during mouse movement, preventing layout thrashing and enabling smooth interaction even on pages with thousands of links.
+
+2. **RequestAnimationFrame with Batched Updates**: Mouse movement events are batched and processed using `requestAnimationFrame`, ensuring updates happen at optimal 60fps. Multiple rapid mouse movements are consolidated into single render updates, dramatically reducing CPU usage during selection.
+
+3. **Three-Tier Settings Cache**: Implements a session storage cache layer on top of sync and local storage, reducing storage API calls from 100+ per session to just 1-2. Settings are loaded once on initialization and served from memory, providing instant access throughout the session.
+
+4. **JavaScript Set for O(1) Lookups**: History tracking and duplicate detection use JavaScript Sets instead of array iterations, providing constant-time O(1) lookups instead of O(n) operations. This ensures instant validation even with 50 history items.
+
+5. **On-Demand Script Injection**: Content scripts are injected only when selection is activated, not on every page load. This reduces initial memory footprint and browser overhead on tabs where the extension is never used, improving overall browser performance.
+
+### Browser Compatibility
+- Built with **Manifest V3** for modern Chrome extensions
+- Requires Chrome/Chromium-based browsers (Chrome, Edge, Brave, etc.)
+- Minimum Chrome version: 88+
+- Fully compatible with the latest Chrome security requirements
+
+### Smart Behaviors
+- **Automatic Tab Switching Prevention**: Automatically resets selection when switching to a different tab
+- **Link Validation**: Filters out invalid links (anchors, javascript:, hidden elements, zero-size elements)
+- **Duplicate Detection**: Multiple mechanisms to prevent duplicate link opening/copying with separate history tracking for each mode
+- **Context Awareness**: Different cursor styles and behaviors for open vs. copy modes
+- **Graceful Degradation**: Fallback clipboard copy method (`document.execCommand`) for non-secure contexts
+- **International Domain Support**: Proper handling of international domains with automatic Punycode conversion for exclusion filters
+- **Automatic Language Detection**: Detects browser UI language on first install and sets extension language accordingly
+
+---
+
+## 🔒 Permissions & Privacy
+
+This extension was built with your privacy as a top priority.
+
+-   **🚫 Zero Tracking**: No analytics, telemetry, or user data is ever collected.
+-   **🔒 Offline First**: All processing happens locally in your browser. The extension makes no external network requests.
+-   **🗑️ Transparent Storage**: You have full control over the data stored by the extension and can clear it at any time.
+
+### Data Handling
+
+<details>
+<summary><strong>🏠 Local Storage (<code>chrome.storage.local</code>)</strong> - This data is stored only on your computer and is NOT synced to your Google Account.</summary>
+
+-   `linkHistory`: Stores a list of the last 50 unique URLs you opened using the extension, if `useHistory` is enabled.
+-   `copyHistory`: Stores a list of the last 50 unique URLs you copied using the extension, if `useCopyHistory` is enabled.
+-   `excludedDomains`: Comma-separated list of domains to exclude from link operations.
+-   `excludedWords`: Comma-separated list of keywords to exclude from link URLs.
+-   `useHistory`: A true/false setting for whether to remember opened links.
+-   `useCopyHistory`: A true/false setting for whether to remember copied links.
+-   `checkDuplicatesOnCopy`: A true/false setting for whether to remove duplicate links when copying.
+</details>
+
+<details>
+<summary><strong>☁️ Sync Storage (<code>chrome.storage.sync</code>)</strong> - These settings are synced across all browsers where you are logged into your Chrome account.</summary>
+
+-   Core settings including `tabLimit`, `selectionStyle`, `highlightStyle`, `openInNewWindow`, `openNextToParent`, `reverseOrder`, `applyExclusionsOnCopy`, `removeDuplicatesInSelection`, `language`, and `showContextMenu`.
+</details>
+
+<details>
+<summary><strong>⚡ Session Storage (<code>chrome.storage.session</code>)</strong> - Temporary cache cleared when browser closes.</summary>
+
+-   `settingsCache`: Performance optimization cache for frequently accessed settings.
+</details>
+
+### Required Permissions
+
+<details>
+<summary><b>View Permission Explanations</b></summary>
+
+| Permission         | Purpose                                                                   |
+| ------------------ | ------------------------------------------------------------------------- |
+| `storage`          | To save your settings and link history.                                   |
+| `tabs`             | To open links in new tabs and create new windows.                         |
+| `scripting`        | To inject the code that draws the selection box onto web pages.           |
+| `contextMenus`     | To add the activation options to your right-click menu for easy access.   |
+| `http://*/*`, `https://*/*` | To allow the extension to run on any website you visit.     |
+
+*We only request permissions that are essential for the extension's core functionality.*
+
+</details>
+
+---
+
+## 📁 Project Structure
+
+```
+Area_Links/
+├── 🌐 _locales/              # Language files for internationalization (i18n)
+│   ├── 📦 en/messages.json   # English localization strings
+│   └── 📦 ru/messages.json   # Russian localization strings
+├── 🖼️ icons/                 # Application and branding icons
+│   ├── 🖼️ icon16.png         # Icon for browser toolbar (16x16)
+│   ├── 🖼️ icon48.png         # Icon for extensions management page (48x48)
+│   └── 🖼️ icon128.png        # Icon for the Chrome Web Store (128x128)
+├── 🧠 background.js          # Service worker for event handling and settings management
+├── ⚡ content.js             # Injects selection logic and UI into web pages
+├── 🎨 styles.css             # CSS for the selection box and link highlights
+├── 🧩 manifest.json          # The extension's manifest file (Manifest V3)
+├── 🎛️🖥️ options.html         # The full settings page UI
+├── 🎛️ options.css            # Styling for the options page
+├── 🎛️ options.js             # Logic for the settings page
+├── 💬🖥️ popup.html           # The extension's popup UI
+├── 💬 popup.css              # Styling for the popup
+├── 💬 popup.js               # Logic for the popup quick settings
+├── 📄 LICENSE                # MIT License
+└── ℹ️ README.md              # This documentation file
+```
+
+---
+
+<div align="center">
+  
+  **Made with ❤️ by badrenton**
+  
+  *© 2025 • If you find this extension helpful, please consider giving it a ⭐ on GitHub!*
+</div>
