@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title></title>
+    <link rel="stylesheet" href="options.css">
+</head>
+<body class="loading-settings">
+    <div class="container">
+        <header>
+            <div class="title-group">
+                <img src="icons/icon48.png" alt="Extension Icon" class="header-icon">
+                <h1>Area Links</h1>
+                <span id="ext-version" class="version-tag"></span>
+                <span class="author-tag">by badrenton</span>
+            </div>
+            <div class="controls-group">
+                <div class="control-item">
+                    <label for="language-select" data-i18n="optionsLanguage">Language</label>
+                    <select id="language-select">
+                        <option value="en">English</option>
+                        <option value="ru">Русский</option>
+                    </select>
+                </div>
+            </div>
+        </header>
+
+        <main>
+            <section class="card">
+                <h2 data-i18n="optionsHeaderBehavior">Behavior</h2>
+                
+                <div class="setting-row">
+                    <label for="tabLimit" data-i18n="optionsTabLimit">Maximum Tabs to Open at Once:</label>
+                    <input type="number" id="tabLimit" min="1" max="50">
+                </div>
+                <div class="setting-row toggle-row">
+                    <label for="openInNewWindow" data-i18n="optionsOpenInNewWindow">Open in new window</label>
+                    <label class="switch"><input type="checkbox" id="openInNewWindow"><span class="slider"></span></label>
+                </div>
+                <div class="setting-row toggle-row">
+                    <label for="reverseOrder" data-i18n="optionsReverseOrder">Open in reverse order</label>
+                    <label class="switch"><input type="checkbox" id="reverseOrder"><span class="slider"></span></label>
+                </div>
+                <div class="setting-row toggle-row">
+                    <label for="openNextToParent" data-i18n="popupOpenNextToParent"></label>
+                    <label class="switch"><input type="checkbox" id="openNextToParent"><span class="slider"></span></label>
+                </div>
+
+                <div class="settings-divider"></div>
+
+                <div class="settings-columns">
+                    <div class="settings-column">
+                        <div class="column-header">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                            <span data-i18n="optionsColumnOpen">[OPEN]</span>
+                        </div>
+                        <div class="setting-row toggle-row">
+                            <label for="useHistory" data-i18n="optionsUseHistory">Remember opened links</label>
+                            <label class="switch"><input type="checkbox" id="useHistory"><span class="slider"></span></label>
+                        </div>
+                        <div class="setting-row toggle-row">
+                            <label for="removeDuplicatesInSelection" data-i18n="optionsRemoveDuplicatesInSelection">Remove duplicates when opening</label>
+                            <label class="switch"><input type="checkbox" id="removeDuplicatesInSelection"><span class="slider"></span></label>
+                        </div>
+                    </div>
+                    <div class="settings-column">
+                        <div class="column-header">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                            <span data-i18n="optionsColumnCopy">[COPY]</span>
+                        </div>
+                        <div class="setting-row toggle-row">
+                            <label for="useCopyHistory" data-i18n="optionsUseCopyHistory">Remember copied links</label>
+                            <label class="switch"><input type="checkbox" id="useCopyHistory"><span class="slider"></span></label>
+                        </div>
+                        <div class="setting-row toggle-row">
+                            <label for="checkDuplicatesOnCopy" data-i18n="optionsCheckDuplicatesOnCopy">Remove duplicates when copying</label>
+                            <label class="switch"><input type="checkbox" id="checkDuplicatesOnCopy"><span class="slider"></span></label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-footer">
+                    <div id="status-behavior" class="status-message"></div>
+                    <div class="control-wrapper">
+                        <div id="status-history" class="status-message"></div>
+                        <button id="clearHistory" class="button-danger" data-i18n="optionsClearHistory">Clear History</button>
+                    </div>
+                </div>
+            </section>
+
+            <details class="card" id="exclusions-details">
+                <summary>
+                    <h2 data-i18n="optionsHeaderExclusions">Exclusions</h2>
+                </summary>
+                <div class="details-content">
+                    <div class="setting-row toggle-row">
+                        <label for="applyExclusionsOnCopy" data-i18n="optionsApplyExclusionsOnCopy"></label>
+                        <label class="switch"><input type="checkbox" id="applyExclusionsOnCopy"><span class="slider"></span></label>
+                    </div>
+                    <div class="setting-row-vertical">
+                        <label for="excludedDomains" data-i18n="optionsExcludedDomains">Excluded Domains (comma-separated):</label>
+                        <div class="textarea-wrapper">
+                            <textarea id="excludedDomains" data-i18n-placeholder="e.g., example.com, sitelock.com" rows="3"></textarea>
+                            <button class="clear-btn" id="clearExcludedDomains" title="Clear field" disabled>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="setting-row-vertical">
+                        <label for="excludedWords" data-i18n="optionsExcludedWords">Exclude links with these words (comma-separated):</label>
+                        <div class="textarea-wrapper">
+                            <textarea id="excludedWords" data-i18n-placeholder="e.g., logout, unsubscribe" rows="3"></textarea>
+                            <button class="clear-btn" id="clearExcludedWords" title="Clear field" disabled>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <div class="control-wrapper">
+                             <button id="importExclusions" class="button-secondary">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5V19m7-7l-7 7-7-7"/></svg>
+                                <span data-i18n="optionsImportExclusionsButton"></span>
+                             </button>
+                             <button id="exportExclusions" class="button-secondary">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5m-7 7l7-7 7 7"/></svg>
+                                <span data-i18n="optionsExportExclusionsButton"></span>
+                             </button>
+                             <input type="file" id="import-file-input" accept=".json" style="display: none;">
+                        </div>
+                        <div class="control-wrapper">
+                            <div id="status-exclusions" class="status-message"></div>
+                            <button id="saveExclusions" class="button-primary">
+                                <span class="unsaved-indicator">!</span>
+                                <span class="button-text" data-i18n="optionsSaveExclusionsButton">Save Exclusions</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </details>
+
+            <section class="card">
+                <h2 data-i18n="optionsHeaderAppearance">Appearance</h2>
+                <div class="setting-row">
+                    <label for="selectionStyle" data-i18n="optionsSelectionStyle">Selection Box Style:</label>
+                    <select id="selectionStyle">
+                        <option value="dashed-blue" data-i18n="optionsStyleDashedBlue">Dashed Blue</option>
+                        <option value="dashed-red" data-i18n="optionsStyleDashedRed">Dashed Red</option>
+                        <option value="solid-green" data-i18n="optionsStyleSolidGreen">Solid Green</option>
+                        <option value="subtle-gray" data-i18n="optionsStyleSubtleGray">Subtle Gray</option>
+                    </select>
+                </div>
+                 <div class="setting-row">
+                    <label for="highlightStyle" data-i18n="optionsHighlightStyle"></label>
+                    <select id="highlightStyle">
+                        <option value="classic-yellow" data-i18n="optionsHighlightStyleClassicYellow"></option>
+                        <option value="green-highlighter" data-i18n="optionsHighlightStyleGreenHighlighter"></option>
+                        <option value="dark-gray" data-i18n="optionsHighlightStyleDarkGray"></option>
+                    </select>
+                </div>
+                <div class="setting-row toggle-row">
+                    <label for="showContextMenu" data-i18n="optionsShowContextMenu">Show in context menu</label>
+                    <label class="switch"><input type="checkbox" id="showContextMenu"><span class="slider"></span></label>
+                </div>
+                <div class="card-footer">
+                    <div id="status-appearance" class="status-message"></div>
+                </div>
+            </section>
+
+            <section class="card-alt">
+                <h2 data-i18n="optionsHowToUseTitle">How to Use</h2>
+                <p><span data-i18n="optionsHowToUseOpen"></span> <kbd>Alt + Z</kbd> <span data-i18n="optionsHowToUseOpenDetail"></span></p>
+                <p><span data-i18n="optionsHowToUseCopy"></span> <kbd>Alt + X</kbd> <span data-i18n="optionsHowToUseCopyDetail"></span></p>
+                <p><span data-i18n="optionsHowToUseShortcuts"></span> <a href="chrome://extensions/shortcuts" id="shortcutsLink" target="_blank">chrome://extensions/shortcuts</a></p>
+            </section>
+        </main>
+        <footer>
+            <span>🔗</span>
+            <a href="https://github.com/le0booba/Area_Links" target="_blank">github.com/le0booba/Area_Links</a>
+        </footer>
+    </div>
+    <script src="options.js"></script>
+</body>
+</html>

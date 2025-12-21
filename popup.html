@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title data-i18n-title="Area Links Options"></title>
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="title-group">
+                <img src="icons/icon48.png" class="logo" alt="Area Links Logo">
+                <h1 data-i18n="extName">Area Links</h1>
+            </div>
+            <div class="header-controls">
+                <div id="status-message" data-i18n="popupStatusSaved"></div>
+                <button id="clear-history-popup" class="header-btn" data-i18n-title="popupClearHistoryTitle" disabled>
+                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18m-2 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                </button>
+                <button id="open-options" class="header-btn" data-i18n-title="popupSettingsTitle">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M22.7 19l-9.1-9.1c.9-2.3.4-5-1.5-6.9-2-2-5-2.4-7.4-1.3L9 6 6 9 1.6 4.7C.4 7.1.9 10.1 2.9 12.1c1.9 1.9 4.6 2.4 6.9 1.5l9.1 9.1c.4.4 1 .4 1.4 0l2.3-2.3c.5-.4.5-1.1.1-1.4z"/>
+                    </svg>
+                </button>
+            </div>
+        </header>
+
+        <main>
+            <div class="mode-row">
+                <button id="action-open-links" class="action-btn-popup" data-i18n-title="popupOpenTitle" disabled>
+                    <span class="mode-label" data-i18n="optionsColumnOpen"></span>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                    <small class="shortcut"></small>
+                </button>
+                <div class="settings-group">
+                    <div class="setting-row">
+                        <label for="popup-openNextToParent" data-i18n="popupOpenNextToParent"></label>
+                        <label class="switch"><input type="checkbox" id="popup-openNextToParent"><span class="slider"></span></label>
+                    </div>
+                    <div class="divider"></div>
+                    <div class="setting-row">
+                        <label for="popup-useHistory" data-i18n="optionsUseHistory"></label>
+                        <label class="switch"><input type="checkbox" id="popup-useHistory"><span class="slider"></span></label>
+                    </div>
+                    <div class="setting-row">
+                        <label for="popup-removeDuplicatesInSelection" data-i18n="optionsRemoveDuplicatesInSelection"></label>
+                        <label class="switch"><input type="checkbox" id="popup-removeDuplicatesInSelection"><span class="slider"></span></label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section-spacer"></div>
+
+            <div class="mode-row">
+                <button id="action-copy-links" class="action-btn-popup" data-i18n-title="popupCopyTitle" disabled>
+                    <span class="mode-label" data-i18n="optionsColumnCopy"></span>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                    </svg>
+                    <small class="shortcut"></small>
+                </button>
+                <div class="settings-group">
+                    <div class="setting-row">
+                        <label for="popup-useCopyHistory" data-i18n="optionsUseCopyHistory"></label>
+                        <label class="switch"><input type="checkbox" id="popup-useCopyHistory"><span class="slider"></span></label>
+                    </div>
+                    <div class="setting-row">
+                        <label for="popup-checkDuplicatesOnCopy" data-i18n="optionsCheckDuplicatesOnCopy"></label>
+                        <label class="switch"><input type="checkbox" id="popup-checkDuplicatesOnCopy"><span class="slider"></span></label>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    <script src="popup.js"></script>
+</body>
+</html>
