@@ -123,7 +123,7 @@ The popup also provides quick action buttons to activate selection modes and cle
 
 2. **RequestAnimationFrame with Batched Updates**: Mouse movement events are batched and processed using `requestAnimationFrame`, ensuring updates happen at optimal 60fps. Multiple rapid mouse movements are consolidated into single render updates, dramatically reducing CPU usage during selection.
 
-3. **Three-Tier Settings Cache**: Implements a session storage cache layer on top of sync and local storage, reducing storage API calls from 100+ per session to just 1-2. Settings are loaded once on initialization and served from memory, providing instant access throughout the session.
+3. **In-Memory Settings Cache**: Implements an in-memory cache layer that combines sync and local storage settings, reducing storage API calls from 100+ per session to just 1-2. Settings are loaded once on initialization and served from memory, providing instant access throughout the session with intelligent change tracking for automatic updates.
 
 4. **JavaScript Set for O(1) Lookups**: History tracking and duplicate detection use JavaScript Sets instead of array iterations, providing constant-time O(1) lookups instead of O(n) operations. This ensures instant validation even with 50 history items.
 
@@ -174,12 +174,6 @@ This extension was built with your privacy as a top priority.
 -   Core settings including `tabLimit`, `selectionStyle`, `highlightStyle`, `openInNewWindow`, `openNextToParent`, `reverseOrder`, `applyExclusionsOnCopy`, `removeDuplicatesInSelection`, `language`, and `showContextMenu`.
 </details>
 
-<details>
-<summary><strong>⚡ Session Storage (<code>chrome.storage.session</code>)</strong> - Temporary cache cleared when browser closes.</summary>
-
--   `settingsCache`: Performance optimization cache for frequently accessed settings.
-</details>
-
 ### Required Permissions
 
 <details>
@@ -191,6 +185,7 @@ This extension was built with your privacy as a top priority.
 | `tabs`             | To open links in new tabs and create new windows.                         |
 | `scripting`        | To inject the code that draws the selection box onto web pages.           |
 | `contextMenus`     | To add the activation options to your right-click menu for easy access.   |
+| `alarms`           | To perform periodic cleanup of stale selection states.                    |
 | `http://*/*`, `https://*/*` | To allow the extension to run on any website you visit.     |
 
 *We only request permissions that are essential for the extension's core functionality.*
