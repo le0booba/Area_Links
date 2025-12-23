@@ -203,6 +203,7 @@ details[open] > summary::after {
     margin-top: 0;
     padding-top: 15px;
     border-top: 1px solid var(--grid-border-color);
+    min-height: 42px; /* Prevent layout shift */
 }
 
 label {
@@ -501,6 +502,14 @@ input:checked+.slider:before {
     font-family: "Roboto", sans-serif;
     letter-spacing: 0.5px;
     transition: color 0.3s;
+}
+
+.status-success {
+    color: var(--primary-color);
+}
+
+.status-error {
+    color: var(--danger-color);
 }
 
 #status-exclusions,

@@ -16,69 +16,66 @@ const SETTINGS_CONFIG = {
     checkDuplicatesOnCopy: { default: true, storage: 'local' },
 };
 
-let messages = {};
+const domCache = {};
+const i18nCache = {};
 let savedExcludedDomains = '';
 let savedExcludedWords = '';
-const saveTimers = {};
 
-async function loadLanguage(lang) {
+function getElement(id) {
+    if (!domCache[id]) domCache[id] = document.getElementById(id);
+    return domCache[id];
+}
+
+function i18n(key, ...args) {
+    let message = i18nCache[key] || key;
+    args.forEach((arg, i) => message = message.replace(`$${i + 1}`, arg));
+    return message;
+}
+
+function debounce(fn, delay) {
+    let timeoutId;
+    return function(...args) {
+        clearTimeout(timeoutId);
+        timeoutId = setTimeout(() => fn.apply(this, args), delay);
+    };
+}
+
+async function loadLanguage(lang = 'en') {
+    if (Object.keys(i18nCache).length > 0) return;
     try {
-        const url = chrome.runtime.getURL(`_locales/${lang}/messages.json`);
-        const response = await fetch(url);
-        if (!response.ok) throw new Error(`Failed to fetch ${lang}`);
+        const response = await fetch(chrome.runtime.getURL(`_locales/${lang}/messages.json`));
+        if (!response.ok) throw new Error('Network response was not ok');
         const json = await response.json();
-        messages = Object.entries(json).reduce((acc, [key, value]) => {
-            acc[key] = value.message;
-            return acc;
-        }, {});
+        Object.entries(json).forEach(([key, value]) => i18nCache[key] = value.message);
     } catch (error) {
-        console.error(`Could not load language file for ${lang}:`, error);
+        console.error(`Area Links: Could not load language file for ${lang}.`, error);
         if (lang !== 'en') await loadLanguage('en');
     }
 }
 
 function localizePage() {
-    document.querySelectorAll('[data-i18n]').forEach(el => {
-        const key = el.getAttribute('data-i18n');
-        if (messages[key]) el.textContent = messages[key];
-    });
-    document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
-        const key = el.getAttribute('data-i18n-placeholder');
-        if (messages[key]) el.placeholder = messages[key];
-    });
+    document.title = i18n('optionsTitle');
+    document.querySelectorAll('[data-i18n]').forEach(el => el.textContent = i18n(el.dataset.i18n));
+    document.querySelectorAll('[data-i18n-placeholder]').forEach(el => el.placeholder = i18n(el.dataset.i18nPlaceholder));
 }
 
-function showStatus(elementId, message, isError = false, duration = 2000) {
-    const status = document.getElementById(elementId);
+function showStatus(elementId, messageKey, isError = false, duration = 2000) {
+    const status = getElement(elementId);
     if (!status) return;
-    status.textContent = message;
-    status.style.color = isError ? 'var(--danger-color)' : 'var(--primary-color)';
-    setTimeout(() => {
-        if (status.textContent === message) {
-            status.textContent = '';
-        }
-    }, duration);
+    status.textContent = i18n(messageKey);
+    status.className = isError ? 'status-error' : 'status-success';
+    setTimeout(() => status.textContent = '', duration);
 }
 
-function updateClearButtonsState() {
-    const domainsTextarea = document.getElementById('excludedDomains');
-    const wordsTextarea = document.getElementById('excludedWords');
-    document.getElementById('clearExcludedDomains').disabled = domainsTextarea.value.trim() === '';
-    document.getElementById('clearExcludedWords').disabled = wordsTextarea.value.trim() === '';
-}
-
-function updateExportButtonState() {
-    const domainsTextarea = document.getElementById('excludedDomains');
-    const wordsTextarea = document.getElementById('excludedWords');
-    document.getElementById('exportExclusions').disabled = domainsTextarea.value.trim() === '' && wordsTextarea.value.trim() === '';
-}
-
-function updateSaveButtonState() {
-    const saveButton = document.getElementById('saveExclusions');
-    if (!saveButton) return;
-    const currentDomainsValue = document.getElementById('excludedDomains').value;
-    const currentWordsValue = document.getElementById('excludedWords').value;
-    const hasUnsavedChanges = currentDomainsValue.trim() !== savedExcludedDomains.trim() || currentWordsValue.trim() !== savedExcludedWords.trim();
+function updateExclusionButtonsState() {
+    const domainsValue = getElement('excludedDomains').value.trim();
+    const wordsValue = getElement('excludedWords').value.trim();
+    getElement('clearExcludedDomains').disabled = domainsValue === '';
+    getElement('clearExcludedWords').disabled = wordsValue === '';
+    getElement('exportExclusions').disabled = domainsValue === '' && wordsValue === '';
+    
+    const hasUnsavedChanges = domainsValue !== savedExcludedDomains.trim() || wordsValue !== savedExcludedWords.trim();
+    const saveButton = getElement('saveExclusions');
     saveButton.classList.toggle('has-unsaved-changes', hasUnsavedChanges);
     saveButton.disabled = !hasUnsavedChanges;
 }
@@ -89,187 +86,117 @@ async function restoreOptions() {
     const syncDefaults = syncKeys.reduce((acc, key) => ({ ...acc, [key]: SETTINGS_CONFIG[key].default }), {});
     const localDefaults = localKeys.reduce((acc, key) => ({ ...acc, [key]: SETTINGS_CONFIG[key].default }), {});
 
-    const [syncItems, localItems] = await Promise.all([
+    const [syncSettings, localSettings] = await Promise.all([
         chrome.storage.sync.get(syncDefaults),
         chrome.storage.local.get(localDefaults)
     ]);
-    const settings = { ...syncItems, ...localItems };
+    const settings = { ...syncSettings, ...localSettings };
 
     await loadLanguage(settings.language);
+    localizePage();
 
-    document.getElementById('ext-version').textContent = 'v' + chrome.runtime.getManifest().version;
-    document.getElementById('tabLimit').value = settings.tabLimit;
-    document.getElementById('selectionStyle').value = settings.selectionStyle;
-    document.getElementById('highlightStyle').value = settings.highlightStyle;
-    document.getElementById('language-select').value = settings.language;
-    
-    ['openInNewWindow', 'reverseOrder', 'openNextToParent', 'applyExclusionsOnCopy', 'useHistory', 'checkDuplicatesOnCopy', 'showContextMenu', 'removeDuplicatesInSelection', 'useCopyHistory'].forEach(id => {
-        const el = document.getElementById(id);
-        if (el) {
-            el.checked = settings[id];
-        }
+    getElement('ext-version').textContent = 'v' + chrome.runtime.getManifest().version;
+
+    Object.keys(SETTINGS_CONFIG).forEach(id => {
+        const el = getElement(id);
+        if (!el || id === 'language') return; // language is handled separately
+        if (el.type === 'checkbox') el.checked = settings[id];
+        else el.value = settings[id];
     });
+
+    getElement('language-select').value = settings.language;
 
     savedExcludedDomains = settings.excludedDomains;
     savedExcludedWords = settings.excludedWords;
-    const domainsTextarea = document.getElementById('excludedDomains');
-    const wordsTextarea = document.getElementById('excludedWords');
-    domainsTextarea.value = savedExcludedDomains;
-    wordsTextarea.value = savedExcludedWords;
 
-    const detailsEl = document.getElementById('exclusions-details');
-    if (domainsTextarea.value.trim() || wordsTextarea.value.trim()) {
-        if (localStorage.getItem('exclusionsOpen') === 'true') {
-            detailsEl.open = true;
-        }
-    } else {
-        detailsEl.open = false;
+    const detailsEl = getElement('exclusions-details');
+    if (localStorage.getItem('exclusionsOpen') === 'true' && (savedExcludedDomains || savedExcludedWords)) {
+        detailsEl.open = true;
     }
 
-    chrome.storage.local.get(['linkHistory', 'copyHistory'], (items) => {
-        const clearHistoryButton = document.getElementById('clearHistory');
-        if (clearHistoryButton) {
-            const hasLinks = (items.linkHistory && items.linkHistory.length > 0) || (items.copyHistory && items.copyHistory.length > 0);
-            clearHistoryButton.disabled = !hasLinks;
-        }
-    });
+    const { linkHistory = [], copyHistory = [] } = await chrome.storage.local.get(['linkHistory', 'copyHistory']);
+    getElement('clearHistory').disabled = linkHistory.length === 0 && copyHistory.length === 0;
 
-    localizePage();
-    updateClearButtonsState();
-    updateSaveButtonState();
-    updateExportButtonState();
-
+    updateExclusionButtonsState();
     document.body.classList.remove('loading-settings');
 }
 
 function saveExclusions() {
-    const domainsTextarea = document.getElementById('excludedDomains');
-    const wordsTextarea = document.getElementById('excludedWords');
+    const domainsTextarea = getElement('excludedDomains');
+    const wordsTextarea = getElement('excludedWords');
 
-    const sanitizeDomains = (str) => {
-        let cleaned = str.replace(/[\r\n\s]+/g, ',');
-        cleaned = cleaned.replace(/https?:\/\//gi, '');
-        cleaned = cleaned.replace(/[^\p{L}\p{N}\.\-,]/gu, '');
-        
-        return cleaned.split(',')
-            .map(item => item.trim())
-            .filter(item => item)
-            .join(',');
+    const sanitize = (str, isDomain) => {
+        let cleaned = str.replace(/[\r\n\s]+/g, ',').replace(/https?:\/\//gi, '');
+        const regex = isDomain ? /[^\p{L}\p{N}\.\-,]/gu : /[^\p{L}\p{N}\.\-_~!$&'()*+,;=:@%\/]/gu;
+        cleaned = cleaned.replace(regex, '');
+        return cleaned.split(',').map(s => s.trim()).filter(Boolean).join(',');
     };
 
-    const sanitizeWords = (str) => {
-        let cleaned = str.replace(/[\r\n\s]+/g, ',');
-        cleaned = cleaned.replace(/[^\p{L}\p{N}\.\-_~!$&'()*+,;=:@%\/]/gu, '');
-        return cleaned.split(',')
-            .map(item => item.trim())
-            .filter(item => item)
-            .join(',');
-    };
-    
-    const domainsToSave = sanitizeDomains(domainsTextarea.value);
-    const wordsToSave = sanitizeWords(wordsTextarea.value);
+    const domainsToSave = sanitize(domainsTextarea.value, true);
+    const wordsToSave = sanitize(wordsTextarea.value, false);
 
     domainsTextarea.value = domainsToSave;
     wordsTextarea.value = wordsToSave;
 
-    updateClearButtonsState();
-    updateExportButtonState();
-
-    const settingsToSave = { excludedDomains: domainsToSave, excludedWords: wordsToSave };
-    chrome.storage.local.set(settingsToSave).then(() => {
-        showStatus('status-exclusions', messages.optionsStatusExclusionsSaved);
+    chrome.storage.local.set({ excludedDomains: domainsToSave, excludedWords: wordsToSave }).then(() => {
+        showStatus('status-exclusions', 'optionsStatusExclusionsSaved');
         savedExcludedDomains = domainsToSave;
         savedExcludedWords = wordsToSave;
-        updateSaveButtonState();
-
-        const exclusionsDetails = document.getElementById('exclusions-details');
-        if (domainsToSave || wordsToSave) {
-            if (exclusionsDetails.open) {
-                localStorage.setItem('exclusionsOpen', 'true');
-            }
-        } else {
-            localStorage.removeItem('exclusionsOpen');
-        }
+        updateExclusionButtonsState();
+        localStorage.setItem('exclusionsOpen', getElement('exclusions-details').open);
     });
 }
 
-function clearHistory() {
-    chrome.storage.local.set({ linkHistory: [], copyHistory: [] })
-        .then(() => {
-            showStatus('status-history', messages.optionsStatusHistoryCleared, false, 3000);
-            document.getElementById('clearHistory').disabled = true;
-        });
-}
+const debouncedSaveSetting = debounce((storage, key, value, statusId, messageKey) => {
+    chrome.storage[storage].set({ [key]: value })
+        .then(() => showStatus(statusId, messageKey))
+        .catch(err => showStatus(statusId, 'optionsStatusError', true));
+}, 400);
 
-function handleExport() {
-    const domains = document.getElementById('excludedDomains').value;
-    const words = document.getElementById('excludedWords').value;
-    const data = { excludedDomains: domains, excludedWords: words };
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
+function handleSettingChange(e) {
+    const el = e.target;
+    const { id, type } = el;
+    const config = SETTINGS_CONFIG[id];
+    if (!config || el.tagName === 'TEXTAREA' || id === 'language-select') return;
+
+    let value = type === 'checkbox' ? el.checked : 
+                type === 'number' ? parseInt(el.value, 10) : el.value;
     
-    const date = new Date();
-    const dateString = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-    a.download = `area-links-exclusions_${dateString}.json`;
+    if (type === 'number' && (isNaN(value) || value < 1 || value > 50)) {
+        showStatus('status-behavior', 'optionsStatusTabLimitError', true, 3500);
+        chrome.storage.sync.get({ tabLimit: SETTINGS_CONFIG.tabLimit.default }).then(i => el.value = i.tabLimit);
+        return;
+    }
     
-    a.href = url;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    const statusId = ['selectionStyle', 'showContextMenu', 'highlightStyle'].includes(id) ? 'status-appearance'
+                   : id === 'applyExclusionsOnCopy' ? 'status-exclusions' : 'status-behavior';
+    
+    debouncedSaveSetting(config.storage, id, value, statusId, 'optionsStatusSettingSaved');
 }
 
 function handleImport(event) {
     const file = event.target.files[0];
     if (!file) return;
-
     const reader = new FileReader();
-    reader.onload = (e) => {
+    reader.onload = e => {
         try {
             const data = JSON.parse(e.target.result);
-            const domainsTextarea = document.getElementById('excludedDomains');
-            const wordsTextarea = document.getElementById('excludedWords');
-            let changesMade = false;
-
-            const lang = document.getElementById('language-select').value;
-            const fieldDisplayNames = {
-                excludedDomains: lang === 'ru' ? 'Исключенные домены' : 'Excluded Domains',
-                excludedWords: lang === 'ru' ? 'Исключенные слова' : 'Excluded Words'
-            };
-
-            const processField = (fieldName, textarea) => {
-                if (fieldName in data && typeof data[fieldName] === 'string') {
-                    const newData = data[fieldName].trim();
+            ['excludedDomains', 'excludedWords'].forEach(field => {
+                if (data[field] && typeof data[field] === 'string') {
+                    const textarea = getElement(field);
                     const oldData = textarea.value.trim();
-
-                    if (oldData && newData) {
-                        const displayName = fieldDisplayNames[fieldName] || fieldName;
-                        const message = messages.optionsImportConflictMessage.replace('[FIELD_NAME]', displayName);
-                        if (confirm(message)) {
-                            textarea.value = oldData + ',' + newData;
-                        } else {
-                            textarea.value = newData;
-                        }
+                    const newData = data[field].trim();
+                    if (oldData && newData && confirm(i18n('optionsImportConflictMessage', i18n(field)))) {
+                        textarea.value = `${oldData},${newData}`;
                     } else if (newData) {
                         textarea.value = newData;
                     }
-                    changesMade = true;
                 }
-            };
-
-            processField('excludedDomains', domainsTextarea);
-            processField('excludedWords', wordsTextarea);
-
-            if (changesMade) {
-                saveExclusions();
-                updateExportButtonState();
-                updateClearButtonsState();
-                showStatus('status-exclusions', messages.optionsStatusImportSuccess);
-            }
-
+            });
+            saveExclusions();
+            showStatus('status-exclusions', 'optionsStatusImportSuccess');
         } catch (error) {
-            showStatus('status-exclusions', messages.optionsStatusImportError, true);
+            showStatus('status-exclusions', 'optionsStatusImportError', true);
         }
     };
     reader.readAsText(file);
@@ -277,113 +204,51 @@ function handleImport(event) {
 }
 
 function setupEventListeners() {
-    document.getElementById('saveExclusions').addEventListener('click', saveExclusions);
-    document.getElementById('clearHistory').addEventListener('click', clearHistory);
-    document.getElementById('exportExclusions').addEventListener('click', handleExport);
-    document.getElementById('importExclusions').addEventListener('click', () => {
-        document.getElementById('import-file-input').click();
+    getElement('saveExclusions').addEventListener('click', saveExclusions);
+    getElement('clearHistory').addEventListener('click', () => {
+        chrome.storage.local.set({ linkHistory: [], copyHistory: [] }).then(() => {
+            showStatus('status-history', 'optionsStatusHistoryCleared', false, 3000);
+            getElement('clearHistory').disabled = true;
+        });
     });
-    document.getElementById('import-file-input').addEventListener('change', handleImport);
-    
-    const exclusionsDetails = document.getElementById('exclusions-details');
-    const domainsTextarea = document.getElementById('excludedDomains');
-    const wordsTextarea = document.getElementById('excludedWords');
+    getElement('exportExclusions').addEventListener('click', () => {
+        const data = { excludedDomains: getElement('excludedDomains').value, excludedWords: getElement('excludedWords').value };
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.download = `area-links-exclusions_${new Date().toISOString().slice(0, 10)}.json`;
+        a.href = url;
+        a.click();
+        URL.revokeObjectURL(url);
+    });
+    getElement('importExclusions').addEventListener('click', () => getElement('import-file-input').click());
+    getElement('import-file-input').addEventListener('change', handleImport);
 
-    exclusionsDetails.addEventListener('toggle', (e) => {
-        if (domainsTextarea.value.trim() || wordsTextarea.value.trim()) {
-            localStorage.setItem('exclusionsOpen', e.target.open);
-        } else {
-            localStorage.removeItem('exclusionsOpen');
-        }
-    });
-
-    const textareasHandler = () => {
-        updateClearButtonsState();
-        updateSaveButtonState();
-        updateExportButtonState();
-    };
-    domainsTextarea.addEventListener('input', textareasHandler);
-    wordsTextarea.addEventListener('input', textareasHandler);
-
-    document.getElementById('clearExcludedDomains').addEventListener('click', () => {
-        domainsTextarea.value = '';
-        saveExclusions();
-        updateClearButtonsState();
-        updateExportButtonState();
-    });
-    document.getElementById('clearExcludedWords').addEventListener('click', () => {
-        wordsTextarea.value = '';
-        saveExclusions();
-        updateClearButtonsState();
-        updateExportButtonState();
-    });
-    document.getElementById('shortcutsLink').addEventListener('click', (e) => {
-        e.preventDefault();
-        chrome.tabs.create({ url: 'chrome://extensions/shortcuts' });
-    });
-
-    document.getElementById('language-select').addEventListener('change', (e) => {
-        const newLang = e.target.value;
-        chrome.storage.sync.set({ language: newLang }).then(() => {
-            location.reload();
+    ['excludedDomains', 'excludedWords'].forEach(id => {
+        const textarea = getElement(id);
+        textarea.addEventListener('input', updateExclusionButtonsState);
+        getElement(`clear${id.charAt(0).toUpperCase() + id.slice(1)}`).addEventListener('click', () => {
+            textarea.value = '';
+            saveExclusions();
         });
     });
 
-    document.querySelector('main').addEventListener('change', (e) => {
-        const el = e.target;
-        const id = el.id;
-        if (id === 'language-select' || el.id === 'import-file-input') return;
-
-        const config = SETTINGS_CONFIG[id];
-        if (!config || el.tagName === 'TEXTAREA') return;
-
-        let value;
-        let statusId;
-        
-        switch (el.type) {
-            case 'checkbox':
-                value = el.checked;
-                break;
-            case 'number':
-                value = parseInt(el.value, 10);
-                if (isNaN(value) || value < 1 || value > 50) {
-                    showStatus('status-behavior', `${messages.optionsStatusError} ${messages.optionsStatusTabLimitError}`, true, 3500);
-                    chrome.storage.sync.get({ tabLimit: SETTINGS_CONFIG.tabLimit.default }).then(items => {
-                        el.value = items.tabLimit;
-                    });
-                    return;
-                }
-                break;
-            default:
-                value = el.value;
-                break;
-        }
-
-        const storageArea = chrome.storage[config.storage];
-        
-        if (saveTimers[id]) {
-            clearTimeout(saveTimers[id]);
-        }
-
-        saveTimers[id] = setTimeout(() => {
-            storageArea.set({ [id]: value }).then(() => {
-                if (id.startsWith('popup-')) return;
-                if (['selectionStyle', 'showContextMenu', 'highlightStyle'].includes(id)) {
-                    statusId = 'status-appearance';
-                } else if (id === 'applyExclusionsOnCopy') {
-                    statusId = 'status-exclusions';
-                } else {
-                    statusId = 'status-behavior';
-                }
-                if(statusId) showStatus(statusId, messages.optionsStatusSettingSaved);
-            });
-            delete saveTimers[id];
-        }, 400);
+    getElement('language-select').addEventListener('change', e => {
+        chrome.storage.sync.set({ language: e.target.value }).then(() => {
+            location.reload();
+        });
     });
+    getElement('shortcutsLink').addEventListener('click', e => {
+        e.preventDefault();
+        chrome.tabs.create({ url: 'chrome://extensions/shortcuts' });
+    });
+    getElement('exclusions-details').addEventListener('toggle', e => {
+        localStorage.setItem('exclusionsOpen', e.target.open);
+    });
+    document.querySelector('main').addEventListener('change', handleSettingChange);
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-    document.title = `${chrome.i18n.getMessage('extName')} - ${chrome.i18n.getMessage('optionsTitle')}`;
-    restoreOptions();
+document.addEventListener('DOMContentLoaded', async () => {
+    await restoreOptions();
     setupEventListeners();
 });

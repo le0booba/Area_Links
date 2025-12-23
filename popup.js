@@ -6,41 +6,51 @@ const QUICK_SETTINGS_CONFIG = [
     { id: 'popup-checkDuplicatesOnCopy', key: 'checkDuplicatesOnCopy', default: true, storage: 'local' },
 ];
 
-let messages = {};
+const domCache = {};
+const i18nCache = {};
 
-async function loadLanguage(lang) {
+function getElement(id) {
+    if (!domCache[id]) {
+        domCache[id] = document.getElementById(id);
+    }
+    return domCache[id];
+}
+
+function i18n(key, ...args) {
+    let message = i18nCache[key] || key;
+    args.forEach((arg, i) => {
+        message = message.replace(`$${i + 1}`, arg);
+    });
+    return message;
+}
+
+async function loadLanguage(lang = 'en') {
+    if (Object.keys(i18nCache).length > 0) return;
     try {
         const url = chrome.runtime.getURL(`_locales/${lang}/messages.json`);
         const response = await fetch(url);
         const json = await response.json();
-        messages = Object.entries(json).reduce((acc, [key, value]) => {
-            acc[key] = value.message;
-            return acc;
-        }, {});
+        Object.entries(json).forEach(([key, value]) => {
+            i18nCache[key] = value.message;
+        });
     } catch (error) {
-        console.error(`Could not load language file for ${lang}:`, error);
+        console.error(`Area Links: Could not load language file for ${lang}.`, error);
     }
 }
 
 function localizePage() {
     document.querySelectorAll('[data-i18n]').forEach(el => {
-        const key = el.getAttribute('data-i18n');
-        if (messages[key]) {
-            el.textContent = messages[key];
-        }
+        el.textContent = i18n(el.dataset.i18n);
     });
-     document.querySelectorAll('[data-i18n-title]').forEach(el => {
-        const key = el.getAttribute('data-i18n-title');
-        if (messages[key]) {
-            el.title = messages[key];
-        }
+    document.querySelectorAll('[data-i18n-title]').forEach(el => {
+        el.title = i18n(el.dataset.i18nTitle);
     });
 }
 
 function showStatus(messageKey = "popupStatusSaved") {
-    const statusEl = document.getElementById('status-message');
+    const statusEl = getElement('status-message');
     if (!statusEl) return;
-    statusEl.textContent = messages[messageKey] || '';
+    statusEl.textContent = i18n(messageKey);
     statusEl.style.opacity = '1';
     setTimeout(() => {
         statusEl.style.opacity = '0';
@@ -48,18 +58,13 @@ function showStatus(messageKey = "popupStatusSaved") {
 }
 
 async function loadCommands() {
-    const commands = await chrome.commands.getAll();
+    const commands = await chrome.commands.getAll().catch(() => []);
     commands.forEach(command => {
-        let buttonId;
-        if (command.name === 'activate-selection') {
-            buttonId = 'action-open-links';
-        } else if (command.name === 'activate-selection-copy') {
-            buttonId = 'action-copy-links';
-        }
-
+        const buttonId = command.name === 'activate-selection' ? 'action-open-links' : 
+                         command.name === 'activate-selection-copy' ? 'action-copy-links' : null;
         if (buttonId) {
-            const button = document.getElementById(buttonId);
-            const shortcutEl = button.querySelector('.shortcut');
+            const button = getElement(buttonId);
+            const shortcutEl = button?.querySelector('.shortcut');
             if (shortcutEl && command.shortcut) {
                 shortcutEl.textContent = `(${command.shortcut})`;
             }
@@ -67,80 +72,51 @@ async function loadCommands() {
     });
 }
 
-async function establishConnection() {
-    try {
-        const response = await chrome.runtime.sendMessage({ type: 'ping' });
-        return response?.type === 'pong';
-    } catch (e) {
-        return false;
-    }
-}
-
 async function initialize() {
-    chrome.runtime.sendMessage({ type: 'refreshContextMenu' });
+    const [settings, commands] = await Promise.all([
+        chrome.storage.sync.get('language'),
+        loadCommands(),
+        chrome.runtime.sendMessage({ type: 'refreshContextMenu' }).catch(() => {})
+    ]);
 
-    const isConnected = await establishConnection();
-    const openBtn = document.getElementById('action-open-links');
-    const copyBtn = document.getElementById('action-copy-links');
-    const clearHistoryBtn = document.getElementById('clear-history-popup');
-
-    if (isConnected) {
-        openBtn.disabled = false;
-        copyBtn.disabled = false;
-    }
+    await loadLanguage(settings.language);
+    localizePage();
+    
+    const version = chrome.runtime.getManifest().version;
+    const versionTitle = i18n('popupLogoTitle', version);
+    document.querySelector('.logo').title = versionTitle;
+    document.querySelector('.title-group h1').title = versionTitle;
 
     const syncKeys = QUICK_SETTINGS_CONFIG.filter(c => c.storage === 'sync').map(c => c.key);
     const localKeys = QUICK_SETTINGS_CONFIG.filter(c => c.storage === 'local').map(c => c.key);
 
     const [syncItems, localItems] = await Promise.all([
-        chrome.storage.sync.get([...syncKeys, 'language']),
+        chrome.storage.sync.get(syncKeys),
         chrome.storage.local.get([...localKeys, 'linkHistory', 'copyHistory'])
     ]);
-
+    
     const allSettings = { ...syncItems, ...localItems };
 
-    await loadLanguage(allSettings.language || 'en');
-    localizePage();
-    loadCommands();
-
-    const version = chrome.runtime.getManifest().version;
-    const versionTitle = chrome.i18n.getMessage('popupLogoTitle', version);
-
-    const logoEl = document.querySelector('.logo');
-    if (logoEl) {
-        logoEl.title = versionTitle;
-    }
-
-    const titleEl = document.querySelector('.title-group h1');
-    if (titleEl) {
-        titleEl.title = versionTitle;
-    }
-
-    clearHistoryBtn.disabled = (!localItems.linkHistory || localItems.linkHistory.length === 0) && (!localItems.copyHistory || localItems.copyHistory.length === 0);
+    const clearHistoryBtn = getElement('clear-history-popup');
+    clearHistoryBtn.disabled = (localItems.linkHistory?.length === 0) && (localItems.copyHistory?.length === 0);
 
     QUICK_SETTINGS_CONFIG.forEach(config => {
-        const el = document.getElementById(config.id);
+        const el = getElement(config.id);
         if (el) {
             el.checked = allSettings[config.key] ?? config.default;
             el.addEventListener('change', (e) => {
-                const storageArea = config.storage === 'local' ? chrome.storage.local : chrome.storage.sync;
-                storageArea.set({ [config.key]: e.target.checked }).then(showStatus);
+                const storage = chrome.storage[config.storage];
+                storage.set({ [config.key]: e.target.checked }).then(() => showStatus());
             });
         }
     });
 
-    openBtn.addEventListener('click', () => {
-        chrome.runtime.sendMessage({
-            type: 'triggerSelectionFromPopup',
-            commandType: 'initiateSelection'
-        });
+    getElement('action-open-links').addEventListener('click', () => {
+        chrome.runtime.sendMessage({ type: 'triggerSelectionFromPopup', commandType: 'initiateSelection' });
         window.close();
     });
-    copyBtn.addEventListener('click', () => {
-        chrome.runtime.sendMessage({
-            type: 'triggerSelectionFromPopup',
-            commandType: 'initiateSelectionCopy'
-        });
+    getElement('action-copy-links').addEventListener('click', () => {
+        chrome.runtime.sendMessage({ type: 'triggerSelectionFromPopup', commandType: 'initiateSelectionCopy' });
         window.close();
     });
     clearHistoryBtn.addEventListener('click', () => {
@@ -149,7 +125,14 @@ async function initialize() {
             showStatus('optionsStatusHistoryCleared');
         });
     });
-    document.getElementById('open-options').addEventListener('click', () => chrome.runtime.openOptionsPage());
+    getElement('open-options').addEventListener('click', () => chrome.runtime.openOptionsPage());
+
+    // Enable action buttons only if a tab is active
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+        const isActiveTab = tabs.length > 0 && tabs[0].url?.startsWith('http');
+        getElement('action-open-links').disabled = !isActiveTab;
+        getElement('action-copy-links').disabled = !isActiveTab;
+    });
 }
 
 document.addEventListener('DOMContentLoaded', initialize);
