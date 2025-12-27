@@ -29,7 +29,7 @@ let allTrackedElements = new Set();
 let highlightedLinks = [];
 let cachedLinks = [];
 
-function isValidLink(element) {
+const isValidLink = (element) => {
     const { href } = element;
     if (!href || href.startsWith('#') || href.startsWith('javascript:')) return false;
 
@@ -37,12 +37,10 @@ function isValidLink(element) {
     if (rect.width === 0 || rect.height === 0) return false;
 
     const style = window.getComputedStyle(element);
-    if (style.visibility !== 'visible' || style.display === 'none') return false;
+    return style.visibility === 'visible' && style.display !== 'none';
+};
 
-    return true;
-}
-
-function createSelectionElements() {
+const createSelectionElements = () => {
     if (!selectionOverlay) {
         selectionOverlay = document.createElement('div');
         selectionOverlay.id = 'link-opener-selection-overlay';
@@ -53,108 +51,80 @@ function createSelectionElements() {
         selectionBox.id = 'link-opener-selection-box';
         document.body.appendChild(selectionBox);
     }
-}
+};
 
-function getSelectionRectangle(start, end) {
+const getSelectionRectangle = (start, end) => {
     const x = Math.min(start.x, end.x);
     const y = Math.min(start.y, end.y);
     const width = Math.abs(start.x - end.x);
     const height = Math.abs(start.y - end.y);
     return { x, y, width, height, left: x, top: y, right: x + width, bottom: y + height };
-}
+};
 
-function updateSelectionBox() {
+const updateSelectionBox = () => {
     if (!selectionBox) return;
     const rect = getSelectionRectangle(selectionState.startCoords, selectionState.currentCoords);
-    Object.assign(selectionBox.style, {
-        left: `${rect.x - window.scrollX}px`,
-        top: `${rect.y - window.scrollY}px`,
-        width: `${rect.width}px`,
-        height: `${rect.height}px`,
-    });
-}
+    const { style } = selectionBox;
+    style.left = `${rect.x - window.scrollX}px`;
+    style.top = `${rect.y - window.scrollY}px`;
+    style.width = `${rect.width}px`;
+    style.height = `${rect.height}px`;
+};
 
-// Centralized exclusion logic. Checks raw href for words (to catch IDNs)
-// and the parsed hostname for domains.
-function isExcluded(url, rawHref) {
+const isExcluded = (url, rawHref) => {
     if (!url || !selectionState.settings) return false;
     const { excludedDomains = [], excludedWords = [] } = selectionState.settings;
 
     try {
         const urlHostname = new URL(url).hostname.toLowerCase();
-        // Domain-based exclusions (explicit domains)
-        if (excludedDomains.some(domain => urlHostname.includes(domain))) {
-            return true;
-        }
-
-        // If an excluded word appears inside the hostname, consider it excluded as well.
-        // This helps catch Unicode words that have been converted to punycode in hostnames.
-        if (excludedWords.some(word => urlHostname.includes(word))) {
-            return true;
-        }
+        
+        if (excludedDomains.some(domain => urlHostname.includes(domain))) return true;
+        if (excludedWords.some(word => urlHostname.includes(word))) return true;
 
         const rawHrefLower = rawHref.toLowerCase();
         const decodedUrlLower = decodeURI(url).toLowerCase();
 
-        // Finally check words in the full href (path/query) or in decoded URL
-        if (excludedWords.some(word => rawHrefLower.includes(word) || decodedUrlLower.includes(word))) {
-            return true;
-        }
+        if (excludedWords.some(word => 
+            rawHrefLower.includes(word) || decodedUrlLower.includes(word)
+        )) return true;
     } catch {
-        return true; // Invalid URL
+        return true;
     }
     return false;
-}
+};
 
-// New centralized function to get the final list of links to be opened or copied.
-function getFilteredLinks(candidateElements) {
+const getFilteredLinks = (candidateElements) => {
     const finalLinks = [];
     const seenInSelection = new Set();
 
-    const isCopy = selectionState.isCopyMode;
-    const settings = selectionState.settings;
-    const historySet = isCopy ? selectionState.copyHistorySet : selectionState.historySet;
-    const useHistory = isCopy ? settings.useCopyHistory : settings.useHistory;
-    const removeDuplicatesInSelection = isCopy ? settings.checkDuplicatesOnCopy : settings.removeDuplicatesInSelection;
+    const { isCopyMode, settings } = selectionState;
+    const historySet = isCopyMode ? selectionState.copyHistorySet : selectionState.historySet;
+    const useHistory = isCopyMode ? settings.useCopyHistory : settings.useHistory;
+    const removeDuplicates = isCopyMode ? settings.checkDuplicatesOnCopy : settings.removeDuplicatesInSelection;
 
     for (const element of candidateElements) {
         const { href } = element;
-        let isLinkExcluded = false;
-        if (!isCopy || settings.applyExclusionsOnCopy) {
-            isLinkExcluded = isExcluded(href, element.href);
-        }
-
-        const isSeenInSelection = seenInSelection.has(href);
-        const isSeenInHistory = useHistory && historySet.has(href);
         
-        if (isLinkExcluded || isSeenInHistory || (removeDuplicatesInSelection && isSeenInSelection)) {
-            continue;
-        }
-
-        if (!isCopy && finalLinks.length >= settings.tabLimit) {
-            break; 
-        }
+        const isLinkExcluded = (!isCopyMode || settings.applyExclusionsOnCopy) && 
+            isExcluded(href, element.href);
+        const isSeenInHistory = useHistory && historySet.has(href);
+        const isSeenInSelection = seenInSelection.has(href);
+        
+        if (isLinkExcluded || isSeenInHistory || (removeDuplicates && isSeenInSelection)) continue;
+        if (!isCopyMode && finalLinks.length >= settings.tabLimit) break;
 
         finalLinks.push(element);
-
-        if (removeDuplicatesInSelection) {
-            seenInSelection.add(href);
-        }
+        if (removeDuplicates) seenInSelection.add(href);
     }
     return finalLinks;
-}
+};
 
-// Refactored to use getFilteredLinks and simplify styling logic.
-function updateLinkHighlights() {
+const updateLinkHighlights = () => {
     const selectionRect = getSelectionRectangle(selectionState.startCoords, selectionState.currentCoords);
-    const linksInSelectionBox = [];
-    
-    for (const link of cachedLinks) {
-        if (link.left < selectionRect.right && link.right > selectionRect.left &&
-            link.top < selectionRect.bottom && link.bottom > selectionRect.top) {
-            linksInSelectionBox.push(link.element);
-        }
-    }
+    const linksInSelectionBox = cachedLinks.filter(link =>
+        link.left < selectionRect.right && link.right > selectionRect.left &&
+        link.top < selectionRect.bottom && link.bottom > selectionRect.top
+    ).map(link => link.element);
 
     const finalLinksToHighlight = getFilteredLinks(linksInSelectionBox);
     const finalLinksSet = new Set(finalLinksToHighlight);
@@ -163,18 +133,18 @@ function updateLinkHighlights() {
     const seenInSelection = new Set();
     let highlightedCount = 0;
 
+    const { isCopyMode, settings, historySet, copyHistorySet } = selectionState;
+    const relevantHistorySet = isCopyMode ? copyHistorySet : historySet;
+    const useHistory = isCopyMode ? settings.useCopyHistory : settings.useHistory;
+    const removeDuplicates = isCopyMode ? settings.checkDuplicatesOnCopy : settings.removeDuplicatesInSelection;
+    
     for (const element of linksInSelectionBox) {
         newTrackedElements.add(element);
         const { href } = element;
         
+        const isSeenInHistory = useHistory && relevantHistorySet.has(href);
         const isSeenInSelection = seenInSelection.has(href);
-        const isSeenInHistory = (selectionState.isCopyMode ? selectionState.settings.useCopyHistory && selectionState.copyHistorySet.has(href) : selectionState.settings.useHistory && selectionState.historySet.has(href));
-        let isLinkExcluded = false;
-        if (!selectionState.isCopyMode || selectionState.settings.applyExclusionsOnCopy) {
-            isLinkExcluded = isExcluded(href, element.href);
-        }
-        
-        const removeDuplicates = selectionState.isCopyMode ? selectionState.settings.checkDuplicatesOnCopy : selectionState.settings.removeDuplicatesInSelection;
+        const isLinkExcluded = (!isCopyMode || settings.applyExclusionsOnCopy) && isExcluded(href, element.href);
         
         let statusClass = '';
         if (finalLinksSet.has(element)) {
@@ -182,20 +152,21 @@ function updateLinkHighlights() {
             highlightedCount++;
         } else if (isLinkExcluded || isSeenInHistory || (removeDuplicates && isSeenInSelection)) {
             statusClass = DUPLICATE_CLASS;
-        } else if (!selectionState.isCopyMode && highlightedCount >= selectionState.settings.tabLimit) {
+        } else if (!isCopyMode && highlightedCount >= settings.tabLimit) {
             statusClass = LIMIT_EXCEEDED_CLASS;
         }
 
-        if (statusClass && !element.classList.contains(statusClass)) {
-            element.classList.remove(HIGHLIGHT_CLASS, DUPLICATE_CLASS, LIMIT_EXCEEDED_CLASS);
-            element.classList.add(statusClass);
-        } else if (!statusClass && (element.classList.contains(HIGHLIGHT_CLASS) || element.classList.contains(DUPLICATE_CLASS) || element.classList.contains(LIMIT_EXCEEDED_CLASS))) {
-             element.classList.remove(HIGHLIGHT_CLASS, DUPLICATE_CLASS, LIMIT_EXCEEDED_CLASS);
+        const { classList } = element;
+        if (statusClass) {
+            if (!classList.contains(statusClass)) {
+                classList.remove(HIGHLIGHT_CLASS, DUPLICATE_CLASS, LIMIT_EXCEEDED_CLASS);
+                classList.add(statusClass);
+            }
+        } else if (classList.contains(HIGHLIGHT_CLASS) || classList.contains(DUPLICATE_CLASS) || classList.contains(LIMIT_EXCEEDED_CLASS)) {
+            classList.remove(HIGHLIGHT_CLASS, DUPLICATE_CLASS, LIMIT_EXCEEDED_CLASS);
         }
         
-        if (removeDuplicates) {
-            seenInSelection.add(href);
-        }
+        if (removeDuplicates) seenInSelection.add(href);
     }
 
     for (const el of allTrackedElements) {
@@ -206,11 +177,10 @@ function updateLinkHighlights() {
     
     allTrackedElements = newTrackedElements;
     highlightedLinks = finalLinksToHighlight;
-}
+};
 
-function resetSelection() {
-    const wasActive = selectionState.isActive;
-    if (!wasActive) return;
+const resetSelection = () => {
+    if (!selectionState.isActive) return;
 
     if (selectionOverlay) {
         selectionOverlay.removeEventListener('mousedown', handleMouseDown, true);
@@ -218,27 +188,35 @@ function resetSelection() {
         selectionOverlay.removeEventListener('mouseup', handleMouseUp, true);
         selectionOverlay.style.display = 'none';
     }
+    
     document.removeEventListener('keydown', handleKeyDown, true);
-    document.removeEventListener('scroll', handleScroll, true);
+    document.removeEventListener('scroll', handleScroll, { passive: true });
 
     if (selectionBox) selectionBox.style.display = 'none';
 
-    allTrackedElements.forEach(el => el.classList.remove(HIGHLIGHT_CLASS, DUPLICATE_CLASS, LIMIT_EXCEEDED_CLASS));
+    allTrackedElements.forEach(el => 
+        el.classList.remove(HIGHLIGHT_CLASS, DUPLICATE_CLASS, LIMIT_EXCEEDED_CLASS)
+    );
     
     document.body.classList.remove(PREPARE_ANIMATION_CLASS);
     delete document.body.dataset.linkOpenerHighlightStyle;
     document.body.style.cursor = 'default';
 
-    Object.assign(selectionState, { isActive: false, isSelecting: false, isUpdateScheduled: false, settings: {} });
+    Object.assign(selectionState, {
+        isActive: false,
+        isSelecting: false,
+        isUpdateScheduled: false,
+        settings: {}
+    });
     
     cachedLinks = [];
     allTrackedElements.clear();
     highlightedLinks = [];
 
     chrome.runtime.sendMessage({ type: 'selectionDeactivated' }).catch(() => {});
-}
+};
 
-function copyLinksToClipboard(links) {
+const copyLinksToClipboard = (links) => {
     const text = links.join('\n');
     if (selectionState.settings.useCopyHistory && links.length > 0) {
         chrome.runtime.sendMessage({ type: "saveCopyHistory", urls: links });
@@ -258,18 +236,20 @@ function copyLinksToClipboard(links) {
         document.body.removeChild(textarea);
         return;
     }
-    navigator.clipboard.writeText(text).catch(err => console.error('Area Links: Clipboard write failed.', err));
-}
+    navigator.clipboard.writeText(text).catch(err => 
+        console.error('Area Links: Clipboard write failed.', err)
+    );
+};
 
-function handleKeyDown(e) {
+const handleKeyDown = (e) => {
     if (e.key === 'Escape') {
         e.preventDefault();
         e.stopPropagation();
         resetSelection();
     }
-}
+};
 
-function runScheduledUpdate() {
+const runScheduledUpdate = () => {
     if (!selectionState.isSelecting) {
         selectionState.isUpdateScheduled = false;
         return;
@@ -277,37 +257,36 @@ function runScheduledUpdate() {
     updateSelectionBox();
     updateLinkHighlights();
     selectionState.isUpdateScheduled = false;
-}
+};
 
-function scheduleUpdate() {
+const scheduleUpdate = () => {
     if (!selectionState.isUpdateScheduled) {
         selectionState.isUpdateScheduled = true;
         requestAnimationFrame(runScheduledUpdate);
     }
-}
+};
 
-function handleScroll() {
-    if (!selectionState.isSelecting) return;
-    scheduleUpdate();
-}
+const handleScroll = () => {
+    if (selectionState.isSelecting) scheduleUpdate();
+};
 
-function handleMouseMove(e) {
+const handleMouseMove = (e) => {
     if (selectionState.isSelecting && (e.buttons & 1) === 0) {
         handleMouseUp(e);
         return;
     }
     selectionState.currentCoords = { x: e.pageX, y: e.pageY };
     scheduleUpdate();
-}
+};
 
-function handleMouseUp(e) {
+const handleMouseUp = (e) => {
     if (e.button !== 0 || !selectionState.isSelecting) return;
     e.preventDefault();
     e.stopPropagation();
 
     const rect = getSelectionRectangle(selectionState.startCoords, selectionState.currentCoords);
     if (rect.width > 5 || rect.height > 5) {
-        const linksToProcess = Array.from(highlightedLinks, el => el.href);
+        const linksToProcess = highlightedLinks.map(el => el.href);
         if (linksToProcess.length > 0) {
             if (selectionState.isCopyMode) {
                 copyLinksToClipboard(linksToProcess);
@@ -317,9 +296,9 @@ function handleMouseUp(e) {
         }
     }
     resetSelection();
-}
+};
 
-function handleMouseDown(e) {
+const handleMouseDown = (e) => {
     if (e.button !== 0) return;
     e.preventDefault();
     e.stopPropagation();
@@ -328,18 +307,24 @@ function handleMouseDown(e) {
     selectionState.startCoords = { x: e.pageX, y: e.pageY };
     selectionState.currentCoords = { x: e.pageX, y: e.pageY };
     
-    cachedLinks = [];
-    const scrollX = window.scrollX, scrollY = window.scrollY;
-    for (const link of document.querySelectorAll('a[href]')) {
+    const scrollX = window.scrollX;
+    const scrollY = window.scrollY;
+    const links = document.querySelectorAll('a[href]');
+    
+    cachedLinks = Array.from(links).reduce((acc, link) => {
         if (isValidLink(link)) {
             const rect = link.getBoundingClientRect();
-            cachedLinks.push({
-                element: link, href: link.href,
-                left: rect.left + scrollX, right: rect.right + scrollX,
-                top: rect.top + scrollY, bottom: rect.bottom + scrollY
+            acc.push({
+                element: link,
+                href: link.href,
+                left: rect.left + scrollX,
+                right: rect.right + scrollX,
+                top: rect.top + scrollY,
+                bottom: rect.bottom + scrollY
             });
         }
-    }
+        return acc;
+    }, []);
     
     selectionBox.className = selectionState.style;
     selectionBox.style.display = 'block';
@@ -347,17 +332,19 @@ function handleMouseDown(e) {
     
     selectionOverlay.addEventListener('mousemove', handleMouseMove, true);
     selectionOverlay.addEventListener('mouseup', handleMouseUp, true);
-}
+};
 
-function initSelection(settings) {
+const initSelection = (settings) => {
     if (selectionState.isActive) resetSelection();
     
-    selectionState.isActive = true;
-    selectionState.isCopyMode = settings.type === "initiateSelectionCopy";
-    selectionState.style = settings.style;
-    selectionState.settings = settings;
-    selectionState.historySet = new Set(settings.linkHistory || []);
-    selectionState.copyHistorySet = new Set(settings.copyHistory || []);
+    Object.assign(selectionState, {
+        isActive: true,
+        isCopyMode: settings.type === "initiateSelectionCopy",
+        style: settings.style,
+        settings: settings,
+        historySet: new Set(settings.linkHistory || []),
+        copyHistorySet: new Set(settings.copyHistory || [])
+    });
     
     document.body.dataset.linkOpenerHighlightStyle = settings.highlightStyle;
     document.body.classList.add(PREPARE_ANIMATION_CLASS);
@@ -368,8 +355,8 @@ function initSelection(settings) {
 
     selectionOverlay.addEventListener('mousedown', handleMouseDown, true);
     document.addEventListener('keydown', handleKeyDown, true);
-    document.addEventListener('scroll', handleScroll, true);
-}
+    document.addEventListener('scroll', handleScroll, { passive: true });
+};
 
 const messageHandlers = {
     initiateSelection: initSelection,
@@ -379,15 +366,16 @@ const messageHandlers = {
 };
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-    if (messageHandlers[request.type]) {
-        messageHandlers[request.type](request, sender, sendResponse);
+    const handler = messageHandlers[request.type];
+    if (handler) {
+        handler(request, sender, sendResponse);
         if (request.type === 'initiateSelection' || request.type === 'initiateSelectionCopy') {
-             sendResponse({ success: true });
+            sendResponse({ success: true });
         }
         return true;
     }
 });
 
-window.addEventListener('popstate', resetSelection);
-window.addEventListener('hashchange', resetSelection);
-window.addEventListener('pagehide', resetSelection);
+['popstate', 'hashchange', 'pagehide'].forEach(event => 
+    window.addEventListener(event, resetSelection)
+);

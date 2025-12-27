@@ -20,8 +20,8 @@
 }
 
 #link-opener-selection-box.dashed-red {
-    background-color: rgba(220, 53, 69, 0.15);
-    border: 2px dashed rgba(220, 53, 69, 0.9);
+    background-color: rgba(201, 80, 155, 0.199);
+    border: 2px dashed rgba(201, 0, 98, 0.685);
 }
 
 #link-opener-selection-box.solid-green {
