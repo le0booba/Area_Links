@@ -1,5 +1,11 @@
 const SETTINGS_CONFIG = {
     tabLimit: { default: 15, storage: 'sync' },
+    selectionBoxStyle: { default: 'dashed', storage: 'sync' },
+    selectionBoxColor: { default: '#007bff', storage: 'sync' },
+    selectionColorCustomPreset0: { default: '#007bff', storage: 'sync' },
+    selectionColorCustomPreset1: { default: '#c90062', storage: 'sync' },
+    selectionColorCustomPreset2: { default: '#28a745', storage: 'sync' },
+    selectionColorCustomPreset3: { default: '#343a40', storage: 'sync' },
     selectionStyle: { default: 'dashed-blue', storage: 'sync' },
     highlightStyle: { default: 'classic-yellow', storage: 'sync' },
     openInNewWindow: { default: false, storage: 'sync' },
@@ -15,23 +21,19 @@ const SETTINGS_CONFIG = {
     useCopyHistory: { default: false, storage: 'local' },
     checkDuplicatesOnCopy: { default: true, storage: 'local' },
 };
-
 const domCache = new Map();
 const i18nCache = {};
 let savedExcludedDomains = '';
 let savedExcludedWords = '';
-
 const getElement = (id) => {
     if (!domCache.has(id)) domCache.set(id, document.getElementById(id));
     return domCache.get(id);
 };
-
 const i18n = (key, ...args) => {
     let message = i18nCache[key] || key;
     args.forEach((arg, i) => message = message.replace(`$${i + 1}`, arg));
     return message;
 };
-
 const debounce = (fn, delay) => {
     let timeoutId;
     return (...args) => {
@@ -39,7 +41,6 @@ const debounce = (fn, delay) => {
         timeoutId = setTimeout(() => fn(...args), delay);
     };
 };
-
 const loadLanguage = async (lang = 'en') => {
     if (Object.keys(i18nCache).length > 0) return;
     try {
@@ -47,22 +48,15 @@ const loadLanguage = async (lang = 'en') => {
         if (!response.ok) throw new Error('Network response was not ok');
         const json = await response.json();
         Object.entries(json).forEach(([key, value]) => i18nCache[key] = value.message);
-    } catch (error) {
-        console.error(`Area Links: Could not load language file for ${lang}.`, error);
+    } catch {
         if (lang !== 'en') await loadLanguage('en');
     }
 };
-
 const localizePage = () => {
     document.title = i18n('optionsTitle');
-    document.querySelectorAll('[data-i18n]').forEach(el => 
-        el.textContent = i18n(el.dataset.i18n)
-    );
-    document.querySelectorAll('[data-i18n-placeholder]').forEach(el => 
-        el.placeholder = i18n(el.dataset.i18nPlaceholder)
-    );
+    document.querySelectorAll('[data-i18n]').forEach(el => el.textContent = i18n(el.dataset.i18n));
+    document.querySelectorAll('[data-i18n-placeholder]').forEach(el => el.placeholder = i18n(el.dataset.i18nPlaceholder));
 };
-
 const showStatus = (elementId, messageKey, isError = false, duration = 2000) => {
     const status = getElement(elementId);
     if (!status) return;
@@ -70,96 +64,93 @@ const showStatus = (elementId, messageKey, isError = false, duration = 2000) => 
     status.className = `status-message ${isError ? 'status-error' : 'status-success'}`;
     setTimeout(() => status.textContent = '', duration);
 };
-
 const updateExclusionButtonsState = () => {
     const domainsValue = getElement('excludedDomains').value.trim();
     const wordsValue = getElement('excludedWords').value.trim();
-    
-    getElement('clearExcludedDomains').disabled = domainsValue === '';
-    getElement('clearExcludedWords').disabled = wordsValue === '';
-    getElement('exportExclusions').disabled = domainsValue === '' && wordsValue === '';
-    
-    const hasUnsavedChanges = domainsValue !== savedExcludedDomains.trim() || 
-                               wordsValue !== savedExcludedWords.trim();
+    getElement('clearExcludedDomains').disabled = !domainsValue;
+    getElement('clearExcludedWords').disabled = !wordsValue;
+    getElement('exportExclusions').disabled = !domainsValue && !wordsValue;
+    const hasUnsavedChanges = domainsValue !== savedExcludedDomains.trim() || wordsValue !== savedExcludedWords.trim();
     const saveButton = getElement('saveExclusions');
     saveButton.classList.toggle('has-unsaved-changes', hasUnsavedChanges);
     saveButton.disabled = !hasUnsavedChanges;
 };
-
+const customPresets = [
+    { btnId: 'selectionColorPresetCustom0', saveId: 'selectionColorPresetCustomSave0', key: 'selectionColorCustomPreset0' },
+    { btnId: 'selectionColorPresetCustom1', saveId: 'selectionColorPresetCustomSave1', key: 'selectionColorCustomPreset1' },
+    { btnId: 'selectionColorPresetCustom2', saveId: 'selectionColorPresetCustomSave2', key: 'selectionColorCustomPreset2' },
+    { btnId: 'selectionColorPresetCustom3', saveId: 'selectionColorPresetCustomSave3', key: 'selectionColorCustomPreset3' },
+];
+const checkResetButtonState = () => {
+    const resetButton = getElement('resetColorPresets');
+    if (!resetButton) return;
+    const currentBoxStyle = getElement('selectionBoxStyle').value;
+    const currentHighlightStyle = getElement('highlightStyle').value;
+    if (currentBoxStyle !== 'solid' || currentHighlightStyle !== 'classic-yellow') {
+        resetButton.disabled = false;
+        return;
+    }
+    const presetKeys = customPresets.map(p => p.key);
+    chrome.storage.sync.get(presetKeys).then(currentSettings => {
+        resetButton.disabled = customPresets.every(p => currentSettings[p.key] === SETTINGS_CONFIG[p.key].default);
+    });
+};
 const restoreOptions = async () => {
-    const syncKeys = Object.keys(SETTINGS_CONFIG).filter(k => SETTINGS_CONFIG[k].storage === 'sync');
-    const localKeys = Object.keys(SETTINGS_CONFIG).filter(k => SETTINGS_CONFIG[k].storage === 'local');
-    const syncDefaults = syncKeys.reduce((acc, key) => ({ 
-        ...acc, [key]: SETTINGS_CONFIG[key].default 
-    }), {});
-    const localDefaults = localKeys.reduce((acc, key) => ({ 
-        ...acc, [key]: SETTINGS_CONFIG[key].default 
-    }), {});
-
+    const syncDefaults = {}, localDefaults = {};
+    Object.keys(SETTINGS_CONFIG).forEach(k => {
+        (SETTINGS_CONFIG[k].storage === 'sync' ? syncDefaults : localDefaults)[k] = SETTINGS_CONFIG[k].default;
+    });
     const [syncSettings, localSettings] = await Promise.all([
         chrome.storage.sync.get(syncDefaults),
         chrome.storage.local.get(localDefaults)
     ]);
     const settings = { ...syncSettings, ...localSettings };
-
     await loadLanguage(settings.language);
     localizePage();
-
     getElement('ext-version').textContent = 'v' + chrome.runtime.getManifest().version;
-
     Object.keys(SETTINGS_CONFIG).forEach(id => {
         const el = getElement(id);
         if (!el || id === 'language') return;
-        if (el.type === 'checkbox') {
-            el.checked = settings[id];
-        } else {
-            el.value = settings[id];
-        }
+        el.type === 'checkbox' ? el.checked = settings[id] : el.value = settings[id];
     });
-
+    customPresets.forEach(p => {
+        const btn = getElement(p.btnId);
+        if (btn) btn.style.setProperty('--preset-color', settings[p.key]);
+    });
+    const selectedColor = (settings.selectionBoxColor || '').toLowerCase();
+    customPresets.forEach(p => {
+        const btn = getElement(p.btnId);
+        if (!btn) return;
+        btn.classList.remove('selected');
+        const c = (btn.dataset.color || settings[p.key] || '').toLowerCase();
+        if (c === selectedColor) btn.classList.add('selected');
+    });
     getElement('language-select').value = settings.language;
-
     savedExcludedDomains = settings.excludedDomains;
     savedExcludedWords = settings.excludedWords;
-
     const detailsEl = getElement('exclusions-details');
-    if (localStorage.getItem('exclusionsOpen') === 'true' && 
-        (savedExcludedDomains || savedExcludedWords)) {
+    if (localStorage.getItem('exclusionsOpen') === 'true' && (savedExcludedDomains || savedExcludedWords)) {
         detailsEl.open = true;
     }
-
-    const { linkHistory = [], copyHistory = [] } = await chrome.storage.local.get([
-        'linkHistory', 'copyHistory'
-    ]);
-    getElement('clearHistory').disabled = linkHistory.length === 0 && copyHistory.length === 0;
-
+    const { linkHistory = [], copyHistory = [] } = await chrome.storage.local.get(['linkHistory', 'copyHistory']);
+    getElement('clearHistory').disabled = !linkHistory.length && !copyHistory.length;
     updateExclusionButtonsState();
+    checkResetButtonState();
     document.body.classList.remove('loading-settings');
 };
-
 const saveExclusions = () => {
     const domainsTextarea = getElement('excludedDomains');
     const wordsTextarea = getElement('excludedWords');
-
     const sanitize = (str, isDomain) => {
         let cleaned = str.replace(/[\r\n\s]+/g, ',').replace(/https?:\/\//gi, '');
-        const regex = isDomain 
-            ? /[^\p{L}\p{N}\.\-,]/gu 
-            : /[^\p{L}\p{N}\.\-_~!$&'()*+,;=:@%\/]/gu;
-        cleaned = cleaned.replace(regex, '');
+        cleaned = cleaned.replace(isDomain ? /[^\p{L}\p{N}\.\-,]/gu : /[^\p{L}\p{N}\.\-_~!$&'()*+,;=:@%\/]/gu, '');
         return cleaned.split(',').map(s => s.trim()).filter(Boolean).join(',');
     };
-
     const domainsToSave = sanitize(domainsTextarea.value, true);
     const wordsToSave = sanitize(wordsTextarea.value, false);
-
     domainsTextarea.value = domainsToSave;
     wordsTextarea.value = wordsToSave;
-
-    chrome.storage.local.set({ 
-        excludedDomains: domainsToSave, 
-        excludedWords: wordsToSave 
-    }).then(() => {
+    chrome.storage.local.set({ excludedDomains: domainsToSave, excludedWords: wordsToSave }).then(() => {
         showStatus('status-exclusions', 'optionsStatusExclusionsSaved');
         savedExcludedDomains = domainsToSave;
         savedExcludedWords = wordsToSave;
@@ -167,40 +158,29 @@ const saveExclusions = () => {
         localStorage.setItem('exclusionsOpen', getElement('exclusions-details').open);
     });
 };
-
 const debouncedSaveSetting = debounce((storage, key, value, statusId, messageKey) => {
-    chrome.storage[storage].set({ [key]: value })
-        .then(() => showStatus(statusId, messageKey))
-        .catch(err => showStatus(statusId, 'optionsStatusError', true));
+    chrome.storage[storage].set({ [key]: value }).then(() => {
+        showStatus(statusId, messageKey);
+        if (['selectionBoxStyle', 'highlightStyle'].includes(key)) checkResetButtonState();
+    }).catch(() => showStatus(statusId, 'optionsStatusError', true));
 }, 400);
-
 const handleSettingChange = (e) => {
     const el = e.target;
     const { id, type } = el;
     const config = SETTINGS_CONFIG[id];
     if (!config || el.tagName === 'TEXTAREA' || id === 'language-select') return;
-
-    let value = type === 'checkbox' ? el.checked : 
-                type === 'number' ? parseInt(el.value, 10) : el.value;
-    
+    let value = type === 'checkbox' ? el.checked : type === 'number' ? parseInt(el.value, 10) : el.value;
     if (type === 'number' && (isNaN(value) || value < 1 || value > 50)) {
         showStatus('status-behavior', 'optionsStatusTabLimitError', true, 3500);
-        chrome.storage.sync.get({ tabLimit: SETTINGS_CONFIG.tabLimit.default })
-            .then(i => el.value = i.tabLimit);
+        chrome.storage.sync.get({ tabLimit: 15 }).then(i => el.value = i.tabLimit);
         return;
     }
-    
-    const statusId = ['selectionStyle', 'showContextMenu', 'highlightStyle'].includes(id) 
-        ? 'status-appearance'
-        : id === 'applyExclusionsOnCopy' ? 'status-exclusions' : 'status-behavior';
-    
+    const statusId = id.includes('selection') || id === 'highlightStyle' || id === 'showContextMenu' ? 'status-appearance' : id === 'applyExclusionsOnCopy' ? 'status-exclusions' : 'status-behavior';
     debouncedSaveSetting(config.storage, id, value, statusId, 'optionsStatusSettingSaved');
 };
-
 const handleImport = (event) => {
     const file = event.target.files[0];
     if (!file) return;
-    
     const reader = new FileReader();
     reader.onload = e => {
         try {
@@ -210,79 +190,101 @@ const handleImport = (event) => {
                     const textarea = getElement(field);
                     const oldData = textarea.value.trim();
                     const newData = data[field].trim();
-                    if (oldData && newData && 
-                        confirm(i18n('optionsImportConflictMessage', i18n(field)))) {
+                    if (oldData && newData && confirm(i18n('optionsImportConflictMessage', i18n(field)))) {
                         textarea.value = `${oldData},${newData}`;
-                    } else if (newData) {
-                        textarea.value = newData;
-                    }
+                    } else if (newData) textarea.value = newData;
                 }
             });
             saveExclusions();
             showStatus('status-exclusions', 'optionsStatusImportSuccess');
-        } catch (error) {
+        } catch {
             showStatus('status-exclusions', 'optionsStatusImportError', true);
         }
     };
     reader.readAsText(file);
     event.target.value = '';
 };
-
 const setupEventListeners = () => {
     getElement('saveExclusions').addEventListener('click', saveExclusions);
-    
     getElement('clearHistory').addEventListener('click', () => {
         chrome.storage.local.set({ linkHistory: [], copyHistory: [] }).then(() => {
             showStatus('status-history', 'optionsStatusHistoryCleared', false, 3000);
             getElement('clearHistory').disabled = true;
         });
     });
-    
     getElement('exportExclusions').addEventListener('click', () => {
-        const data = { 
-            excludedDomains: getElement('excludedDomains').value, 
-            excludedWords: getElement('excludedWords').value 
-        };
-        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
+        const data = { excludedDomains: getElement('excludedDomains').value, excludedWords: getElement('excludedWords').value };
+        const url = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }));
         const a = document.createElement('a');
         a.download = `area-links-exclusions_${new Date().toISOString().slice(0, 10)}.json`;
         a.href = url;
         a.click();
         URL.revokeObjectURL(url);
     });
-    
-    getElement('importExclusions').addEventListener('click', () => 
-        getElement('import-file-input').click()
-    );
+    getElement('importExclusions').addEventListener('click', () => getElement('import-file-input').click());
     getElement('import-file-input').addEventListener('change', handleImport);
-
     ['excludedDomains', 'excludedWords'].forEach(id => {
         const textarea = getElement(id);
         textarea.addEventListener('input', updateExclusionButtonsState);
-        getElement(`clear${id.charAt(0).toUpperCase() + id.slice(1)}`)
-            .addEventListener('click', () => {
-                textarea.value = '';
-                saveExclusions();
-            });
+        getElement(`clear${id.charAt(0).toUpperCase() + id.slice(1)}`).addEventListener('click', () => {
+            textarea.value = '';
+            saveExclusions();
+        });
     });
-
     getElement('language-select').addEventListener('change', e => {
         chrome.storage.sync.set({ language: e.target.value }).then(() => location.reload());
     });
-    
     getElement('shortcutsLink').addEventListener('click', e => {
         e.preventDefault();
         chrome.tabs.create({ url: 'chrome://extensions/shortcuts' });
     });
-    
-    getElement('exclusions-details').addEventListener('toggle', e => {
-        localStorage.setItem('exclusionsOpen', e.target.open);
-    });
-    
+    getElement('exclusions-details').addEventListener('toggle', e => localStorage.setItem('exclusionsOpen', e.target.open));
     document.querySelector('main').addEventListener('change', handleSettingChange);
+    const saveSelectionBoxColor = (hex) => {
+        debouncedSaveSetting('sync', 'selectionBoxColor', hex, 'status-appearance', 'optionsStatusSettingSaved');
+        getElement('selectionBoxColor').value = hex;
+        const normalized = hex.trim().toLowerCase();
+        customPresets.forEach(p => {
+            const btn = getElement(p.btnId);
+            if (!btn) return;
+            btn.classList.remove('selected');
+            const c = (btn.dataset.color || btn.style.getPropertyValue('--preset-color') || '').trim().toLowerCase();
+            if (c === normalized) btn.classList.add('selected');
+        });
+    };
+    getElement('selectionBoxColor')?.addEventListener('input', (e) => saveSelectionBoxColor(e.target.value));
+    customPresets.forEach(p => {
+        getElement(p.btnId)?.addEventListener('click', () => {
+            chrome.storage.sync.get({ [p.key]: SETTINGS_CONFIG[p.key].default }).then(v => {
+                if (v[p.key]) saveSelectionBoxColor(v[p.key]);
+            });
+        });
+        getElement(p.saveId)?.addEventListener('click', () => {
+            const hex = getElement('selectionBoxColor').value;
+            chrome.storage.sync.set({ [p.key]: hex }).then(() => {
+                const btn = getElement(p.btnId);
+                if (btn) btn.style.setProperty('--preset-color', hex);
+                showStatus('status-appearance', 'optionsStatusSettingSaved');
+                saveSelectionBoxColor(hex);
+                checkResetButtonState();
+            }).catch(() => showStatus('status-appearance', 'optionsStatusError', true));
+        });
+    });
+    getElement('resetColorPresets')?.addEventListener('click', () => {
+        const defaults = {
+            selectionBoxStyle: 'solid', highlightStyle: 'classic-yellow',
+            ...customPresets.reduce((acc, p) => ({ ...acc, [p.key]: SETTINGS_CONFIG[p.key].default }), {})
+        };
+        chrome.storage.sync.set(defaults).then(() => {
+            customPresets.forEach(p => getElement(p.btnId)?.style.setProperty('--preset-color', defaults[p.key]));
+            getElement('selectionBoxStyle').value = defaults.selectionBoxStyle;
+            getElement('highlightStyle').value = defaults.highlightStyle;
+            showStatus('status-reset-presets', 'optionsStatusSettingSaved');
+            saveSelectionBoxColor(getElement('selectionBoxColor').value);
+            checkResetButtonState();
+        }).catch(() => showStatus('status-appearance', 'optionsStatusError', true));
+    });
 };
-
 document.addEventListener('DOMContentLoaded', async () => {
     await restoreOptions();
     setupEventListeners();

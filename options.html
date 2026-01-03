@@ -24,11 +24,9 @@
                 </div>
             </div>
         </header>
-
         <main>
             <section class="card">
                 <h2 data-i18n="optionsHeaderBehavior">Behavior</h2>
-                
                 <div class="setting-row">
                     <label for="tabLimit" data-i18n="optionsTabLimit">Maximum Tabs to Open at Once:</label>
                     <input type="number" id="tabLimit" min="1" max="50">
@@ -45,9 +43,7 @@
                     <label for="openNextToParent" data-i18n="popupOpenNextToParent"></label>
                     <label class="switch"><input type="checkbox" id="openNextToParent"><span class="slider"></span></label>
                 </div>
-
                 <div class="settings-divider"></div>
-
                 <div class="settings-columns">
                     <div class="settings-column">
                         <div class="column-header">
@@ -78,7 +74,6 @@
                         </div>
                     </div>
                 </div>
-
                 <div class="card-footer">
                     <div id="status-behavior" class="status-message"></div>
                     <div class="control-wrapper">
@@ -87,7 +82,6 @@
                     </div>
                 </div>
             </section>
-
             <details class="card" id="exclusions-details">
                 <summary>
                     <h2 data-i18n="optionsHeaderExclusions">Exclusions</h2>
@@ -137,35 +131,68 @@
                     </div>
                 </div>
             </details>
-
             <section class="card">
                 <h2 data-i18n="optionsHeaderAppearance">Appearance</h2>
-                <div class="setting-row">
-                    <label for="selectionStyle" data-i18n="optionsSelectionStyle">Selection Box Style:</label>
-                    <select id="selectionStyle">
-                        <option value="dashed-blue" data-i18n="optionsStyleDashedBlue">Dashed Blue</option>
-                        <option value="dashed-red" data-i18n="optionsStyleDashedRed">Dashed Red</option>
-                        <option value="solid-green" data-i18n="optionsStyleSolidGreen">Solid Green</option>
-                        <option value="subtle-gray" data-i18n="optionsStyleSubtleGray">Subtle Gray</option>
-                    </select>
+                <div class="appearance-columns">
+                    <div class="appearance-column">
+                        <div class="setting-row-vertical">
+                            <label for="selectionBoxStyle" data-i18n="optionsSelectionStyle">Selection Box Style:</label>
+                            <select id="selectionBoxStyle">
+                                <option value="solid" data-i18n="optionsSelectionBoxStyleSolid"></option>
+                                <option value="dashed" data-i18n="optionsSelectionBoxStyleDashed"></option>
+                                <option value="dotted" data-i18n="optionsSelectionBoxStyleDotted"></option>
+                                <option value="subtle" data-i18n="optionsSelectionBoxStyleSubtle"></option>
+                            </select>
+                        </div>
+                        <div class="setting-row-vertical">
+                            <label for="selectionBoxColor" data-i18n="optionsSelectionColor"></label>
+                            <div class="color-picker-container">
+                                <div class="selection-color-control">
+                                    <input type="color" id="selectionBoxColor">
+                                    <div class="color-preset-editable">
+                                        <button type="button" class="color-preset" id="selectionColorPresetCustom0" data-custom-key="selectionColorCustomPreset0"></button>
+                                        <button type="button" class="color-preset-save" id="selectionColorPresetCustomSave0">🢱</button>
+                                    </div>
+                                    <div class="color-preset-editable">
+                                        <button type="button" class="color-preset" id="selectionColorPresetCustom1" data-custom-key="selectionColorCustomPreset1"></button>
+                                        <button type="button" class="color-preset-save" id="selectionColorPresetCustomSave1">🢱</button>
+                                    </div>
+                                    <div class="color-preset-editable">
+                                        <button type="button" class="color-preset" id="selectionColorPresetCustom2" data-custom-key="selectionColorCustomPreset2"></button>
+                                        <button type="button" class="color-preset-save" id="selectionColorPresetCustomSave2">🢱</button>
+                                    </div>
+                                    <div class="color-preset-editable">
+                                        <button type="button" class="color-preset" id="selectionColorPresetCustom3" data-custom-key="selectionColorCustomPreset3"></button>
+                                        <button type="button" class="color-preset-save" id="selectionColorPresetCustomSave3">🢱</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="appearance-column">
+                        <div class="setting-row-vertical">
+                            <label for="highlightStyle" data-i18n="optionsHighlightStyle"></label>
+                            <select id="highlightStyle">
+                                <option value="classic-yellow" data-i18n="optionsHighlightStyleClassicYellow"></option>
+                                <option value="green-highlighter" data-i18n="optionsHighlightStyleGreenHighlighter"></option>
+                                <option value="dark-gray" data-i18n="optionsHighlightStyleDarkGray"></option>
+                            </select>
+                        </div>
+                    </div>
                 </div>
-                 <div class="setting-row">
-                    <label for="highlightStyle" data-i18n="optionsHighlightStyle"></label>
-                    <select id="highlightStyle">
-                        <option value="classic-yellow" data-i18n="optionsHighlightStyleClassicYellow"></option>
-                        <option value="green-highlighter" data-i18n="optionsHighlightStyleGreenHighlighter"></option>
-                        <option value="dark-gray" data-i18n="optionsHighlightStyleDarkGray"></option>
-                    </select>
-                </div>
+                <div class="settings-divider"></div>
                 <div class="setting-row toggle-row">
                     <label for="showContextMenu" data-i18n="optionsShowContextMenu">Show in context menu</label>
                     <label class="switch"><input type="checkbox" id="showContextMenu"><span class="slider"></span></label>
                 </div>
                 <div class="card-footer">
                     <div id="status-appearance" class="status-message"></div>
+                    <div class="control-wrapper" style="justify-content: flex-end;">
+                        <div id="status-reset-presets" class="status-message"></div>
+                        <button type="button" class="button-secondary" id="resetColorPresets" data-i18n="optionsResetColorPresets">Reset Presets</button>
+                    </div>
                 </div>
             </section>
-
             <section class="card-alt">
                 <h2 data-i18n="optionsHowToUseTitle">How to Use</h2>
                 <p><span data-i18n="optionsHowToUseOpen"></span> <kbd>Alt + Z</kbd> <span data-i18n="optionsHowToUseOpenDetail"></span></p>

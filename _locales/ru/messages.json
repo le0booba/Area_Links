@@ -24,9 +24,14 @@
   "optionsHeaderAppearance": { "message": "Внешний вид" },
   "optionsSelectionStyle": { "message": "Стиль рамки выделения:" },
   "optionsStyleDashedBlue": { "message": "Пунктирный синий" },
-  "optionsStyleDashedRed": { "message": "Пунктирный красный" },
+  "optionsStyleDashedRed": { "message": "Точечный красный" },
   "optionsStyleSolidGreen": { "message": "Сплошной зеленый" },
   "optionsStyleSubtleGray": { "message": "Нейтральный серый" },
+  "optionsSelectionBoxStyleSolid": { "message": "Сплошной" },
+  "optionsSelectionBoxStyleDashed": { "message": "Пунктирный" },
+  "optionsSelectionBoxStyleDotted": { "message": "Точечный" },
+  "optionsSelectionBoxStyleSubtle": { "message": "Незаметный" },
+  "optionsSelectionColor": { "message": "Цвет рамки выделения:" },
   "optionsShowContextMenu": { "message": "Показывать в контекстном меню" },
   "optionsHowToUseTitle": { "message": "Как использовать" },
   "optionsHowToUseOpen": { "message": "Чтобы открыть ссылки," },
@@ -55,5 +60,6 @@
   "popupCopyTitle": { "message": "Активировать выделение для копирования ссылок" },
   "popupSettingsTitle": { "message": "Открыть все настройки" },
   "copyFailedPermissionError": { "message": "Не удалось скопировать в буфер обмена. На некоторых сайтах (например, YouTube) это может произойти, если отклонить запрос на разрешение доступа к Буферу обмена. Пожалуйста, попробуйте еще раз и предоставьте доступ." },
-  "optionsApplyExclusionsOnCopy": { "message": "Также, применять исключения для режима копирования" }
+  "optionsApplyExclusionsOnCopy": { "message": "Также, применять исключения для режима копирования" },
+  "optionsResetColorPresets": { "message": "Сбросить пресеты" }
 }
