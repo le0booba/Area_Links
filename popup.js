@@ -5,8 +5,16 @@ const QUICK_SETTINGS = [
     { id: 'popup-useCopyHistory', key: 'useCopyHistory', default: false, storage: 'local' },
     { id: 'popup-checkDuplicatesOnCopy', key: 'checkDuplicatesOnCopy', default: true, storage: 'local' },
 ];
+const i18nCache = {};
+const loadLanguage = async (lang) => {
+    try {
+        const res = await fetch(chrome.runtime.getURL(`_locales/${lang}/messages.json`));
+        const json = await res.json();
+        Object.entries(json).forEach(([k, v]) => i18nCache[k] = v.message);
+    } catch {}
+};
 const i18n = (k, ...a) => {
-    let m = chrome.i18n.getMessage(k) || k;
+    let m = i18nCache[k] || chrome.i18n.getMessage(k) || k;
     a.forEach((x, i) => m = m.replace(`$${i + 1}`, x));
     return m;
 };
@@ -19,6 +27,7 @@ const showStatus = (k = "popupStatusSaved") => {
 };
 document.addEventListener('DOMContentLoaded', async () => {
     const s = await chrome.storage.sync.get('language');
+    await loadLanguage(s.language || 'en');
     const cmds = await chrome.commands.getAll();
     const map = { 'activate-selection': 'action-open-links', 'activate-selection-copy': 'action-copy-links' };
     cmds.forEach(c => {

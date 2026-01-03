@@ -204,7 +204,10 @@ label {
 .settings-divider {
     height: 1px;
     background-color: var(--grid-border-color);
-    margin: 15px 0 15px 0;
+    margin: 15px 0 0 0;
+}
+.settings-divider + .setting-row {
+    margin-top: 15px;
 }
 .settings-columns {
     display: flex;
@@ -238,7 +241,7 @@ label {
     align-items: center;
     gap: 10px;
     margin-bottom: 0;
-    padding: 15px 0;
+    padding: 10px 0;
     color: var(--text-secondary);
     border-bottom: 1px solid var(--grid-border-color);
     font-weight: 600;
