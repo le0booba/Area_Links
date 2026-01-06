@@ -7,7 +7,7 @@
   </div>
   
   <p>
-    <a href="README.ru.md">Description in English</a>
+    <a href="README.md">Description in English</a>
   </p>
   
   **Select. Open. Done**
