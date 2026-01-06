@@ -5,6 +5,10 @@
     <img src="https://raw.githubusercontent.com/le0booba/Area_Links/refs/heads/main/screen-options-popup.png" alt="Area Links Screenshot 1" width="280"/>
     <img src="https://raw.githubusercontent.com/le0booba/Area_Links/refs/heads/main/screen-options.png" alt="Area Links Screenshot 2" width="400"/>
   </div>
+
+  <p>
+    <a href="README.md">English</a> • <a href="README.ru.md">Русский</a>
+  </p>
   
   **Select. Open. Done**
   
