@@ -6,9 +6,13 @@
     <img src="https://raw.githubusercontent.com/le0booba/Area_Links/refs/heads/main/screen-options.png" alt="Area Links Screenshot 2" width="400"/>
   </div>
 
+---
+
   <p>
-    <a href="README.md">README in English</a> • <a href="README.ru.md">README на Русском</a>
+    <a href="README.md">Information in English</a> • <a href="README.ru.md">Информация на русском</a>
   </p>
+
+---
   
   **Select. Open. Done**
   
