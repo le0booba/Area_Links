@@ -7,7 +7,7 @@
   </div>
   
   <p>
-    <a>English</a> • <a href="README.ru.md">Русский</a>
+    <a href="README.md">⯈ Description in English ⯇</a>
   </p>
   
   **Выделил. Открыл.**
@@ -25,7 +25,7 @@
 
 ### Установка
 
-1.  **Скачайте** [последнюю версию](https://github.com/le0booba/Area_Links/releases/latest) с GitHub.
+1.  **Скачайте** [ПОСЛЕДНИЙ РЕЛИЗ](https://github.com/le0booba/Area_Links/releases/latest) с GitHub.
 2.  **Распакуйте** ZIP-архив в любую удобную папку на компьютере.
 3.  **Откройте Chrome** и перейдите на страницу расширений: `chrome://extensions/`.
 4.  **Включите режим разработчика** с помощью переключателя в правом верхнем углу.
