@@ -250,13 +250,24 @@ label {
 }
 .appearance-columns {
     display: flex;
-    gap: 20px;
-    margin-bottom: 15px;
+    gap: 0;
+    margin-bottom: 0;
 }
 .appearance-column {
     flex: 1;
     display: flex;
     flex-direction: column;
+}
+.appearance-column:first-child {
+    border-right: 1px solid var(--grid-border-color);
+    padding-right: 20px;
+}
+.appearance-column:last-child {
+    padding-left: 0;
+}
+.appearance-column:last-child .setting-row-vertical,
+.appearance-column:last-child .setting-row {
+    padding-left: 20px;
 }
 .controls-group {
     display: flex;
