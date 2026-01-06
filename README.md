@@ -49,7 +49,7 @@
 - 🚀 **Dual Operation Modes**: Open links in new tabs or copy them to your clipboard.
 - ✨ **Visual Highlighting**: See which links are inside your selection box with three color themes (Classic Yellow, Green Highlighter, Dark Gray).
 - 🎨 **Customizable Selection Box**: Choose from four border styles (Solid, Dashed, Dotted, Subtle) and customize the color with a color picker plus four saveable preset slots.
-- 🔗 **Smart Filtering**: Automatically ignores non-http, anchor (`#`), and javascript links, as well as hidden or zero-size elements.
+- 🔗 **Smart Filtering**: Automatically ignores non-http/https links, anchor (`#`) links, javascript: links, and hidden or zero-size elements.
 - 🖱️ **Context Menu Integration**: Activate selection using the right-click menu on any page.
 - 📂 **Flexible Opening Behavior**: Open links in new tabs or a completely new window, position new tabs next to the current tab or at the end, open links in reverse order.
 - ⚙️ **Configurable Tab Limit**: Set a maximum number of tabs to open at once (from 1 to 50).
@@ -106,8 +106,9 @@ The popup also provides quick action buttons to activate selection modes and cle
 | **Excluded Domains** | Comma-separated list of domains to ignore (e.g., `google.com, twitter.com`). Supports international domains with Punycode conversion. | `(empty)` |
 | **Excluded Words** | Comma-separated list of keywords to ignore in link URLs (e.g., `logout, unsubscribe`). | `(empty)` |
 | **Import/Export Exclusions** | Backup and restore your exclusion lists via JSON files with automatic conflict resolution. | `N/A` |
+| **Import/Export Settings** | Backup and restore all extension settings including exclusions via JSON files. | `N/A` |
 | **Show in context menu** | Toggles the "Open/Copy Links" options in the right-click menu. | `On` |
-| **Language** | Switch the extension's display language between supported locales. | `Auto-detect` |
+| **Language** | Switch the extension's display language between supported locales (English, Russian). | `Auto-detect` |
 | **Clear History** | A button to clear the list of links remembered by both "Remember opened links" and "Remember copied links" features. | `N/A` |
 
 ###### HISTORY_LIMIT = 50 (const)
@@ -120,15 +121,15 @@ The popup also provides quick action buttons to activate selection modes and cle
 
 ### Performance Optimizations
 
-1. **Link Position Caching**: All link bounding rectangles are pre-calculated once during `mousedown` and cached in memory. This eliminates expensive DOM queries during mouse movement, preventing layout thrashing and enabling smooth interaction even on pages with thousands of links. This is the most critical optimization for responsiveness.
+1. **Link Position Caching**: All link bounding rectangles are pre-calculated once during `mousedown` and cached in memory. This eliminates expensive DOM queries during mouse movement, preventing layout thrashing and enabling smooth interaction even on pages with thousands of links. Cache includes precise coordinates (`left`, `right`, `top`, `bottom`) for rapid intersection testing.
 
-2. **RequestAnimationFrame with Batched Updates**: Mouse movement events are batched and processed using `requestAnimationFrame`, ensuring updates happen at optimal 60fps. Multiple rapid mouse movements are consolidated into single render updates, dramatically reducing CPU usage during selection.
+2. **RequestAnimationFrame with Batched Updates**: Mouse movement events are batched and processed using `requestAnimationFrame`, ensuring updates happen at optimal 60fps. Multiple rapid mouse movements are consolidated into single render updates, dramatically reducing CPU usage during selection. The `scheduleUpdate()` function prevents redundant calculations when updates are already queued.
 
-3. **In-Memory Settings Cache** (~15% faster access): Implements an in-memory cache layer that combines sync and local storage settings, reducing storage API calls from 100+ per session to just 1-2. Settings are loaded once on initialization and served from memory, providing instant access throughout the session with intelligent change tracking for automatic updates.
+3. **In-Memory Settings Cache** (~15% faster access): Implements an in-memory cache layer that combines sync and local storage settings, reducing storage API calls from 100+ per session to just 1-2. Settings are loaded once on initialization via `settingsManager.initialize()` and served from memory, providing instant access throughout the session with intelligent change tracking for automatic updates via `storage.onChanged` listener.
 
-4. **Set-based History Lookup** (O(1) vs O(n)): Link history is converted to a Set data structure for constant-time lookup operations. When processing 100 links against a history of 50 URLs, this reduces operations from 5,000 (array scanning) to just 100 (Set lookups), dramatically improving selection performance.
+4. **Set-based History Lookup** (O(1) vs O(n)): Link history is converted to a Set data structure (`historySet`, `copyHistorySet`) for constant-time lookup operations. When processing 100 links against a history of 50 URLs, this reduces operations from 5,000 (array scanning) to just 100 (Set lookups), dramatically improving selection performance when duplicate detection is enabled.
 
-5. **CSS Class Toggling**: Link highlighting uses efficient classList manipulation instead of inline style changes. This minimizes layout recalculation and reflow operations, ensuring smooth visual feedback even when highlighting hundreds of links simultaneously.
+5. **CSS Class Toggling with Status Tracking**: Link highlighting uses efficient `classList` manipulation with status tracking (`item.status`) that prevents redundant DOM operations—classes are only added or removed when status actually changes. This minimizes layout recalculation and reflow operations, ensuring smooth visual feedback even when highlighting hundreds of links simultaneously.
 
 ### Browser Compatibility
 - Built with **Manifest V3** for modern Chrome extensions
