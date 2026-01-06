@@ -48,7 +48,7 @@
 - 🎯 **Visual Area Selection**: Drag-and-drop interface to select links on any webpage.
 - 🚀 **Dual Operation Modes**: Open links in new tabs or copy them to your clipboard.
 - ✨ **Visual Highlighting**: See which links are inside your selection box with three color themes (Classic Yellow, Green Highlighter, Dark Gray).
-- 🎨 **4 Selection Box Styles**: Choose from Dashed Blue, Dashed Red, Solid Green, or Subtle Gray.
+- 🎨 **Customizable Selection Box**: Choose from four border styles (Solid, Dashed, Dotted, Subtle) and customize the color with a color picker plus four saveable preset slots.
 - 🔗 **Smart Filtering**: Automatically ignores non-http, anchor (`#`), and javascript links, as well as hidden or zero-size elements.
 - 🖱️ **Context Menu Integration**: Activate selection using the right-click menu on any page.
 - 📂 **Flexible Opening Behavior**: Open links in new tabs or a completely new window, position new tabs next to the current tab or at the end, open links in reverse order.
@@ -92,8 +92,9 @@ The popup also provides quick action buttons to activate selection modes and cle
 | Setting | Description | Default |
 |---|---|---|
 | **Tab Limit** | Set the maximum number of tabs to open in a single action. | `15` |
-| **Selection Style** | Changes the visual appearance of the selection box. Options: Dashed Blue, Dashed Red, Solid Green, Subtle Gray. | `Dashed Blue` |
-| **Highlight Style** | Changes the color scheme for highlighted links within selection. Options: Classic Yellow, Green Highlighter, Dark Gray. | `Classic Yellow` |
+| **Selection Box Style** | Changes the border style of the selection box. Options: Solid, Dashed, Dotted, Subtle. | `Dashed` |
+| **Selection Box Color** | Customize the color of the selection box with a color picker. Includes four saveable preset slots for quick color switching. | `#007bff` (Blue) |
+| **Link Highlight Style** | Changes the color scheme for highlighted links within selection. Options: Classic Yellow, Green Highlighter, Dark Gray. | `Classic Yellow` |
 | **Open in new window** | Opens all selected links in a new browser window instead of tabs. | `Off` |
 | **Open in reverse order** | Opens links in reverse order (bottom to top). | `Off` |
 | **Open next to current** | Opens new tabs immediately after the current tab instead of at the end. | `Off` |
@@ -119,15 +120,15 @@ The popup also provides quick action buttons to activate selection modes and cle
 
 ### Performance Optimizations
 
-1. **Parallel Script Injection** (~45% faster): CSS and content scripts are injected concurrently using `Promise.all()`, significantly reducing initialization time when activating selection mode.
+1. **Link Position Caching**: All link bounding rectangles are pre-calculated once during `mousedown` and cached in memory. This eliminates expensive DOM queries during mouse movement, preventing layout thrashing and enabling smooth interaction even on pages with thousands of links. This is the most critical optimization for responsiveness.
 
-2. **Link Position Caching**: All link bounding rectangles are pre-calculated once during `mousedown` and cached in memory. This eliminates expensive DOM queries during mouse movement, preventing layout thrashing and enabling smooth interaction even on pages with thousands of links.
+2. **RequestAnimationFrame with Batched Updates**: Mouse movement events are batched and processed using `requestAnimationFrame`, ensuring updates happen at optimal 60fps. Multiple rapid mouse movements are consolidated into single render updates, dramatically reducing CPU usage during selection.
 
-3. **RequestAnimationFrame with Batched Updates**: Mouse movement events are batched and processed using `requestAnimationFrame`, ensuring updates happen at optimal 60fps. Multiple rapid mouse movements are consolidated into single render updates, dramatically reducing CPU usage during selection.
+3. **In-Memory Settings Cache** (~15% faster access): Implements an in-memory cache layer that combines sync and local storage settings, reducing storage API calls from 100+ per session to just 1-2. Settings are loaded once on initialization and served from memory, providing instant access throughout the session with intelligent change tracking for automatic updates.
 
-4. **In-Memory Settings Cache** (~15% faster access): Implements an in-memory cache layer that combines sync and local storage settings, reducing storage API calls from 100+ per session to just 1-2. Settings are loaded once on initialization and served from memory, providing instant access throughout the session with intelligent change tracking for automatic updates.
+4. **Set-based History Lookup** (O(1) vs O(n)): Link history is converted to a Set data structure for constant-time lookup operations. When processing 100 links against a history of 50 URLs, this reduces operations from 5,000 (array scanning) to just 100 (Set lookups), dramatically improving selection performance.
 
-5. **Pre-Computed Loop Values** (O(n²) → O(n)): Critical values are extracted before loops to eliminate repeated property lookups, reducing algorithmic complexity from quadratic to linear time for link highlighting operations with 100+ links.
+5. **CSS Class Toggling**: Link highlighting uses efficient classList manipulation instead of inline style changes. This minimizes layout recalculation and reflow operations, ensuring smooth visual feedback even when highlighting hundreds of links simultaneously.
 
 ### Browser Compatibility
 - Built with **Manifest V3** for modern Chrome extensions
@@ -169,7 +170,7 @@ This extension was built with your privacy as a top priority.
 <details>
 <summary><strong>☁️ Sync Storage (<code>chrome.storage.sync</code>)</strong> - These settings are synced across all browsers where you are logged into your Chrome account.</summary>
 
--   Core settings including `tabLimit`, `selectionStyle`, `highlightStyle`, `openInNewWindow`, `openNextToParent`, `reverseOrder`, `applyExclusionsOnCopy`, `removeDuplicatesInSelection`, `language`, and `showContextMenu`.
+-   Core settings including `tabLimit`, `selectionBoxStyle`, `selectionBoxColor`, `highlightStyle`, `openInNewWindow`, `openNextToParent`, `reverseOrder`, `applyExclusionsOnCopy`, `removeDuplicatesInSelection`, `language`, `showContextMenu`, and color preset slots (`selectionColorCustomPreset0-3`).
 </details>
 
 ### Required Permissions
