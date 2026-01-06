@@ -43,23 +43,25 @@ const settingsManager = {
     get() { return settingsCache || this.initialize(); },
     processExclusions() {
         if (!settingsCache) return;
-        const d = (settingsCache.excludedDomains || '').split(',').filter(Boolean);
-        settingsCache.processedExcludedDomains = d.map(x => {
-            try { return new URL('http://' + x.trim()).hostname; } catch { return x.trim().toLowerCase(); }
-        });
-        const w = (settingsCache.excludedWords || '').split(',').filter(Boolean);
-        const set = new Set();
-        w.forEach(word => {
-            const val = word.trim().toLowerCase();
-            if (!val) return;
-            set.add(val);
-            try { set.add(encodeURI(val).toLowerCase()); } catch {}
-            try {
-                const host = new URL('http://' + (val.includes('.') ? val : val + '.test')).hostname.toLowerCase();
-                set.add(host.endsWith('.test') ? host.slice(0, -5) : host);
-            } catch {}
-        });
-        settingsCache.processedExcludedWords = Array.from(set);
+        const dRaw = (settingsCache.excludedDomains || '').split(',');
+        const dSet = new Set();
+        for (let i = 0; i < dRaw.length; i++) {
+            const val = dRaw[i].trim();
+            if (!val) continue;
+            try { 
+                dSet.add(new URL(val.includes('://') ? val : 'http://' + val).hostname.toLowerCase()); 
+            } catch { 
+                dSet.add(val.toLowerCase()); 
+            }
+        }
+        settingsCache.processedExcludedDomains = Array.from(dSet);
+        const wRaw = (settingsCache.excludedWords || '').split(',');
+        const wSet = new Set();
+        for (let i = 0; i < wRaw.length; i++) {
+            const val = wRaw[i].trim().toLowerCase();
+            if (val) wSet.add(val);
+        }
+        settingsCache.processedExcludedWords = Array.from(wSet);
     },
     async refresh() {
         await this.initialize();
@@ -173,7 +175,3 @@ async function processLinks(urls, tab) {
         chrome.storage.local.set({ linkHistory: [...new Set([...list, ...s.linkHistory])].slice(0, HISTORY_LIMIT) });
     }
 }
-chrome.alarms.create('check', { periodInMinutes: 1 });
-chrome.alarms.onAlarm.addListener(a => {
-    if (a.name === 'check' && activeSelectionTabId) chrome.tabs.get(activeSelectionTabId).catch(() => activeSelectionTabId = null);
-});

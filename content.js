@@ -13,9 +13,8 @@ const selectionState = {
 };
 let selectionBox = null;
 let selectionOverlay = null;
-let allTrackedElements = new Set();
-let highlightedLinks = [];
-let cachedLinks = [];
+let cachedLinks = null;
+
 const setSelectionBoxAppearance = (settings) => {
     if (!selectionBox) return;
     const { selectionBoxStyle: boxStyle, selectionBoxColor: boxColor } = settings || {};
@@ -39,12 +38,7 @@ const setSelectionBoxAppearance = (settings) => {
     selectionBox.style.setProperty('--al-selection-border-style', borderStyle);
     selectionBox.style.setProperty('--al-selection-border-width', borderWidth);
 };
-const isValidLink = (element) => {
-    const { href } = element;
-    if (!href || href.startsWith('#') || href.startsWith('javascript:')) return false;
-    const rect = element.getBoundingClientRect();
-    return rect.width > 0 && rect.height > 0 && window.getComputedStyle(element).visibility === 'visible';
-};
+
 const createSelectionElements = () => {
     if (!selectionOverlay) {
         selectionOverlay = document.createElement('div');
@@ -57,6 +51,7 @@ const createSelectionElements = () => {
         document.body.appendChild(selectionBox);
     }
 };
+
 const getSelectionRectangle = (start, end) => {
     const x = Math.min(start.x, end.x);
     const y = Math.min(start.y, end.y);
@@ -64,6 +59,7 @@ const getSelectionRectangle = (start, end) => {
     const height = Math.abs(start.y - end.y);
     return { x, y, width, height, left: x, top: y, right: x + width, bottom: y + height };
 };
+
 const updateSelectionBox = () => {
     if (!selectionBox) return;
     const rect = getSelectionRectangle(selectionState.startCoords, selectionState.currentCoords);
@@ -72,55 +68,75 @@ const updateSelectionBox = () => {
         width: `${rect.width}px`, height: `${rect.height}px`
     });
 };
-const isExcluded = (linkData, settings) => {
-    if (!settings) return false;
-    const { excludedDomains = [], excludedWords = [] } = settings;
-    const { hostname, hrefLower, decodedHrefLower } = linkData;
-    if (excludedDomains.some(d => hostname.includes(d)) || excludedWords.some(w => hostname.includes(w))) return true;
-    return excludedWords.some(w => hrefLower.includes(w) || decodedHrefLower.includes(w));
+
+const getLinkData = (item) => {
+    if (!item.data) {
+        const raw = item.el.href;
+        let host = '';
+        try { host = new URL(raw).hostname.toLowerCase(); } catch {}
+        item.data = {
+            raw: raw,
+            h: host,
+            l: raw.toLowerCase(),
+            d: decodeURI(raw).toLowerCase()
+        };
+    }
+    return item.data;
 };
+
 const updateLinkHighlights = () => {
-    const selectionRect = getSelectionRectangle(selectionState.startCoords, selectionState.currentCoords);
-    const linksInSelection = cachedLinks.filter(l =>
-        l.left < selectionRect.right && l.right > selectionRect.left &&
-        l.top < selectionRect.bottom && l.bottom > selectionRect.top
-    );
+    if (!cachedLinks) return;
+    const rect = getSelectionRectangle(selectionState.startCoords, selectionState.currentCoords);
     const { isCopyMode, settings, historySet, copyHistorySet } = selectionState;
     const relevantHistory = isCopyMode ? copyHistorySet : historySet;
     const useHistory = isCopyMode ? settings.useCopyHistory : settings.useHistory;
     const removeDuplicates = isCopyMode ? settings.checkDuplicatesOnCopy : settings.removeDuplicatesInSelection;
-    const seenInSelection = new Set();
-    const finalLinksSet = new Set();
-    const newTrackedElements = new Set();
+    const seenInCurrentPass = new Set();
     let count = 0;
-    linksInSelection.forEach(linkObj => {
-        newTrackedElements.add(linkObj.element);
-        const { href } = linkObj;
-        const isExcludedLink = (!isCopyMode || settings.applyExclusionsOnCopy) && isExcluded(linkObj, settings);
-        const isSeen = seenInSelection.has(href);
-        const isHistory = useHistory && relevantHistory.has(href);
-        let status = '';
-        if (!isExcludedLink && !isHistory && (!removeDuplicates || !isSeen)) {
-            if (isCopyMode || count < settings.tabLimit) {
-                status = HIGHLIGHT_CLASS;
-                finalLinksSet.add(linkObj.element);
-                count++;
-            } else if (!isCopyMode) {
-                status = LIMIT_EXCEEDED_CLASS;
+    const len = cachedLinks.length;
+    for (let i = 0; i < len; i++) {
+        const item = cachedLinks[i];
+        const isInside = !(item.t > rect.bottom || item.b < rect.top || item.l > rect.right || item.r < rect.left);
+        if (isInside) {
+            const data = getLinkData(item);
+            let isExcluded = false;
+            if ((!isCopyMode || settings.applyExclusionsOnCopy)) {
+                const { excludedDomains = [], excludedWords = [] } = settings;
+                if (excludedDomains.some(d => data.h.includes(d))) isExcluded = true;
+                else if (excludedWords.some(w => data.h.includes(w) || data.l.includes(w) || data.d.includes(w))) isExcluded = true;
+            }
+            const isHistory = useHistory && relevantHistory.has(data.raw);
+            const isSeen = seenInCurrentPass.has(data.raw);
+            let newStatus = 0;
+            let className = '';
+            if (!isExcluded && !isHistory && (!removeDuplicates || !isSeen)) {
+                if (isCopyMode || count < settings.tabLimit) {
+                    newStatus = 1;
+                    className = HIGHLIGHT_CLASS;
+                    count++;
+                } else if (!isCopyMode) {
+                    newStatus = 3;
+                    className = LIMIT_EXCEEDED_CLASS;
+                }
+            } else {
+                newStatus = 2;
+                className = DUPLICATE_CLASS;
+            }
+            if (removeDuplicates) seenInCurrentPass.add(data.raw);
+            if (item.status !== newStatus) {
+                if (item.status !== 0) item.el.classList.remove(HIGHLIGHT_CLASS, DUPLICATE_CLASS, LIMIT_EXCEEDED_CLASS);
+                if (className) item.el.classList.add(className);
+                item.status = newStatus;
             }
         } else {
-            status = DUPLICATE_CLASS;
+            if (item.status !== 0) {
+                item.el.classList.remove(HIGHLIGHT_CLASS, DUPLICATE_CLASS, LIMIT_EXCEEDED_CLASS);
+                item.status = 0;
+            }
         }
-        if (removeDuplicates) seenInSelection.add(href);
-        linkObj.element.classList.remove(HIGHLIGHT_CLASS, DUPLICATE_CLASS, LIMIT_EXCEEDED_CLASS);
-        if (status) linkObj.element.classList.add(status);
-    });
-    allTrackedElements.forEach(el => {
-        if (!newTrackedElements.has(el)) el.classList.remove(HIGHLIGHT_CLASS, DUPLICATE_CLASS, LIMIT_EXCEEDED_CLASS);
-    });
-    allTrackedElements = newTrackedElements;
-    highlightedLinks = Array.from(finalLinksSet);
+    }
 };
+
 const resetSelection = () => {
     if (!selectionState.isActive) return;
     if (selectionOverlay) {
@@ -132,17 +148,22 @@ const resetSelection = () => {
     document.removeEventListener('keydown', handleKeyDown, true);
     document.removeEventListener('scroll', handleScroll, { passive: true });
     if (selectionBox) selectionBox.style.display = 'none';
-    allTrackedElements.forEach(el => el.classList.remove(HIGHLIGHT_CLASS, DUPLICATE_CLASS, LIMIT_EXCEEDED_CLASS));
+    if (cachedLinks) {
+        cachedLinks.forEach(item => {
+            if (item.status !== 0) {
+                item.el.classList.remove(HIGHLIGHT_CLASS, DUPLICATE_CLASS, LIMIT_EXCEEDED_CLASS);
+            }
+        });
+    }
     document.body.classList.remove(PREPARE_ANIMATION_CLASS);
     delete document.body.dataset.linkOpenerHighlightStyle;
     document.body.style.cursor = 'default';
     selectionState.isActive = false;
     selectionState.isSelecting = false;
-    cachedLinks = [];
-    allTrackedElements.clear();
-    highlightedLinks = [];
+    cachedLinks = null;
     chrome.runtime.sendMessage({ type: 'selectionDeactivated' }).catch(() => {});
 };
+
 const copyLinksToClipboard = (links) => {
     const text = links.join('\n');
     if (selectionState.settings.useCopyHistory && links.length) {
@@ -160,6 +181,7 @@ const copyLinksToClipboard = (links) => {
         document.body.removeChild(ta);
     }
 };
+
 const handleKeyDown = (e) => {
     if (e.key === 'Escape') {
         e.preventDefault();
@@ -167,6 +189,7 @@ const handleKeyDown = (e) => {
         resetSelection();
     }
 };
+
 const scheduleUpdate = () => {
     if (!selectionState.isUpdateScheduled && selectionState.isSelecting) {
         selectionState.isUpdateScheduled = true;
@@ -179,7 +202,9 @@ const scheduleUpdate = () => {
         });
     }
 };
+
 const handleScroll = () => { if (selectionState.isSelecting) scheduleUpdate(); };
+
 const handleMouseMove = (e) => {
     if (selectionState.isSelecting) {
         if ((e.buttons & 1) === 0) return handleMouseUp(e);
@@ -187,19 +212,27 @@ const handleMouseMove = (e) => {
         scheduleUpdate();
     }
 };
+
 const handleMouseUp = (e) => {
     if (e.button !== 0 || !selectionState.isSelecting) return;
     e.preventDefault();
     e.stopPropagation();
     const rect = getSelectionRectangle(selectionState.startCoords, selectionState.currentCoords);
-    if (rect.width > 5 || rect.height > 5) {
-        const urls = highlightedLinks.map(el => el.href);
+    if ((rect.width > 5 || rect.height > 5) && cachedLinks) {
+        const urls = [];
+        const len = cachedLinks.length;
+        for (let i = 0; i < len; i++) {
+            if (cachedLinks[i].status === 1) {
+                urls.push(getLinkData(cachedLinks[i]).raw);
+            }
+        }
         if (urls.length) {
             selectionState.isCopyMode ? copyLinksToClipboard(urls) : chrome.runtime.sendMessage({ type: "openLinks", urls });
         }
     }
     resetSelection();
 };
+
 const handleMouseDown = (e) => {
     if (e.button !== 0) return;
     e.preventDefault();
@@ -207,30 +240,32 @@ const handleMouseDown = (e) => {
     selectionState.isSelecting = true;
     selectionState.startCoords = { x: e.pageX, y: e.pageY };
     selectionState.currentCoords = { x: e.pageX, y: e.pageY };
-    const scrollX = window.scrollX, scrollY = window.scrollY;
-    cachedLinks = Array.from(document.querySelectorAll('a[href]')).reduce((acc, element) => {
-        if (isValidLink(element)) {
-            const rect = element.getBoundingClientRect();
-            const href = element.href;
-            let hostname = '';
-            try { hostname = new URL(href).hostname.toLowerCase(); } catch {}
-            acc.push({
-                element, href,
-                hostname,
-                hrefLower: href.toLowerCase(),
-                decodedHrefLower: decodeURI(href).toLowerCase(),
-                left: rect.left + scrollX, right: rect.right + scrollX,
-                top: rect.top + scrollY, bottom: rect.bottom + scrollY
-            });
-        }
-        return acc;
-    }, []);
+    const scrollX = window.scrollX;
+    const scrollY = window.scrollY;
+    cachedLinks = [];
+    const links = document.querySelectorAll('a[href]');
+    const len = links.length;
+    for (let i = 0; i < len; i++) {
+        const element = links[i];
+        const rect = element.getBoundingClientRect();
+        if (rect.width === 0 || rect.height === 0) continue;
+        cachedLinks.push({
+            el: element,
+            l: rect.left + scrollX,
+            r: rect.right + scrollX,
+            t: rect.top + scrollY,
+            b: rect.bottom + scrollY,
+            status: 0,
+            data: null
+        });
+    }
     setSelectionBoxAppearance(selectionState.settings);
     selectionBox.style.display = 'block';
     updateSelectionBox();
     selectionOverlay.addEventListener('mousemove', handleMouseMove, true);
     selectionOverlay.addEventListener('mouseup', handleMouseUp, true);
 };
+
 const initSelection = (settings) => {
     if (selectionState.isActive) resetSelection();
     Object.assign(selectionState, {
@@ -248,6 +283,7 @@ const initSelection = (settings) => {
     document.addEventListener('keydown', handleKeyDown, true);
     document.addEventListener('scroll', handleScroll, { passive: true });
 };
+
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.type === 'ping') return sendResponse({ type: "pong" });
     if (request.type === 'resetSelection') return resetSelection();
@@ -256,4 +292,5 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         sendResponse({ success: true });
     }
 });
+
 ['popstate', 'hashchange', 'pagehide'].forEach(event => window.addEventListener(event, resetSelection));

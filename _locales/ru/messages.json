@@ -61,5 +61,9 @@
   "popupSettingsTitle": { "message": "Открыть все настройки" },
   "copyFailedPermissionError": { "message": "Не удалось скопировать в буфер обмена. На некоторых сайтах (например, YouTube) это может произойти, если отклонить запрос на разрешение доступа к Буферу обмена. Пожалуйста, попробуйте еще раз и предоставьте доступ." },
   "optionsApplyExclusionsOnCopy": { "message": "Также, применять исключения для режима копирования" },
-  "optionsResetColorPresets": { "message": "Сбросить пресеты" }
+  "optionsResetColorPresets": { "message": "Сбросить пресеты" },
+  "optionsExportSettings": { "message": "Экспорт настроек (c Исключениями)" },
+  "optionsImportSettings": { "message": "Импорт настроек (c Исключениями)" },
+  "optionsLabelLanguage": { "message": "Язык" },
+  "optionsLabelExportImport": { "message": "Импорт / Экспорт" }
 }

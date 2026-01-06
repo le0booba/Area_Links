@@ -61,5 +61,9 @@
   "popupSettingsTitle": { "message": "Open All Settings" },
   "copyFailedPermissionError": { "message": "Copying to clipboard failed. On some sites (like YouTube), this can happen if you deny the Clipboard permission prompt. Please try again and allow access." },
   "optionsApplyExclusionsOnCopy": { "message": "Also, apply exclusions for copy mode" },
-  "optionsResetColorPresets": { "message": "Reset Presets" }
+  "optionsResetColorPresets": { "message": "Reset Presets" },
+  "optionsExportSettings": { "message": "Export Settings (with Exclusions)" },
+  "optionsImportSettings": { "message": "Import Settings (with Exclusions)" },
+  "optionsLabelLanguage": { "message": "Language" },
+  "optionsLabelExportImport": { "message": "Import / Export" }
 }

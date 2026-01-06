@@ -89,7 +89,15 @@ h1 {
     cursor: default;
     opacity: 0.4;
 }
-#clear-history-popup { color: var(--danger-color); }
+#clear-history-popup {
+    color: var(--danger-color);
+    width: 24px;
+    height: 24px;
+}
+#clear-history-popup svg {
+    width: 14px;
+    height: 14px;
+}
 #clear-history-popup:hover:not(:disabled) {
     color: #f56565;
     border: 1px solid var(--danger-hover);

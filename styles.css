@@ -47,7 +47,7 @@ body.link-opener-prepare-animation a::before {
     transform: scale(0.95);
     transition: opacity 0.15s ease-in-out, transform 0.15s ease-in-out;
     pointer-events: none;
-    will-change: transform, opacity;
+    will-change: opacity, transform;
 }
 body.link-opener-prepare-animation a.link-opener-highlighted-link::before,
 body.link-opener-prepare-animation a.link-opener-duplicate-link::before,
