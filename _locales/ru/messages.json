@@ -65,5 +65,7 @@
   "optionsExportSettings": { "message": "Экспорт настроек (c Исключениями)" },
   "optionsImportSettings": { "message": "Импорт настроек (c Исключениями)" },
   "optionsLabelLanguage": { "message": "Язык" },
-  "optionsLabelExportImport": { "message": "Импорт / Экспорт" }
+  "optionsLabelExportImport": { "message": "Импорт / Экспорт" },
+  "optionsClearField": { "message": "Очистить поле" },
+  "optionsSaveColorPreset": { "message": "Сохранить выбранный цвет в пресет" }
 }

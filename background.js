@@ -40,7 +40,7 @@ const settingsManager = {
         }
         return settingsCache;
     },
-    get() { return settingsCache || this.initialize(); },
+    async get() { return settingsCache || await this.initialize(); },
     processExclusions() {
         if (!settingsCache) return;
         const dRaw = (settingsCache.excludedDomains || '').split(',');
@@ -80,6 +80,7 @@ async function setupContextMenu() {
     
     const commands = await chrome.commands.getAll();
     const getShortcut = (name) => commands.find(c => c.name === name)?.shortcut || '';
+    
     const menus = [
         { id: "activate-selection-menu", title: `${chrome.i18n.getMessage("cmdActivate")} ${getShortcut('activate-selection') && `(${getShortcut('activate-selection')})`}` },
         { id: "activate-selection-copy-menu", title: `${chrome.i18n.getMessage("cmdActivateCopy")} ${getShortcut('activate-selection-copy') && `(${getShortcut('activate-selection-copy')})`}` }
@@ -130,12 +131,21 @@ chrome.storage.onChanged.addListener(async (changes) => {
 chrome.contextMenus.onClicked.addListener((info, tab) => {
     if (tab?.id) triggerSelection(tab, info.menuItemId === "activate-selection-menu" ? "initiateSelection" : "initiateSelectionCopy");
 });
+
 chrome.tabs.onActivated.addListener(i => {
     if (activeSelectionTabId && activeSelectionTabId !== i.tabId) {
         chrome.tabs.sendMessage(activeSelectionTabId, { type: "resetSelection" }).catch(() => {});
         activeSelectionTabId = null;
     }
+    setupContextMenu();
 });
+
+chrome.windows.onFocusChanged.addListener(windowId => {
+    if (windowId !== chrome.windows.WINDOW_ID_NONE) {
+        setupContextMenu();
+    }
+});
+
 chrome.tabs.onRemoved.addListener(id => { if (id === activeSelectionTabId) activeSelectionTabId = null; });
 async function triggerSelection(tab, type) {
     if (!tab.url?.startsWith('http') || !tab.id) return;

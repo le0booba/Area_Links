@@ -65,5 +65,7 @@
   "optionsExportSettings": { "message": "Export Settings (with Exclusions)" },
   "optionsImportSettings": { "message": "Import Settings (with Exclusions)" },
   "optionsLabelLanguage": { "message": "Language" },
-  "optionsLabelExportImport": { "message": "Import / Export" }
+  "optionsLabelExportImport": { "message": "Import / Export" },
+  "optionsClearField": { "message": "Clear field" },
+  "optionsSaveColorPreset": { "message": "Save the selected color to preset" }
 }
