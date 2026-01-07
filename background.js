@@ -1,16 +1,16 @@
 const HISTORY_LIMIT = 50;
 const DEFAULTS = {
     sync: {
-        tabLimit: 15, selectionBoxStyle: 'dashed', selectionBoxColor: '#007bff',
+        tabLimit: 15, selectionBoxStyle: 'solid', selectionBoxColor: '#007bff',
         selectionColorCustomPreset1: '#c90062', selectionColorCustomPreset2: '#28a745',
         selectionColorCustomPreset3: '#343a40', selectionStyle: 'dashed-blue',
         highlightStyle: 'classic-yellow', openInNewWindow: false, reverseOrder: false,
-        openNextToParent: false, applyExclusionsOnCopy: false, language: 'en',
-        showContextMenu: true, removeDuplicatesInSelection: true,
+        openNextToParent: true, applyExclusionsOnCopy: false, language: 'en',
+        showContextMenu: true, removeDuplicatesInSelection: true, checkDuplicatesOnCopy: true,
     },
     local: {
         excludedDomains: '', excludedWords: '', linkHistory: [], copyHistory: [],
-        useHistory: true, useCopyHistory: false, checkDuplicatesOnCopy: true,
+        useHistory: true, useCopyHistory: false,
     }
 };
 let activeSelectionTabId = null;
@@ -69,16 +69,29 @@ const settingsManager = {
     }
 };
 async function setupContextMenu() {
-    await chrome.contextMenus.removeAll();
+    try {
+        await chrome.contextMenus.removeAll();
+    } catch (e) {
+        // Ignore removal errors
+    }
+    
     const settings = await settingsManager.get();
     if (!settings.showContextMenu) return;
+    
     const commands = await chrome.commands.getAll();
     const getShortcut = (name) => commands.find(c => c.name === name)?.shortcut || '';
     const menus = [
         { id: "activate-selection-menu", title: `${chrome.i18n.getMessage("cmdActivate")} ${getShortcut('activate-selection') && `(${getShortcut('activate-selection')})`}` },
         { id: "activate-selection-copy-menu", title: `${chrome.i18n.getMessage("cmdActivateCopy")} ${getShortcut('activate-selection-copy') && `(${getShortcut('activate-selection-copy')})`}` }
     ];
-    menus.forEach(m => chrome.contextMenus.create({ ...m, contexts: ["page"] }));
+    
+    menus.forEach(m => {
+        chrome.contextMenus.create({ ...m, contexts: ["page"] }, () => {
+            if (chrome.runtime.lastError) {
+                // Suppress "duplicate id" errors
+            }
+        });
+    });
 }
 chrome.runtime.onInstalled.addListener(async (d) => {
     if (d.reason === 'install') {

@@ -1,6 +1,6 @@
 const SETTINGS_CONFIG = {
     tabLimit: { default: 15, storage: 'sync' },
-    selectionBoxStyle: { default: 'dashed', storage: 'sync' },
+    selectionBoxStyle: { default: 'solid', storage: 'sync' },
     selectionBoxColor: { default: '#007bff', storage: 'sync' },
     selectionColorCustomPreset0: { default: '#007bff', storage: 'sync' },
     selectionColorCustomPreset1: { default: '#c90062', storage: 'sync' },
@@ -10,16 +10,16 @@ const SETTINGS_CONFIG = {
     highlightStyle: { default: 'classic-yellow', storage: 'sync' },
     openInNewWindow: { default: false, storage: 'sync' },
     reverseOrder: { default: false, storage: 'sync' },
-    openNextToParent: { default: false, storage: 'sync' },
+    openNextToParent: { default: true, storage: 'sync' },
     applyExclusionsOnCopy: { default: false, storage: 'sync' },
     language: { default: 'en', storage: 'sync' },
     showContextMenu: { default: true, storage: 'sync' },
     removeDuplicatesInSelection: { default: true, storage: 'sync' },
+    checkDuplicatesOnCopy: { default: true, storage: 'sync' },
     excludedDomains: { default: '', storage: 'local' },
     excludedWords: { default: '', storage: 'local' },
     useHistory: { default: true, storage: 'local' },
     useCopyHistory: { default: false, storage: 'local' },
-    checkDuplicatesOnCopy: { default: true, storage: 'local' },
 };
 const domCache = new Map();
 const i18nCache = {};
@@ -276,7 +276,7 @@ const setupEventListeners = () => {
     
     getElement('exportSettings').addEventListener('click', async () => {
         const sync = await chrome.storage.sync.get(null);
-        const local = await chrome.storage.local.get(['excludedDomains', 'excludedWords', 'useHistory', 'useCopyHistory', 'checkDuplicatesOnCopy']);
+        const local = await chrome.storage.local.get(['excludedDomains', 'excludedWords', 'useHistory', 'useCopyHistory']);
         const data = { sync, local };
         const url = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }));
         const a = document.createElement('a');

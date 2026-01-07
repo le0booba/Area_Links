@@ -1,9 +1,9 @@
 const QUICK_SETTINGS = [
-    { id: 'popup-openNextToParent', key: 'openNextToParent', default: false, storage: 'sync' },
+    { id: 'popup-openNextToParent', key: 'openNextToParent', default: true, storage: 'sync' },
     { id: 'popup-removeDuplicatesInSelection', key: 'removeDuplicatesInSelection', default: true, storage: 'sync' },
     { id: 'popup-useHistory', key: 'useHistory', default: true, storage: 'local' },
     { id: 'popup-useCopyHistory', key: 'useCopyHistory', default: false, storage: 'local' },
-    { id: 'popup-checkDuplicatesOnCopy', key: 'checkDuplicatesOnCopy', default: true, storage: 'local' },
+    { id: 'popup-checkDuplicatesOnCopy', key: 'checkDuplicatesOnCopy', default: true, storage: 'sync' },
 ];
 const i18nCache = {};
 const loadLanguage = async (lang) => {
