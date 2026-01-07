@@ -94,17 +94,26 @@ chrome.runtime.onInstalled.addListener(async (d) => {
     setupContextMenu();
 });
 chrome.runtime.onStartup.addListener(async () => { await settingsManager.initialize(); await setupContextMenu(); });
-chrome.storage.onChanged.addListener((changes) => {
-    if (!settingsCache) return;
-    let refreshMenu = false, processExc = false;
-    for (const [k, { newValue }] of Object.entries(changes)) {
-        settingsCache[k] = newValue;
-        if (['showContextMenu', 'language'].includes(k)) refreshMenu = true;
-        if (['excludedDomains', 'excludedWords'].includes(k)) processExc = true;
+
+chrome.storage.onChanged.addListener(async (changes) => {
+    if (settingsCache) {
+        for (const [k, { newValue }] of Object.entries(changes)) {
+            settingsCache[k] = newValue;
+        }
     }
-    if (processExc) settingsManager.processExclusions();
+    
+    const keys = Object.keys(changes);
+    const refreshMenu = keys.some(k => ['showContextMenu', 'language'].includes(k));
+    const processExc = keys.some(k => ['excludedDomains', 'excludedWords'].includes(k));
+
+    if (processExc) {
+        if (!settingsCache) await settingsManager.initialize();
+        settingsManager.processExclusions();
+    }
+    
     if (refreshMenu) setupContextMenu();
 });
+
 chrome.contextMenus.onClicked.addListener((info, tab) => {
     if (tab?.id) triggerSelection(tab, info.menuItemId === "activate-selection-menu" ? "initiateSelection" : "initiateSelectionCopy");
 });

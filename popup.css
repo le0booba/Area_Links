@@ -52,7 +52,7 @@ h1 {
     margin-right: 6px;
 }
 #status-message {
-    margin-top: 3px;
+    margin-top: 0px;
     margin-right: 4px;
     min-width: 20px;
     text-align: right;
