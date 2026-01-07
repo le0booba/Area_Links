@@ -96,12 +96,12 @@ The popup also provides quick action buttons to activate selection modes and cle
 | Setting | Description | Default |
 |---|---|---|
 | **Tab Limit** | Set the maximum number of tabs to open in a single action. | `15` |
-| **Selection Box Style** | Changes the border style of the selection box. Options: Solid, Dashed, Dotted, Subtle. | `Dashed` |
+| **Selection Box Style** | Changes the border style of the selection box. Options: Solid, Dashed, Dotted, Subtle. | `Solid` |
 | **Selection Box Color** | Customize the color of the selection box with a color picker. Includes four saveable preset slots for quick color switching. | `#007bff` (Blue) |
 | **Link Highlight Style** | Changes the color scheme for highlighted links within selection. Options: Classic Yellow, Green Highlighter, Dark Gray. | `Classic Yellow` |
 | **Open in new window** | Opens all selected links in a new browser window instead of tabs. | `Off` |
 | **Open in reverse order** | Opens links in reverse order (bottom to top). | `Off` |
-| **Open next to current** | Opens new tabs immediately after the current tab instead of at the end. | `Off` |
+| **Open next to current** | Opens new tabs immediately after the current tab instead of at the end. | `On` |
 | **Remember opened links** | Prevents re-opening of previously opened links (stores last 50 URLs). | `On` |
 | **Remember copied links** | Prevents re-copying of previously copied links (stores last 50 URLs). | `Off` |
 | **Remove duplicates (Open)** | Removes duplicate URLs within the current selection when opening. | `On` |
@@ -169,13 +169,12 @@ This extension was built with your privacy as a top priority.
 -   `excludedWords`: Comma-separated list of keywords to exclude from link URLs.
 -   `useHistory`: A true/false setting for whether to remember opened links.
 -   `useCopyHistory`: A true/false setting for whether to remember copied links.
--   `checkDuplicatesOnCopy`: A true/false setting for whether to remove duplicate links when copying.
 </details>
 
 <details>
 <summary><strong>☁️ Sync Storage (<code>chrome.storage.sync</code>)</strong> - These settings are synced across all browsers where you are logged into your Chrome account.</summary>
 
--   Core settings including `tabLimit`, `selectionBoxStyle`, `selectionBoxColor`, `highlightStyle`, `openInNewWindow`, `openNextToParent`, `reverseOrder`, `applyExclusionsOnCopy`, `removeDuplicatesInSelection`, `language`, `showContextMenu`, and color preset slots (`selectionColorCustomPreset0-3`).
+-   Core settings including `tabLimit`, `selectionBoxStyle`, `selectionBoxColor`, `highlightStyle`, `openInNewWindow`, `openNextToParent`, `reverseOrder`, `applyExclusionsOnCopy`, `removeDuplicatesInSelection`, `checkDuplicatesOnCopy`, `language`, `showContextMenu`, and color preset slots (`selectionColorCustomPreset0-3`).
 </details>
 
 ### Required Permissions
