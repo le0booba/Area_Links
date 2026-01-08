@@ -72,7 +72,6 @@ async function setupContextMenu() {
     try {
         await chrome.contextMenus.removeAll();
     } catch (e) {
-        // Ignore removal errors
     }
     
     const settings = await settingsManager.get();
@@ -89,7 +88,6 @@ async function setupContextMenu() {
     menus.forEach(m => {
         chrome.contextMenus.create({ ...m, contexts: ["page"] }, () => {
             if (chrome.runtime.lastError) {
-                // Suppress "duplicate id" errors
             }
         });
     });
