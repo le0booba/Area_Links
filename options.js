@@ -336,8 +336,8 @@ const setupEventListeners = () => {
     });
     getElement('exclusions-details').addEventListener('toggle', e => localStorage.setItem('exclusionsOpen', e.target.open));
     document.querySelector('main').addEventListener('change', handleSettingChange);
-    const saveSelectionBoxColor = (hex) => {
-        debouncedSaveSetting('sync', 'selectionBoxColor', hex, 'status-appearance', 'optionsStatusSettingSaved');
+    
+    const updateColorUI = (hex) => {
         getElement('selectionBoxColor').value = hex;
         const normalized = hex.trim().toLowerCase();
         customPresets.forEach(p => {
@@ -348,6 +348,12 @@ const setupEventListeners = () => {
             if (c === normalized) btn.classList.add('selected');
         });
     };
+
+    const saveSelectionBoxColor = (hex) => {
+        debouncedSaveSetting('sync', 'selectionBoxColor', hex, 'status-appearance', 'optionsStatusSettingSaved');
+        updateColorUI(hex);
+    };
+
     getElement('selectionBoxColor')?.addEventListener('input', (e) => saveSelectionBoxColor(e.target.value));
     customPresets.forEach(p => {
         getElement(p.btnId)?.addEventListener('click', () => {
@@ -381,7 +387,7 @@ const setupEventListeners = () => {
             statusEl.innerHTML = successIconSVG;
             setTimeout(() => statusEl.innerHTML = '', 2000);
             
-            saveSelectionBoxColor(defaults.selectionBoxColor);
+            updateColorUI(defaults.selectionBoxColor);
             checkResetButtonState();
         }).catch(() => showStatus('status-appearance', 'optionsStatusError', true));
     });
