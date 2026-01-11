@@ -263,10 +263,6 @@ label {
     padding-right: 20px;
 }
 .appearance-column:last-child {
-    padding-left: 0;
-}
-.appearance-column:last-child .setting-row-vertical,
-.appearance-column:last-child .setting-row {
     padding-left: 20px;
 }
 .controls-group {
@@ -310,16 +306,20 @@ select {
 }
 #selectionBoxStyle, #highlightStyle {
     width: 100%;
+    max-width: 200px;
+}
+.appearance-column .setting-row-vertical select {
+    width: 200px;
 }
 input[type="color"] {
-    width: 45px;
-    height: 70px;
+    width: 55px;
+    height: 55px;
     padding: 0px;
     border-radius: 6px;
     border: 2px solid var(--border-color);
     cursor: pointer;
     transition: border-color 0.2s;
-    margin-top: 2px;
+    margin-top: 10px;
 }
 
 input[type="color"]:hover {
@@ -580,7 +580,7 @@ input:checked+.slider:before {
 }
 .header-separator {
     width: 1px;
-    height: 54px;
+    height: 52px;
     background-color: var(--border-color);
     opacity: 0.5;
 }
