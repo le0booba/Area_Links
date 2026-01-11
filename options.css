@@ -312,59 +312,89 @@ select {
     width: 100%;
 }
 input[type="color"] {
-    width: 60px;
-    height: 42px;
-    padding: 0;
-    border-radius: 5px;
-    margin-right: 10px;
-    margin-bottom: 5px;
+    width: 45px;
+    height: 70px;
+    padding: 0px;
+    border-radius: 6px;
+    border: 2px solid var(--border-color);
+    cursor: pointer;
+    transition: border-color 0.2s;
+    margin-top: 2px;
+}
+
+input[type="color"]:hover {
+    border-color: var(--primary-color);
 }
 .selection-color-control {
     display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 8px;
+    align-items: flex-start;
+    gap: 12px;
     flex-wrap: wrap;
 }
-.color-presets-container {
+.color-picker-container {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+.color-presets-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    flex-grow: 1;
+    min-width: 200px;
+}
+.color-preset-item {
+    position: relative;
     display: flex;
     flex-direction: column;
     gap: 8px;
-}
-.color-presets-row {
-    display: flex;
     align-items: center;
-    gap: 8px;
 }
 .color-preset {
-    width: 32px;
-    height: 32px;
+    width: 40px;
+    height: 40px;
     padding: 0;
     border-radius: 6px;
-    background: var(--preset-color, transparent);
-    margin-right: 5px;
-    margin-left: 8px;
+    background: var(--preset-color, #007bff);
+    border: 2px solid var(--border-color);
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+.color-preset:hover:not(:disabled) {
+    transform: scale(1.08);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    border-color: white;
 }
 .color-preset.selected {
-    outline: 4px double black;
-}
-.color-preset-editable {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
+    border: 2px solid var(--primary-color);
+    box-shadow: 0 0 0 2px var(--bg-color), 0 0 0 4px var(--primary-color);
 }
 .color-preset-save {
-    width: 20px;
-    height: 20px;
+    width: 24px;
+    height: 24px;
     padding: 0;
-    border-radius: 6px;
-    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    border: 1.5px solid var(--border-color);
+    background-color: var(--card-bg);
     color: var(--text-secondary);
-    margin-right: 2px;
+    font-size: 0.9em;
+    font-weight: 700;
+    line-height: 1;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 .color-preset-save:hover:not(:disabled) {
     color: var(--text-color);
     border-color: var(--primary-color);
+    background-color: rgba(66, 153, 225, 0.1);
+}
+.color-preset-save:disabled {
+    cursor: default;
+    opacity: 0.4;
 }
 textarea {
     width: 100%;
