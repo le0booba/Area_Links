@@ -482,10 +482,21 @@ const setupEventListeners = () => {
       .set({ language: e.target.value })
       .then(() => location.reload());
   });
-  getElement("shortcutsLink").addEventListener("click", (e) => {
-    e.preventDefault();
-    chrome.tabs.create({ url: "chrome://extensions/shortcuts" });
-  });
+
+  const shortcutsLink = getElement("shortcutsLink");
+  const handleShortcuts = (e) => {
+    if (e.button === 0 || e.button === 1) {
+      e.preventDefault();
+      chrome.tabs.create({
+        url: "chrome://extensions/shortcuts",
+        active: e.button === 0, // Middle click opens in background
+      });
+    }
+  };
+  shortcutsLink.addEventListener("click", handleShortcuts);
+  shortcutsLink.addEventListener("auxclick", handleShortcuts);
+  shortcutsLink.addEventListener("contextmenu", (e) => e.preventDefault());
+
   getElement("exclusions-details").addEventListener("toggle", (e) =>
     localStorage.setItem("exclusionsOpen", e.target.open),
   );

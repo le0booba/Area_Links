@@ -654,3 +654,7 @@ footer a:hover {
     color: var(--primary-color);
     text-decoration: underline;
 }
+.setting-row.right-aligned-row {
+    justify-content: flex-end;
+    gap: 12px;
+}
