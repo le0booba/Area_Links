@@ -13,7 +13,7 @@ const SETTINGS_CONFIG = {
   openNextToParent: { default: true, storage: "sync" },
   applyExclusionsOnCopy: { default: false, storage: "sync" },
   language: { default: "en", storage: "sync" },
-  showContextMenu: { default: true, storage: "sync" },
+  showContextMenu: { default: false, storage: "sync" },
   removeDuplicatesInSelection: { default: true, storage: "sync" },
   checkDuplicatesOnCopy: { default: true, storage: "sync" },
   excludedDomains: { default: "", storage: "local" },
@@ -147,10 +147,13 @@ const checkResetButtonState = () => {
     .get([...presetKeys, "selectionBoxColor"])
     .then((currentSettings) => {
       const isDefaultPresets = customPresets.every(
-        (p) => currentSettings[p.key] === SETTINGS_CONFIG[p.key].default,
+        (p) =>
+          (currentSettings[p.key] || SETTINGS_CONFIG[p.key].default) ===
+          SETTINGS_CONFIG[p.key].default,
       );
       const isDefaultColor =
-        currentSettings.selectionBoxColor ===
+        (currentSettings.selectionBoxColor ||
+          SETTINGS_CONFIG.selectionColorCustomPreset0.default) ===
         SETTINGS_CONFIG.selectionColorCustomPreset0.default;
       resetButton.disabled = isDefaultPresets && isDefaultColor;
     });
@@ -161,8 +164,10 @@ const updateShortcutsDisplay = () => {
     const copyCmd = commands.find((c) => c.name === "activate-selection-copy");
     const openEl = document.getElementById("shortcut-open");
     const copyEl = document.getElementById("shortcut-copy");
-    if (openEl) openEl.textContent = openCmd?.shortcut || "Alt+Z";
-    if (copyEl) copyEl.textContent = copyCmd?.shortcut || "Alt+X";
+    if (openEl)
+      openEl.textContent = openCmd?.shortcut || i18n("optionsShortcutNotSet");
+    if (copyEl)
+      copyEl.textContent = copyCmd?.shortcut || i18n("optionsShortcutNotSet");
   });
 };
 const restoreOptions = async () => {

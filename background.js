@@ -2,11 +2,12 @@ const HISTORY_LIMIT = 50;
 const DEFAULTS = {
     sync: {
         tabLimit: 15, selectionBoxStyle: 'solid', selectionBoxColor: '#007bff',
+        selectionColorCustomPreset0: '#007bff',
         selectionColorCustomPreset1: '#c90062', selectionColorCustomPreset2: '#28a745',
         selectionColorCustomPreset3: '#343a40', selectionStyle: 'dashed-blue',
         highlightStyle: 'classic-yellow', openInNewWindow: false, reverseOrder: false,
         openNextToParent: true, applyExclusionsOnCopy: false, language: 'en',
-        showContextMenu: true, removeDuplicatesInSelection: true, checkDuplicatesOnCopy: true,
+        showContextMenu: false, removeDuplicatesInSelection: true, checkDuplicatesOnCopy: true,
     },
     local: {
         excludedDomains: '', excludedWords: '', linkHistory: [], copyHistory: [],

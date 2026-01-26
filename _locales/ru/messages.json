@@ -67,5 +67,6 @@
   "optionsLabelLanguage": { "message": "Язык" },
   "optionsLabelExportImport": { "message": "Импорт / Экспорт" },
   "optionsClearField": { "message": "Очистить поле" },
-  "optionsSaveColorPreset": { "message": "Сохранить выбранный цвет в пресет" }
+  "optionsSaveColorPreset": { "message": "Сохранить выбранный цвет в пресет" },
+  "optionsShortcutNotSet": { "message": "Не задано" }
 }

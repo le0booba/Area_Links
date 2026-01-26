@@ -67,5 +67,6 @@
   "optionsLabelLanguage": { "message": "Language" },
   "optionsLabelExportImport": { "message": "Import / Export" },
   "optionsClearField": { "message": "Clear field" },
-  "optionsSaveColorPreset": { "message": "Save the selected color to preset" }
+  "optionsSaveColorPreset": { "message": "Save the selected color to preset" },
+  "optionsShortcutNotSet": { "message": "Not set" }
 }

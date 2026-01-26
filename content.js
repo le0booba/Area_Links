@@ -149,11 +149,14 @@ const resetSelection = () => {
     document.removeEventListener('scroll', handleScroll, { passive: true });
     if (selectionBox) selectionBox.style.display = 'none';
     if (cachedLinks) {
-        cachedLinks.forEach(item => {
+        const len = cachedLinks.length;
+        for (let i = 0; i < len; i++) {
+            const item = cachedLinks[i];
             if (item.status !== 0) {
                 item.el.classList.remove(HIGHLIGHT_CLASS, DUPLICATE_CLASS, LIMIT_EXCEEDED_CLASS);
+                item.status = 0;
             }
-        });
+        }
     }
     document.body.classList.remove(PREPARE_ANIMATION_CLASS);
     delete document.body.dataset.linkOpenerHighlightStyle;
@@ -243,10 +246,12 @@ const handleMouseDown = (e) => {
     const scrollX = window.scrollX;
     const scrollY = window.scrollY;
     cachedLinks = [];
-    const links = document.querySelectorAll('a[href]');
+    
+    const links = document.links;
     const len = links.length;
     for (let i = 0; i < len; i++) {
         const element = links[i];
+        if (element.offsetParent === null && element.getClientRects().length === 0) continue;
         const rect = element.getBoundingClientRect();
         if (rect.width === 0 || rect.height === 0) continue;
         cachedLinks.push({
