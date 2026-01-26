@@ -2,8 +2,8 @@
 
 <div align="center">
   <div style="display: flex; justify-content: center; align-items: center; gap: 10px; flex-wrap: wrap;">
-    <img src="https://raw.githubusercontent.com/le0booba/Area_Links/refs/heads/main/screen-options-popup.png" alt="Area Links Screenshot 1" width="280"/>
-    <img src="https://raw.githubusercontent.com/le0booba/Area_Links/refs/heads/main/screen-options.png" alt="Area Links Screenshot 2" width="300"/>
+    <img src="https://raw.githubusercontent.com/le0booba/Area_Links/refs/heads/main/screen-options-popup.png" alt="Area Links Screenshot 1" width="250"/>
+    <img src="https://raw.githubusercontent.com/le0booba/Area_Links/refs/heads/main/screen-options.png" alt="Area Links Screenshot 2" width="350"/>
   </div>
 
   <p>
