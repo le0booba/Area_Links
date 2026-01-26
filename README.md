@@ -111,7 +111,7 @@ The popup also provides quick action buttons to activate selection modes and cle
 | **Excluded Words** | Comma-separated list of keywords to ignore in link URLs (e.g., `logout, unsubscribe`). | `(empty)` |
 | **Import/Export Exclusions** | Backup and restore your exclusion lists via JSON files with automatic conflict resolution. | `N/A` |
 | **Import/Export Settings** | Backup and restore all extension settings including exclusions via JSON files. | `N/A` |
-| **Show in context menu** | Toggles the "Open/Copy Links" options in the right-click menu. | `On` |
+| **Show in context menu** | Toggles the "Open/Copy Links" options in the right-click menu. | `Off` |
 | **Language** | Switch the extension's display language between supported locales (English, Russian). | `Auto-detect` |
 | **Clear History** | A button to clear the list of links remembered by both "Remember opened links" and "Remember copied links" features. | `N/A` |
 
