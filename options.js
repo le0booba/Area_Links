@@ -494,7 +494,7 @@ const setupEventListeners = () => {
       e.preventDefault();
       chrome.tabs.create({
         url: "chrome://extensions/shortcuts",
-        active: e.button === 0, // Middle click opens in background
+        active: e.button === 0,
       });
     }
   };
