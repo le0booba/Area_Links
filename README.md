@@ -125,15 +125,15 @@ The popup also provides quick action buttons to activate selection modes and cle
 
 ### Performance Optimizations
 
-1. **Link Position Caching**: All link bounding rectangles are pre-calculated once during `mousedown` and cached in memory. This eliminates expensive DOM queries during mouse movement, preventing layout thrashing and enabling smooth interaction even on pages with thousands of links. Cache includes precise coordinates (`left`, `right`, `top`, `bottom`) for rapid intersection testing.
+1. **Link Position Caching**: All link bounding rectangles are pre-calculated once on `mousedown` and stored as plain coordinate values (`left`, `right`, `top`, `bottom`) in a `cachedLinks` array. This completely eliminates DOM queries during mouse movement, preventing layout thrashing and enabling smooth 60fps interaction even on pages with thousands of links. The cache also stores a `data` field for lazy URL parsing — hostname and lowercase variants are only computed the first time a link enters the selection rectangle, not upfront for all links.
 
-2. **RequestAnimationFrame with Batched Updates**: Mouse movement events are batched and processed using `requestAnimationFrame`, ensuring updates happen at optimal 60fps. Multiple rapid mouse movements are consolidated into single render updates, dramatically reducing CPU usage during selection. The `scheduleUpdate()` function prevents redundant calculations when updates are already queued.
+2. **RequestAnimationFrame with Batched Updates**: Mouse movement events are processed using `requestAnimationFrame` via a `scheduleUpdate()` guard that sets an `isUpdateScheduled` flag. Multiple rapid `mousemove` events fired between frames are collapsed into a single render update, drastically reducing CPU usage during selection. The flag is reset only after the frame callback completes, ensuring no redundant calculations are ever queued.
 
-3. **In-Memory Settings Cache** (~15% faster access): Implements an in-memory cache layer that combines sync and local storage settings, reducing storage API calls from 100+ per session to just 1-2. Settings are loaded once on initialization via `settingsManager.initialize()` and served from memory, providing instant access throughout the session with intelligent change tracking for automatic updates via `storage.onChanged` listener.
+3. **In-Memory Settings Cache**: A `settingsCache` object in `background.js` combines sync and local storage into a single in-memory snapshot, loaded once via `settingsManager.initialize()` on startup. Throughout a browser session this reduces storage API calls from potentially hundreds down to 1–2. The cache is kept fresh automatically via a `chrome.storage.onChanged` listener that patches only the changed keys — no full reload required.
 
-4. **Set-based History Lookup** (O(1) vs O(n)): Link history is converted to a Set data structure (`historySet`, `copyHistorySet`) for constant-time lookup operations. When processing 100 links against a history of 50 URLs, this reduces operations from 5,000 (array scanning) to just 100 (Set lookups), dramatically improving selection performance when duplicate detection is enabled.
+4. **Set-based History Lookup (O(1) vs O(n))**: Link history arrays are converted to `Set` objects (`historySet`, `copyHistorySet`) immediately when selection is initiated. Duplicate and history checks during mouse movement are constant-time `Set.has()` lookups rather than linear array scans. For a selection of 100 links checked against a 50-entry history, this reduces the total number of comparisons from 5,000 to 100 — a 50× improvement that is most impactful when both history and duplicate detection are enabled simultaneously.
 
-5. **CSS Class Toggling with Status Tracking**: Link highlighting uses efficient `classList` manipulation with status tracking (`item.status`) that prevents redundant DOM operations—classes are only added or removed when status actually changes. This minimizes layout recalculation and reflow operations, ensuring smooth visual feedback even when highlighting hundreds of links simultaneously.
+5. **CSS Class Toggling with Status Tracking**: Each cached link carries a `status` field (`0` = outside, `1` = highlighted, `2` = duplicate/excluded, `3` = over limit). On every animation frame, a class change via `classList.add/remove` is only triggered when a link's new status differs from its previous one. This means links that remain inside or outside the selection box across frames generate zero DOM mutations, minimizing layout recalculation and reflow even when hundreds of links are visible simultaneously.
 
 ### Browser Compatibility
 - Built with **Manifest V3** for modern Chrome extensions
@@ -188,7 +188,6 @@ This extension was built with your privacy as a top priority.
 | `tabs`             | To open links in new tabs and create new windows.                         |
 | `scripting`        | To inject the code that draws the selection box onto web pages.           |
 | `contextMenus`     | To add the activation options to your right-click menu for easy access.   |
-| `alarms`           | To perform periodic cleanup of stale selection states.                    |
 | `http://*/*`, `https://*/*` | To allow the extension to run on any website you visit.     |
 
 *We only request permissions that are essential for the extension's core functionality.*
