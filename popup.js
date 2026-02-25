@@ -38,7 +38,7 @@ const loadLanguage = async (lang) => {
     );
     const json = await res.json();
     Object.entries(json).forEach(([k, v]) => (i18nCache[k] = v.message));
-  } catch {}
+  } catch { }
 };
 const i18n = (k, ...a) => {
   let m = i18nCache[k] || chrome.i18n.getMessage(k) || k;

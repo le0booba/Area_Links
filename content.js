@@ -14,7 +14,6 @@ const selectionState = {
 let selectionBox = null;
 let selectionOverlay = null;
 let cachedLinks = null;
-
 const setSelectionBoxAppearance = (settings) => {
     if (!selectionBox) return;
     const { selectionBoxStyle: boxStyle, selectionBoxColor: boxColor } = settings || {};
@@ -28,7 +27,10 @@ const setSelectionBoxAppearance = (settings) => {
     const borderStyle = { solid: 'solid', dashed: 'dashed', dotted: 'dotted', subtle: 'solid' }[boxStyle] || 'dashed';
     const borderWidth = boxStyle === 'subtle' ? '1px' : '2px';
     if (rgb) {
-        const [r, g, b] = [parseInt(rgb[1].substr(0, 2), 16), parseInt(rgb[1].substr(2, 2), 16), parseInt(rgb[1].substr(4, 2), 16)];
+        const hex = rgb[1];
+        const r = parseInt(hex.slice(0, 2), 16);
+        const g = parseInt(hex.slice(2, 4), 16);
+        const b = parseInt(hex.slice(4, 6), 16);
         selectionBox.style.setProperty('--al-selection-border-color', `rgba(${r}, ${g}, ${b}, ${boxStyle === 'subtle' ? 0.75 : 0.9})`);
         selectionBox.style.setProperty('--al-selection-fill-color', `rgba(${r}, ${g}, ${b}, ${boxStyle === 'subtle' ? 0.12 : 0.25})`);
     } else {
@@ -38,7 +40,6 @@ const setSelectionBoxAppearance = (settings) => {
     selectionBox.style.setProperty('--al-selection-border-style', borderStyle);
     selectionBox.style.setProperty('--al-selection-border-width', borderWidth);
 };
-
 const createSelectionElements = () => {
     if (!selectionOverlay) {
         selectionOverlay = document.createElement('div');
@@ -51,7 +52,6 @@ const createSelectionElements = () => {
         document.body.appendChild(selectionBox);
     }
 };
-
 const getSelectionRectangle = (start, end) => {
     const x = Math.min(start.x, end.x);
     const y = Math.min(start.y, end.y);
@@ -59,7 +59,6 @@ const getSelectionRectangle = (start, end) => {
     const height = Math.abs(start.y - end.y);
     return { x, y, width, height, left: x, top: y, right: x + width, bottom: y + height };
 };
-
 const updateSelectionBox = () => {
     if (!selectionBox) return;
     const rect = getSelectionRectangle(selectionState.startCoords, selectionState.currentCoords);
@@ -68,14 +67,13 @@ const updateSelectionBox = () => {
         width: `${rect.width}px`, height: `${rect.height}px`
     });
 };
-
 const getLinkData = (item) => {
     if (!item.data) {
         const raw = item.el.href;
         let host = '';
-        try { host = new URL(raw).hostname.toLowerCase(); } catch {}
+        try { host = new URL(raw).hostname.toLowerCase(); } catch { }
         item.data = {
-            raw: raw,
+            raw,
             h: host,
             l: raw.toLowerCase(),
             d: decodeURI(raw).toLowerCase()
@@ -83,7 +81,6 @@ const getLinkData = (item) => {
     }
     return item.data;
 };
-
 const updateLinkHighlights = () => {
     if (!cachedLinks) return;
     const rect = getSelectionRectangle(selectionState.startCoords, selectionState.currentCoords);
@@ -136,7 +133,6 @@ const updateLinkHighlights = () => {
         }
     }
 };
-
 const resetSelection = () => {
     if (!selectionState.isActive) return;
     if (selectionOverlay) {
@@ -149,11 +145,12 @@ const resetSelection = () => {
     document.removeEventListener('scroll', handleScroll, { passive: true });
     if (selectionBox) selectionBox.style.display = 'none';
     if (cachedLinks) {
-        cachedLinks.forEach(item => {
-            if (item.status !== 0) {
-                item.el.classList.remove(HIGHLIGHT_CLASS, DUPLICATE_CLASS, LIMIT_EXCEEDED_CLASS);
+        const len = cachedLinks.length;
+        for (let i = 0; i < len; i++) {
+            if (cachedLinks[i].status !== 0) {
+                cachedLinks[i].el.classList.remove(HIGHLIGHT_CLASS, DUPLICATE_CLASS, LIMIT_EXCEEDED_CLASS);
             }
-        });
+        }
     }
     document.body.classList.remove(PREPARE_ANIMATION_CLASS);
     delete document.body.dataset.linkOpenerHighlightStyle;
@@ -161,9 +158,8 @@ const resetSelection = () => {
     selectionState.isActive = false;
     selectionState.isSelecting = false;
     cachedLinks = null;
-    chrome.runtime.sendMessage({ type: 'selectionDeactivated' }).catch(() => {});
+    chrome.runtime.sendMessage({ type: 'selectionDeactivated' }).catch(() => { });
 };
-
 const copyLinksToClipboard = (links) => {
     const text = links.join('\n');
     if (selectionState.settings.useCopyHistory && links.length) {
@@ -177,11 +173,10 @@ const copyLinksToClipboard = (links) => {
         ta.style.cssText = 'position:fixed;opacity:0';
         document.body.appendChild(ta);
         ta.select();
-        try { document.execCommand('copy'); } catch {}
+        try { document.execCommand('copy'); } catch { }
         document.body.removeChild(ta);
     }
 };
-
 const handleKeyDown = (e) => {
     if (e.key === 'Escape') {
         e.preventDefault();
@@ -189,7 +184,6 @@ const handleKeyDown = (e) => {
         resetSelection();
     }
 };
-
 const scheduleUpdate = () => {
     if (!selectionState.isUpdateScheduled && selectionState.isSelecting) {
         selectionState.isUpdateScheduled = true;
@@ -202,9 +196,7 @@ const scheduleUpdate = () => {
         });
     }
 };
-
 const handleScroll = () => { if (selectionState.isSelecting) scheduleUpdate(); };
-
 const handleMouseMove = (e) => {
     if (selectionState.isSelecting) {
         if ((e.buttons & 1) === 0) return handleMouseUp(e);
@@ -212,7 +204,6 @@ const handleMouseMove = (e) => {
         scheduleUpdate();
     }
 };
-
 const handleMouseUp = (e) => {
     if (e.button !== 0 || !selectionState.isSelecting) return;
     e.preventDefault();
@@ -232,7 +223,6 @@ const handleMouseUp = (e) => {
     }
     resetSelection();
 };
-
 const handleMouseDown = (e) => {
     if (e.button !== 0) return;
     e.preventDefault();
@@ -265,7 +255,6 @@ const handleMouseDown = (e) => {
     selectionOverlay.addEventListener('mousemove', handleMouseMove, true);
     selectionOverlay.addEventListener('mouseup', handleMouseUp, true);
 };
-
 const initSelection = (settings) => {
     if (selectionState.isActive) resetSelection();
     Object.assign(selectionState, {
@@ -283,7 +272,6 @@ const initSelection = (settings) => {
     document.addEventListener('keydown', handleKeyDown, true);
     document.addEventListener('scroll', handleScroll, { passive: true });
 };
-
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.type === 'ping') return sendResponse({ type: "pong" });
     if (request.type === 'resetSelection') return resetSelection();
@@ -292,5 +280,4 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         sendResponse({ success: true });
     }
 });
-
 ['popstate', 'hashchange', 'pagehide'].forEach(event => window.addEventListener(event, resetSelection));

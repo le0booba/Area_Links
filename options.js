@@ -28,6 +28,16 @@ const successIconSVG =
   '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="status-success"><polyline points="20 6 9 17 4 12"></polyline></svg>';
 let savedExcludedDomains = "";
 let savedExcludedWords = "";
+const statusTimeouts = {};
+const statusConflicts = {
+  "status-exclusions": "status-exclusions-icon",
+  "status-exclusions-icon": "status-exclusions",
+  "status-behavior": "status-history",
+  "status-history": "status-behavior",
+  "status-appearance": "status-reset-presets",
+  "status-reset-presets": "status-appearance",
+};
+
 const getElement = (id) => {
   if (!domCache.has(id)) domCache.set(id, document.getElementById(id));
   return domCache.get(id);
@@ -71,18 +81,50 @@ const localizePage = () => {
     .querySelectorAll("[data-i18n-placeholder]")
     .forEach((el) => (el.placeholder = i18n(el.dataset.i18nPlaceholder)));
 };
+
+const setStatus = (
+  elementId,
+  content,
+  isHtml = false,
+  isError = false,
+  duration = 2000,
+) => {
+  if (statusTimeouts[elementId]) clearTimeout(statusTimeouts[elementId]);
+
+  const conflictId = statusConflicts[elementId];
+  if (conflictId) {
+    if (statusTimeouts[conflictId]) clearTimeout(statusTimeouts[conflictId]);
+    const conflictEl = getElement(conflictId);
+    if (conflictEl) {
+      conflictEl.textContent = "";
+      conflictEl.innerHTML = "";
+    }
+  }
+
+  const el = getElement(elementId);
+  if (!el) return;
+
+  if (isHtml) el.innerHTML = content;
+  else el.textContent = content;
+
+  el.className = `status-message ${elementId.includes("header") ? "header-status-msg" : ""} ${isError ? "status-error" : "status-success"}`;
+
+  statusTimeouts[elementId] = setTimeout(() => {
+    el.textContent = "";
+    el.innerHTML = "";
+    delete statusTimeouts[elementId];
+  }, duration);
+};
+
 const showStatus = (
   elementId,
   messageKey,
   isError = false,
   duration = 2000,
 ) => {
-  const status = getElement(elementId);
-  if (!status) return;
-  status.textContent = i18n(messageKey);
-  status.className = `status-message ${elementId.includes("header") ? "header-status-msg" : ""} ${isError ? "status-error" : "status-success"}`;
-  setTimeout(() => (status.textContent = ""), duration);
+  setStatus(elementId, i18n(messageKey), false, isError, duration);
 };
+
 const animateButtonIcon = (btnId, color = "var(--primary-color)") => {
   const btn = getElement(btnId);
   if (!btn) return;
@@ -205,7 +247,9 @@ const restoreOptions = async () => {
     const c = (btn.dataset.color || settings[p.key] || "").toLowerCase();
     if (c === selectedColor) btn.classList.add("selected");
   });
-  getElement("language-select").value = settings.language;
+  document.querySelectorAll(".lang-btn").forEach((btn) => {
+    btn.classList.toggle("active", btn.dataset.lang === settings.language);
+  });
   savedExcludedDomains = settings.excludedDomains;
   savedExcludedWords = settings.excludedWords;
   const detailsEl = getElement("exclusions-details");
@@ -249,12 +293,7 @@ const saveExclusions = () => {
   chrome.storage.local
     .set({ excludedDomains: domainsToSave, excludedWords: wordsToSave })
     .then(() => {
-      const iconEl = getElement("status-exclusions-icon");
-      if (iconEl) {
-        iconEl.innerHTML = successIconSVG;
-        setTimeout(() => (iconEl.innerHTML = ""), 2000);
-      }
-
+      setStatus("status-exclusions-icon", successIconSVG, true);
       savedExcludedDomains = domainsToSave;
       savedExcludedWords = wordsToSave;
       updateExclusionButtonsState();
@@ -301,8 +340,8 @@ const handleSettingChange = (e) => {
   }
   const statusId =
     id.includes("selection") ||
-    id === "highlightStyle" ||
-    id === "showContextMenu"
+      id === "highlightStyle" ||
+      id === "showContextMenu"
       ? "status-appearance"
       : id === "applyExclusionsOnCopy"
         ? "status-exclusions"
@@ -407,9 +446,7 @@ const setupEventListeners = () => {
   getElement("saveExclusions").addEventListener("click", saveExclusions);
   getElement("clearHistory").addEventListener("click", () => {
     chrome.storage.local.set({ linkHistory: [], copyHistory: [] }).then(() => {
-      const statusEl = getElement("status-history");
-      statusEl.innerHTML = successIconSVG;
-      setTimeout(() => (statusEl.innerHTML = ""), 2000);
+      setStatus("status-history", successIconSVG, true);
       getElement("clearHistory").disabled = true;
     });
   });
@@ -482,10 +519,12 @@ const setupEventListeners = () => {
       saveExclusions();
     });
   });
-  getElement("language-select").addEventListener("change", (e) => {
-    chrome.storage.sync
-      .set({ language: e.target.value })
-      .then(() => location.reload());
+  document.querySelectorAll(".lang-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      if (btn.classList.contains("active")) return;
+      const lang = btn.dataset.lang;
+      chrome.storage.sync.set({ language: lang }).then(() => location.reload());
+    });
   });
 
   const shortcutsLink = getElement("shortcutsLink");
@@ -526,8 +565,9 @@ const setupEventListeners = () => {
       if (c === normalized) btn.classList.add("selected");
     });
   };
-
   const saveSelectionBoxColor = (hex) => {
+    const picker = getElement("selectionBoxColor");
+    if (picker && picker.dataset.lastSaved === hex) return;
     debouncedSaveSetting(
       "sync",
       "selectionBoxColor",
@@ -536,21 +576,32 @@ const setupEventListeners = () => {
       "optionsStatusSettingSaved",
     );
     updateColorUI(hex);
+    if (picker) picker.dataset.lastSaved = hex;
   };
 
   getElement("selectionBoxColor")?.addEventListener("input", (e) =>
     saveSelectionBoxColor(e.target.value),
   );
   customPresets.forEach((p) => {
-    getElement(p.btnId)?.addEventListener("click", () => {
+    getElement(p.btnId)?.addEventListener("click", (e) => {
+      if (e.currentTarget.classList.contains("selected")) return;
       chrome.storage.sync
         .get({ [p.key]: SETTINGS_CONFIG[p.key].default })
         .then((v) => {
           if (v[p.key]) saveSelectionBoxColor(v[p.key]);
         });
     });
-    getElement(p.saveId)?.addEventListener("click", () => {
+    getElement(p.saveId)?.addEventListener("click", (e) => {
       const hex = getElement("selectionBoxColor").value;
+      const btn = getElement(p.btnId);
+      if (
+        btn &&
+        (btn.dataset.color ||
+          btn.style.getPropertyValue("--preset-color") ||
+          ""
+        ).trim().toLowerCase() === hex.trim().toLowerCase()
+      )
+        return;
       chrome.storage.sync
         .set({ [p.key]: hex })
         .then(() => {
@@ -587,9 +638,7 @@ const setupEventListeners = () => {
         getElement("selectionBoxStyle").value = defaults.selectionBoxStyle;
         getElement("highlightStyle").value = defaults.highlightStyle;
 
-        const statusEl = getElement("status-reset-presets");
-        statusEl.innerHTML = successIconSVG;
-        setTimeout(() => (statusEl.innerHTML = ""), 2000);
+        setStatus("status-reset-presets", successIconSVG, true);
 
         updateColorUI(defaults.selectionBoxColor);
         checkResetButtonState();
