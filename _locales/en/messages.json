@@ -150,10 +150,10 @@
     "message": "Dark Gray"
   },
   "optionsImportExclusionsButton": {
-    "message": "Import"
+    "message": "Import  "
   },
   "optionsExportExclusionsButton": {
-    "message": "Export"
+    "message": "  Export"
   },
   "optionsStatusImportSuccess": {
     "message": "Import successful."
