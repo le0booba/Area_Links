@@ -117,11 +117,11 @@
         </header>
         <main>
             <section class="card">
-                <h2 data-i18n="optionsHeaderBehavior">Behavior</h2>
+                <h2 data-i18n="optionsHeaderBehavior"></h2>
                 <div class="appearance-columns">
                     <div class="appearance-column">
                         <div class="setting-row">
-                            <label for="tabLimit" data-i18n="optionsTabLimit">Maximum Tabs to Open at Once:</label>
+                            <label for="tabLimit" data-i18n="optionsTabLimit"></label>
                             <input type="number" id="tabLimit" min="1" max="50" />
                         </div>
                         <div class="setting-row toggle-row">
@@ -132,12 +132,12 @@
                     </div>
                     <div class="appearance-column">
                         <div class="setting-row toggle-row">
-                            <label for="openInNewWindow" data-i18n="optionsOpenInNewWindow">Open in new window</label>
+                            <label for="openInNewWindow" data-i18n="optionsOpenInNewWindow"></label>
                             <label class="switch"><input type="checkbox" id="openInNewWindow" /><span
                                     class="slider"></span></label>
                         </div>
                         <div class="setting-row toggle-row">
-                            <label for="reverseOrder" data-i18n="optionsReverseOrder">Open in reverse order</label>
+                            <label for="reverseOrder" data-i18n="optionsReverseOrder"></label>
                             <label class="switch"><input type="checkbox" id="reverseOrder" /><span
                                     class="slider"></span></label>
                         </div>
@@ -154,16 +154,16 @@
                                 <polyline points="15 3 21 3 21 9" />
                                 <line x1="10" y1="14" x2="21" y2="3" />
                             </svg>
-                            <span data-i18n="optionsColumnOpen">[OPEN]</span>
+                            <span data-i18n="optionsColumnOpen"></span>
                         </div>
                         <div class="setting-row toggle-row">
-                            <label for="useHistory" data-i18n="optionsUseHistory">Remember opened links</label>
+                            <label for="useHistory" data-i18n="optionsUseHistory"></label>
                             <label class="switch"><input type="checkbox" id="useHistory" /><span
                                     class="slider"></span></label>
                         </div>
                         <div class="setting-row toggle-row">
                             <label for="removeDuplicatesInSelection"
-                                data-i18n="optionsRemoveDuplicatesInSelection">Remove duplicates when opening</label>
+                                data-i18n="optionsRemoveDuplicatesInSelection"></label>
                             <label class="switch"><input type="checkbox" id="removeDuplicatesInSelection" /><span
                                     class="slider"></span></label>
                         </div>
@@ -176,16 +176,15 @@
                                 <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
                                 <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
                             </svg>
-                            <span data-i18n="optionsColumnCopy">[COPY]</span>
+                            <span data-i18n="optionsColumnCopy"></span>
                         </div>
                         <div class="setting-row toggle-row">
-                            <label for="useCopyHistory" data-i18n="optionsUseCopyHistory">Remember copied links</label>
+                            <label for="useCopyHistory" data-i18n="optionsUseCopyHistory"></label>
                             <label class="switch"><input type="checkbox" id="useCopyHistory" /><span
                                     class="slider"></span></label>
                         </div>
                         <div class="setting-row toggle-row">
-                            <label for="checkDuplicatesOnCopy" data-i18n="optionsCheckDuplicatesOnCopy">Remove
-                                duplicates when copying</label>
+                            <label for="checkDuplicatesOnCopy" data-i18n="optionsCheckDuplicatesOnCopy"></label>
                             <label class="switch"><input type="checkbox" id="checkDuplicatesOnCopy" /><span
                                     class="slider"></span></label>
                         </div>
@@ -195,15 +194,13 @@
                     <div id="status-behavior" class="status-message"></div>
                     <div class="control-wrapper">
                         <div id="status-history" class="status-message"></div>
-                        <button id="clearHistory" class="button-danger" data-i18n="optionsClearHistory">
-                            Clear History
-                        </button>
+                        <button id="clearHistory" class="button-danger" data-i18n="optionsClearHistory"></button>
                     </div>
                 </div>
             </section>
             <details class="card" id="exclusions-details">
                 <summary>
-                    <h2 data-i18n="optionsHeaderExclusions">Exclusions</h2>
+                    <h2 data-i18n="optionsHeaderExclusions"></h2>
                 </summary>
                 <div class="details-content">
                     <div class="setting-row toggle-row right-aligned-row">
@@ -212,8 +209,7 @@
                                 class="slider"></span></label>
                     </div>
                     <div class="setting-row-vertical">
-                        <label for="excludedDomains" data-i18n="optionsExcludedDomains">Excluded Domains
-                            (comma-separated):</label>
+                        <label for="excludedDomains" data-i18n="optionsExcludedDomains"></label>
                         <div class="textarea-wrapper">
                             <textarea id="excludedDomains" rows="3"></textarea>
                             <button class="clear-btn" id="clearExcludedDomains" data-i18n-title="optionsClearField"
@@ -228,8 +224,7 @@
                         </div>
                     </div>
                     <div class="setting-row-vertical">
-                        <label for="excludedWords" data-i18n="optionsExcludedWords">Exclude links with these words
-                            (comma-separated):</label>
+                        <label for="excludedWords" data-i18n="optionsExcludedWords"></label>
                         <div class="textarea-wrapper">
                             <textarea id="excludedWords" rows="3"></textarea>
                             <button class="clear-btn" id="clearExcludedWords" data-i18n-title="optionsClearField"
@@ -268,19 +263,18 @@
                             <div id="status-exclusions-icon" class="status-message"></div>
                             <button id="saveExclusions" class="button-primary">
                                 <span class="unsaved-indicator">!</span>
-                                <span class="button-text" data-i18n="optionsSaveExclusionsButton">Save Exclusions</span>
+                                <span class="button-text" data-i18n="optionsSaveExclusionsButton"></span>
                             </button>
                         </div>
                     </div>
                 </div>
             </details>
             <section class="card">
-                <h2 data-i18n="optionsHeaderAppearance">Appearance</h2>
+                <h2 data-i18n="optionsHeaderAppearance"></h2>
                 <div class="appearance-columns">
                     <div class="appearance-column">
                         <div class="setting-row-vertical">
-                            <label for="selectionBoxStyle" data-i18n="optionsSelectionStyle">Selection Box
-                                Style:</label>
+                            <label for="selectionBoxStyle" data-i18n="optionsSelectionStyle"></label>
                             <select id="selectionBoxStyle">
                                 <option value="solid" data-i18n="optionsSelectionBoxStyleSolid"></option>
                                 <option value="dashed" data-i18n="optionsSelectionBoxStyleDashed"></option>
@@ -347,7 +341,7 @@
                         </div>
                         <div class="settings-divider"></div>
                         <div class="setting-row toggle-row">
-                            <label for="showContextMenu" data-i18n="optionsShowContextMenu">Show in context menu</label>
+                            <label for="showContextMenu" data-i18n="optionsShowContextMenu"></label>
                             <label class="switch"><input type="checkbox" id="showContextMenu" /><span
                                     class="slider"></span></label>
                         </div>
@@ -358,14 +352,12 @@
                     <div class="control-wrapper" style="justify-content: flex-end">
                         <div id="status-reset-presets" class="status-message"></div>
                         <button type="button" class="button-danger" id="resetColorPresets"
-                            data-i18n="optionsResetColorPresets">
-                            Reset Presets
-                        </button>
+                            data-i18n="optionsResetColorPresets"></button>
                     </div>
                 </div>
             </section>
             <section class="card-alt">
-                <h2 data-i18n="optionsHowToUseTitle">How to Use</h2>
+                <h2 data-i18n="optionsHowToUseTitle"></h2>
                 <p>
                     <span data-i18n="optionsHowToUseOpen"></span>
                     <kbd id="shortcut-open">Alt + Z</kbd>
@@ -387,6 +379,17 @@
             <a href="https://github.com/le0booba/Area_Links" target="_blank">github.com/le0booba/Area_Links</a>
         </footer>
     </div>
+    <div id="conflict-modal" class="modal-overlay">
+        <div class="modal-content">
+            <h3 id="conflict-message"></h3>
+            <div class="modal-actions">
+                <button id="modal-merge" class="button-primary" data-i18n="optionsModalMerge"></button>
+                <button id="modal-replace" class="button-danger" data-i18n="optionsModalReplace"></button>
+                <button id="modal-cancel" class="button-secondary" data-i18n="optionsModalCancel"></button>
+            </div>
+        </div>
+    </div>
+    <div id="toast-container"></div>
     <script src="options.js"></script>
 </body>
 

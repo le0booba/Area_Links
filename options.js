@@ -113,6 +113,60 @@ const showStatus = (elementId, messageKey, isError = false, duration = 2000) => 
   setStatus(elementId, i18n(messageKey), false, isError, duration);
 };
 
+const showToast = (messageKey, isError = false, ...args) => {
+  const container = $("toast-container");
+  if (!container) return;
+
+  const toast = document.createElement("div");
+  toast.className = `toast ${isError ? "error" : "success"}`;
+  toast.textContent = i18n(messageKey, ...args);
+
+  container.appendChild(toast);
+
+  // Auto-remove after animation finishes (300ms in + 2700ms stay + 300ms out = 3.3s total)
+  setTimeout(() => {
+    toast.remove();
+  }, 3300);
+};
+
+const showConflictModal = (messageKey, fieldLabelKey) => {
+  return new Promise((resolve) => {
+    const modal = $("conflict-modal");
+    const message = $("conflict-message");
+    const btnMerge = $("modal-merge");
+    const btnReplace = $("modal-replace");
+    const btnCancel = $("modal-cancel");
+
+    message.textContent = i18n(messageKey, i18n(fieldLabelKey));
+    modal.style.display = "flex";
+
+    const close = (result) => {
+      modal.style.display = "none";
+      window.removeEventListener("keydown", onEsc);
+      modal.removeEventListener("click", onBackdrop);
+      btnMerge.onclick = null;
+      btnReplace.onclick = null;
+      btnCancel.onclick = null;
+      resolve(result);
+    };
+
+    const onEsc = (e) => {
+      if (e.key === "Escape") close("cancel");
+    };
+
+    const onBackdrop = (e) => {
+      if (e.target === modal) close("cancel");
+    };
+
+    window.addEventListener("keydown", onEsc);
+    modal.addEventListener("click", onBackdrop);
+
+    btnMerge.onclick = () => close("merge");
+    btnReplace.onclick = () => close("replace");
+    btnCancel.onclick = () => close("cancel");
+  });
+};
+
 const animateButtonIcon = (btnId, color = "var(--primary-color)") => {
   const btn = $(btnId);
   if (!btn) return;
@@ -289,7 +343,14 @@ const handleSettingChange = (e) => {
       ? "status-exclusions"
       : "status-behavior";
 
-  debouncedSaveSetting(config.storage, id, value, statusId, "optionsStatusSettingSaved");
+  if (id === "showContextMenu") {
+    chrome.storage[config.storage]
+      .set({ [id]: value })
+      .then(() => showStatus(statusId, "optionsStatusSettingSaved"))
+      .catch(() => showStatus(statusId, "optionsStatusError", true));
+  } else {
+    debouncedSaveSetting(config.storage, id, value, statusId, "optionsStatusSettingSaved");
+  }
 };
 
 const handleImport = (event) => {
@@ -297,25 +358,56 @@ const handleImport = (event) => {
   if (!file) return;
 
   const reader = new FileReader();
-  reader.onload = (e) => {
+  reader.onload = async (e) => {
     try {
-      const data = JSON.parse(e.target.result);
-      ["excludedDomains", "excludedWords"].forEach((field) => {
-        if (typeof data[field] === "string") {
+      let data;
+      try {
+        data = JSON.parse(e.target.result);
+      } catch (parseError) {
+        showToast("optionsStatusImportInvalidSyntax", true);
+        return;
+      }
+
+      if (!data || (typeof data.excludedDomains === "undefined" && typeof data.excludedWords === "undefined")) {
+        showToast("optionsStatusImportInvalidFile", true);
+        return;
+      }
+
+      let importedCount = 0;
+      let changedCount = 0;
+
+      for (const field of ["excludedDomains", "excludedWords"]) {
+        if (typeof data[field] === "string" && data[field].trim()) {
+          importedCount++;
           const textarea = $(field);
           const oldData = textarea.value.trim();
           const newData = data[field].trim();
-          if (oldData && newData && confirm(i18n("optionsImportConflictMessage", i18n(field)))) {
-            textarea.value = `${oldData},${newData}`;
-          } else if (newData) {
+
+          if (oldData && oldData !== newData) {
+            const labelKey = field === "excludedDomains" ? "optionsExcludedDomains" : "optionsExcludedWords";
+            const result = await showConflictModal("optionsImportConflictMessage", labelKey);
+            if (result === "cancel") return;
+
+            if (result === "merge") {
+              textarea.value = `${oldData},${newData}`;
+              changedCount++;
+            } else {
+              textarea.value = newData;
+              changedCount++;
+            }
+          } else if (oldData !== newData) {
             textarea.value = newData;
+            changedCount++;
           }
         }
-      });
-      saveExclusions();
-      animateButtonIcon("importExclusions");
-    } catch {
-      showStatus("status-exclusions", "optionsStatusImportError", true);
+      }
+
+      if (changedCount > 0) {
+        saveExclusions();
+      }
+      showToast("optionsStatusImportSuccess", false, importedCount, changedCount);
+    } catch (err) {
+      showToast("optionsStatusBackupError", true);
     }
   };
   reader.readAsText(file);
@@ -329,28 +421,90 @@ const handleFullSettingsImport = (event) => {
   const reader = new FileReader();
   reader.onload = async (e) => {
     try {
-      const data = JSON.parse(e.target.result);
+      let data;
+      try {
+        data = JSON.parse(e.target.result);
+      } catch (parseError) {
+        showToast("optionsStatusImportInvalidSyntax", true);
+        return;
+      }
+
+      if (!data || (typeof data.sync === "undefined" && typeof data.local === "undefined" && typeof data.shortcuts === "undefined")) {
+        showToast("optionsStatusImportInvalidFile", true);
+        return;
+      }
+
+      let importedCount = 0;
+      let changedCount = 0;
+
+      const currentSync = await chrome.storage.sync.get(null);
+      const currentLocal = await chrome.storage.local.get(null);
+
+      // Handle exclusions merge conflict
       const importDomains = data.local?.excludedDomains?.trim() || "";
       const importWords = data.local?.excludedWords?.trim() || "";
-      const currentDomains = $("excludedDomains").value.trim();
-      const currentWords = $("excludedWords").value.trim();
+      const currentDomains = currentLocal.excludedDomains?.trim() || "";
+      const currentWords = currentLocal.excludedWords?.trim() || "";
 
-      if ((importDomains || importWords) && (currentDomains || currentWords)) {
-        if (confirm(i18n("optionsImportConflictMessage", i18n("optionsHeaderExclusions")))) {
+      if ((importDomains && currentDomains && importDomains !== currentDomains) || (importWords && currentWords && importWords !== currentWords)) {
+        const result = await showConflictModal("optionsImportConflictMessage", "optionsHeaderExclusions");
+        if (result === "cancel") return;
+
+        if (result === "merge") {
           if (!data.local) data.local = {};
-          if (currentDomains) data.local.excludedDomains = importDomains ? `${currentDomains},${importDomains}` : currentDomains;
-          if (currentWords) data.local.excludedWords = importWords ? `${currentWords},${importWords}` : currentWords;
+          if (importDomains && currentDomains && importDomains !== currentDomains) {
+            data.local.excludedDomains = `${currentDomains},${importDomains}`;
+          }
+          if (importWords && currentWords && importWords !== currentWords) {
+            data.local.excludedWords = `${currentWords},${importWords}`;
+          }
         }
       }
 
-      if (data.sync) await chrome.storage.sync.set(data.sync);
-      if (data.local) await chrome.storage.local.set(data.local);
-      if (data.shortcuts) await chrome.storage.local.set({ savedShortcuts: data.shortcuts });
+      // Count and compare sync settings
+      if (data.sync) {
+        for (const [key, value] of Object.entries(data.sync)) {
+          importedCount++;
+          if (JSON.stringify(currentSync[key]) !== JSON.stringify(value)) {
+            changedCount++;
+          }
+        }
+        await chrome.storage.sync.set(data.sync);
+      }
 
-      animateButtonIcon("importSettings");
-      setTimeout(() => location.reload(), 1200);
-    } catch {
-      showStatus("status-backup", "optionsStatusBackupError", true);
+      // Count and compare local settings
+      if (data.local) {
+        for (const [key, value] of Object.entries(data.local)) {
+          importedCount++;
+          if (JSON.stringify(currentLocal[key]) !== JSON.stringify(value)) {
+            changedCount++;
+          }
+        }
+        await chrome.storage.local.set(data.local);
+      }
+
+      // Count and compare shortcuts
+      if (data.shortcuts) {
+        const shortcutsKeys = Object.keys(data.shortcuts);
+        const currentShortcuts = currentLocal.savedShortcuts || {};
+        importedCount += shortcutsKeys.length;
+        
+        let shortcutsChanged = false;
+        for (const key of shortcutsKeys) {
+          if (currentShortcuts[key] !== data.shortcuts[key]) {
+            changedCount++;
+            shortcutsChanged = true;
+          }
+        }
+        if (shortcutsChanged) {
+          await chrome.storage.local.set({ savedShortcuts: data.shortcuts });
+        }
+      }
+
+      showToast("optionsStatusImportSuccess", false, importedCount, changedCount);
+      setTimeout(() => location.reload(), 1500);
+    } catch (err) {
+      showToast("optionsStatusBackupError", true);
     }
   };
   reader.readAsText(file);
@@ -368,7 +522,6 @@ const setupEventListeners = () => {
   $("exportExclusions").addEventListener("click", () => {
     const data = { excludedDomains: $("excludedDomains").value, excludedWords: $("excludedWords").value };
     downloadJson(`area-links-exclusions_${formatDate(new Date())}.json`, data);
-    animateButtonIcon("exportExclusions");
   });
 
   $("importExclusions").addEventListener("click", () => $("import-file-input").click());
@@ -380,7 +533,6 @@ const setupEventListeners = () => {
     const commands = await chrome.commands.getAll();
     const shortcuts = commands.reduce((acc, cmd) => (cmd.name && cmd.shortcut ? { ...acc, [cmd.name]: cmd.shortcut } : acc), {});
     downloadJson(`area-links-settings_${formatDate(new Date())}.json`, { sync, local, shortcuts });
-    animateButtonIcon("exportSettings");
   });
 
   $("importSettings").addEventListener("click", () => $("import-settings-file").click());

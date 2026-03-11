@@ -9,15 +9,16 @@
     if (window.hasRunAreaLinks) return;
     window.hasRunAreaLinks = true;
 
-    const selectionState = {
+    const state = {
         isActive: false, isSelecting: false, isCopyMode: false, isUpdateScheduled: false,
-        style: 'classic-blue', startCoords: { x: 0, y: 0 }, currentCoords: { x: 0, y: 0 },
+        startX: 0, startY: 0, currentX: 0, currentY: 0,
         settings: {}, historySet: new Set(), copyHistorySet: new Set(),
     };
 
     let selectionBox = null;
     let selectionOverlay = null;
     let cachedLinks = null;
+    const seenInCurrentPass = new Set();
 
     const setSelectionBoxAppearance = (settings = {}) => {
         if (!selectionBox) return;
@@ -29,15 +30,16 @@
         }
         selectionBox.className = '';
         const rgb = /^#?([0-9a-f]{6})$/i.exec(boxColor);
-        const borderStyle = { solid: 'solid', dashed: 'dashed', dotted: 'dotted', subtle: 'solid' }[boxStyle] || 'dashed';
+        const borderStyle = boxStyle === 'dotted' ? 'dotted' : boxStyle === 'solid' || boxStyle === 'subtle' ? 'solid' : 'dashed';
         const borderWidth = boxStyle === 'subtle' ? '1px' : '2px';
         if (rgb) {
-            const [, hex] = rgb;
-            const r = parseInt(hex.slice(0, 2), 16);
-            const g = parseInt(hex.slice(2, 4), 16);
-            const b = parseInt(hex.slice(4, 6), 16);
-            selectionBox.style.setProperty('--al-selection-border-color', `rgba(${r}, ${g}, ${b}, ${boxStyle === 'subtle' ? 0.75 : 0.9})`);
-            selectionBox.style.setProperty('--al-selection-fill-color', `rgba(${r}, ${g}, ${b}, ${boxStyle === 'subtle' ? 0.12 : 0.25})`);
+            const hex = rgb[1];
+            const r = parseInt(hex, 16) >> 16;
+            const g = (parseInt(hex, 16) >> 8) & 0xff;
+            const b = parseInt(hex, 16) & 0xff;
+            const isSubtle = boxStyle === 'subtle';
+            selectionBox.style.setProperty('--al-selection-border-color', `rgba(${r}, ${g}, ${b}, ${isSubtle ? 0.75 : 0.9})`);
+            selectionBox.style.setProperty('--al-selection-fill-color', `rgba(${r}, ${g}, ${b}, ${isSubtle ? 0.12 : 0.25})`);
         } else {
             selectionBox.style.setProperty('--al-selection-border-color', boxColor);
             selectionBox.style.setProperty('--al-selection-fill-color', boxColor);
@@ -59,88 +61,75 @@
         }
     };
 
-    const getSelectionRectangle = (start, end) => {
-        const x = Math.min(start.x, end.x);
-        const y = Math.min(start.y, end.y);
-        const width = Math.abs(start.x - end.x);
-        const height = Math.abs(start.y - end.y);
-        return { x, y, width, height, left: x, top: y, right: x + width, bottom: y + height };
+    const getRect = () => {
+        const x = Math.min(state.startX, state.currentX);
+        const y = Math.min(state.startY, state.currentY);
+        const w = Math.abs(state.startX - state.currentX);
+        const h = Math.abs(state.startY - state.currentY);
+        return { left: x, top: y, right: x + w, bottom: y + h, width: w, height: h };
     };
 
     const updateSelectionBox = () => {
         if (!selectionBox) return;
-        const rect = getSelectionRectangle(selectionState.startCoords, selectionState.currentCoords);
-        Object.assign(selectionBox.style, {
-            left: `${rect.x - window.scrollX}px`, top: `${rect.y - window.scrollY}px`,
-            width: `${rect.width}px`, height: `${rect.height}px`
-        });
+        const { left, top, width, height } = getRect();
+        selectionBox.style.cssText += `left:${left - window.scrollX}px;top:${top - window.scrollY}px;width:${width}px;height:${height}px;`;
+    };
+
+    const getDecodedLower = (data) => {
+        if (data.d !== null) return data.d;
+        try { data.d = decodeURI(data.raw).toLowerCase(); } catch { data.d = data.l; }
+        return data.d;
     };
 
     const getLinkData = (item) => {
-        if (!item.data) {
-            const raw = item.el.href;
-            let host = '';
-            try { host = new URL(raw).hostname.toLowerCase(); } catch { }
-            item.data = {
-                raw, h: host, l: raw.toLowerCase(), d: null,
-                getDecodedLower() {
-                    if (this.d !== null) return this.d;
-                    try { this.d = decodeURI(this.raw).toLowerCase(); } catch { this.d = this.l; }
-                    return this.d;
-                }
-            };
-        }
+        if (item.data) return item.data;
+        const raw = item.el.href;
+        let host = '';
+        try { host = new URL(raw).hostname.toLowerCase(); } catch { }
+        item.data = { raw, h: host, l: raw.toLowerCase(), d: null };
         return item.data;
     };
 
     const updateLinkHighlights = () => {
         if (!cachedLinks) return;
-        const rect = getSelectionRectangle(selectionState.startCoords, selectionState.currentCoords);
-        const { isCopyMode, settings, historySet, copyHistorySet } = selectionState;
+        const rect = getRect();
+        const { isCopyMode, settings, historySet, copyHistorySet } = state;
         const relevantHistory = isCopyMode ? copyHistorySet : historySet;
         const useHistory = isCopyMode ? settings.useCopyHistory : settings.useHistory;
         const removeDuplicates = isCopyMode ? settings.checkDuplicatesOnCopy : settings.removeDuplicatesInSelection;
-        const seenInCurrentPass = removeDuplicates ? new Set() : null;
-        let count = 0;
+        if (removeDuplicates) seenInCurrentPass.clear();
         const excludedDomains = settings.excludedDomains || [];
         const excludedWords = settings.excludedWords || [];
         const checkExclusions = !isCopyMode || settings.applyExclusionsOnCopy;
         const hasExcludedDomains = excludedDomains.length > 0;
         const hasExcludedWords = excludedWords.length > 0;
+        let count = 0;
 
         for (const item of cachedLinks) {
-            const isInside = !(item.t > rect.bottom || item.b < rect.top || item.l > rect.right || item.r < rect.left);
-            if (isInside) {
+            const inside = item.t <= rect.bottom && item.b >= rect.top && item.l <= rect.right && item.r >= rect.left;
+            if (inside) {
                 const data = getLinkData(item);
                 let isExcluded = false;
-                if (checkExclusions && (hasExcludedDomains || hasExcludedWords)) {
-                    if (hasExcludedDomains && excludedDomains.some(d => data.h.includes(d))) {
-                        isExcluded = true;
-                    } else if (hasExcludedWords) {
-                        isExcluded = excludedWords.some(w => data.h.includes(w) || data.l.includes(w) || data.getDecodedLower().includes(w));
-                    }
+                if (checkExclusions) {
+                    if (hasExcludedDomains) isExcluded = excludedDomains.some(d => data.h.includes(d));
+                    if (!isExcluded && hasExcludedWords) isExcluded = excludedWords.some(w => getDecodedLower(data).includes(w));
                 }
                 const isHistory = useHistory && relevantHistory.has(data.raw);
                 const isSeen = removeDuplicates && seenInCurrentPass.has(data.raw);
-                let newStatus = 0;
-                let className = '';
-                if (!isExcluded && !isHistory && (!removeDuplicates || !isSeen)) {
+                let newStatus, className;
+                if (!isExcluded && !isHistory && !isSeen) {
                     if (isCopyMode || count < settings.tabLimit) {
-                        newStatus = 1;
-                        className = HIGHLIGHT_CLASS;
-                        count++;
-                    } else if (!isCopyMode) {
-                        newStatus = 3;
-                        className = LIMIT_EXCEEDED_CLASS;
+                        newStatus = 1; className = HIGHLIGHT_CLASS; count++;
+                    } else {
+                        newStatus = 3; className = LIMIT_EXCEEDED_CLASS;
                     }
                 } else {
-                    newStatus = 2;
-                    className = DUPLICATE_CLASS;
+                    newStatus = 2; className = DUPLICATE_CLASS;
                 }
                 if (removeDuplicates) seenInCurrentPass.add(data.raw);
                 if (item.status !== newStatus) {
                     if (item.status !== 0) item.el.classList.remove(HIGHLIGHT_CLASS, DUPLICATE_CLASS, LIMIT_EXCEEDED_CLASS);
-                    if (className) item.el.classList.add(className);
+                    item.el.classList.add(className);
                     item.status = newStatus;
                 }
             } else if (item.status !== 0) {
@@ -151,7 +140,7 @@
     };
 
     const resetSelection = () => {
-        if (!selectionState.isActive) return;
+        if (!state.isActive) return;
         if (selectionOverlay) {
             selectionOverlay.removeEventListener('mousedown', handleMouseDown, true);
             selectionOverlay.removeEventListener('mousemove', handleMouseMove, true);
@@ -168,24 +157,24 @@
         }
         document.body.classList.remove(PREPARE_ANIMATION_CLASS);
         delete document.body.dataset.linkOpenerHighlightStyle;
-        document.body.style.cursor = 'default';
-        selectionState.isActive = false;
-        selectionState.isSelecting = false;
+        document.body.style.cursor = '';
+        state.isActive = false;
+        state.isSelecting = false;
         cachedLinks = null;
         chrome.runtime.sendMessage({ type: 'selectionDeactivated' }).catch(() => { });
     };
 
     const copyLinksToClipboard = (links) => {
         const text = links.join('\n');
-        if (selectionState.settings.useCopyHistory && links.length) {
-            chrome.runtime.sendMessage({ type: "saveCopyHistory", urls: links });
+        if (state.settings.useCopyHistory && links.length) {
+            chrome.runtime.sendMessage({ type: 'saveCopyHistory', urls: links });
         }
         if (navigator.clipboard && window.isSecureContext) {
             navigator.clipboard.writeText(text).catch(console.error);
         } else {
-            const ta = document.createElement('textarea');
-            ta.value = text;
-            ta.style.cssText = 'position:fixed;opacity:0';
+            const ta = Object.assign(document.createElement('textarea'), {
+                value: text, style: 'position:fixed;opacity:0'
+            });
             document.body.appendChild(ta);
             ta.select();
             try { document.execCommand('copy'); } catch { }
@@ -202,40 +191,39 @@
     };
 
     const scheduleUpdate = () => {
-        if (!selectionState.isUpdateScheduled && selectionState.isSelecting) {
-            selectionState.isUpdateScheduled = true;
+        if (!state.isUpdateScheduled && state.isSelecting) {
+            state.isUpdateScheduled = true;
             requestAnimationFrame(() => {
-                if (selectionState.isSelecting) {
+                if (state.isSelecting) {
                     updateSelectionBox();
                     updateLinkHighlights();
                 }
-                selectionState.isUpdateScheduled = false;
+                state.isUpdateScheduled = false;
             });
         }
     };
 
-    const handleScroll = () => { if (selectionState.isSelecting) scheduleUpdate(); };
+    const handleScroll = () => { if (state.isSelecting) scheduleUpdate(); };
 
     const handleMouseMove = (e) => {
-        if (selectionState.isSelecting) {
-            if ((e.buttons & 1) === 0) return handleMouseUp(e);
-            selectionState.currentCoords = { x: e.pageX, y: e.pageY };
-            scheduleUpdate();
-        }
+        if (!state.isSelecting) return;
+        if ((e.buttons & 1) === 0) return handleMouseUp(e);
+        state.currentX = e.pageX;
+        state.currentY = e.pageY;
+        scheduleUpdate();
     };
 
     const handleMouseUp = (e) => {
-        if (e.button !== 0 || !selectionState.isSelecting) return;
+        if (e.button !== 0 || !state.isSelecting) return;
         e.preventDefault();
         e.stopPropagation();
-        const rect = getSelectionRectangle(selectionState.startCoords, selectionState.currentCoords);
+        const rect = getRect();
         if ((rect.width > 5 || rect.height > 5) && cachedLinks) {
-            const urls = [];
-            for (const item of cachedLinks) {
-                if (item.status === 1) urls.push(getLinkData(item).raw);
-            }
+            const urls = cachedLinks.filter(item => item.status === 1).map(item => getLinkData(item).raw);
             if (urls.length) {
-                selectionState.isCopyMode ? copyLinksToClipboard(urls) : chrome.runtime.sendMessage({ type: "openLinks", urls });
+                state.isCopyMode
+                    ? copyLinksToClipboard(urls)
+                    : chrome.runtime.sendMessage({ type: 'openLinks', urls });
             }
         }
         resetSelection();
@@ -245,38 +233,24 @@
         if (e.button !== 0) return;
         e.preventDefault();
         e.stopPropagation();
-        selectionState.isSelecting = true;
-        selectionState.startCoords = { x: e.pageX, y: e.pageY };
-        selectionState.currentCoords = { x: e.pageX, y: e.pageY };
+        state.isSelecting = true;
+        state.startX = state.currentX = e.pageX;
+        state.startY = state.currentY = e.pageY;
 
-        cachedLinks = [];
         const scrollX = window.scrollX;
         const scrollY = window.scrollY;
+        cachedLinks = [];
 
-        for (const element of document.querySelectorAll('a[href]')) {
-            const rect = element.getBoundingClientRect();
-
-            if (rect.width <= 1 || rect.height <= 1) continue;
-            const style = window.getComputedStyle(element);
-            if (style.visibility === 'hidden' || parseFloat(style.opacity) === 0 || style.display === 'none') continue;
-
-            const absLeft = rect.left + scrollX;
-            const absTop = rect.top + scrollY;
-
-            if (absLeft + rect.width < 0 || absTop + rect.height < 0) continue;
-
-            cachedLinks.push({
-                el: element,
-                l: absLeft,
-                r: absLeft + rect.width,
-                t: absTop,
-                b: absTop + rect.height,
-                status: 0,
-                data: null
-            });
+        for (const element of document.links) {
+            const r = element.getBoundingClientRect();
+            if (r.width <= 1 || r.height <= 1) continue;
+            const absLeft = r.left + scrollX;
+            const absTop = r.top + scrollY;
+            if (absLeft + r.width < 0 || absTop + r.height < 0) continue;
+            cachedLinks.push({ el: element, l: absLeft, r: absLeft + r.width, t: absTop, b: absTop + r.height, status: 0, data: null });
         }
 
-        setSelectionBoxAppearance(selectionState.settings);
+        setSelectionBoxAppearance(state.settings);
         selectionBox.style.display = 'block';
         updateSelectionBox();
         selectionOverlay.addEventListener('mousemove', handleMouseMove, true);
@@ -284,15 +258,15 @@
     };
 
     const initSelection = (settings) => {
-        if (selectionState.isActive) resetSelection();
-        Object.assign(selectionState, {
-            isActive: true, isCopyMode: settings.type === "initiateSelectionCopy",
-            settings, historySet: new Set(settings.linkHistory || []),
-            copyHistorySet: new Set(settings.copyHistory || [])
-        });
+        if (state.isActive) resetSelection();
+        state.isActive = true;
+        state.isCopyMode = settings.type === 'initiateSelectionCopy';
+        state.settings = settings;
+        state.historySet = new Set(settings.linkHistory || []);
+        state.copyHistorySet = new Set(settings.copyHistory || []);
         document.body.dataset.linkOpenerHighlightStyle = settings.highlightStyle;
         document.body.classList.add(PREPARE_ANIMATION_CLASS);
-        document.body.style.cursor = selectionState.isCopyMode ? customCopyCursor : 'crosshair';
+        document.body.style.cursor = state.isCopyMode ? customCopyCursor : 'crosshair';
         createSelectionElements();
         setSelectionBoxAppearance(settings);
         selectionOverlay.style.display = 'block';
@@ -302,7 +276,7 @@
     };
 
     chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-        if (request.type === 'ping') return sendResponse({ type: "pong" });
+        if (request.type === 'ping') return sendResponse({ type: 'pong' });
         if (request.type === 'resetSelection') return resetSelection();
         if (request.type.startsWith('initiateSelection')) {
             initSelection(request);

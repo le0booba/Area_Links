@@ -25,11 +25,11 @@
     background-color: rgba(201, 80, 155, 0.199);
     border: none !important;
     background-image:
-        linear-gradient(to right, rgba(201, 0, 98, 0.8) 3px, transparent 3px),
-        linear-gradient(to bottom, rgba(201, 0, 98, 0.8) 3px, transparent 3px),
-        linear-gradient(to left, rgba(201, 0, 98, 0.8) 3px, transparent 3px),
-        linear-gradient(to top, rgba(201, 0, 98, 0.8) 3px, transparent 3px);
-    background-size: 20px 3px, 3px 20px, 20px 3px, 3px 20px;
+        linear-gradient(to right, rgba(201, 0, 98, 0.8) 4px, transparent 4px),
+        linear-gradient(to bottom, rgba(201, 0, 98, 0.8) 4px, transparent 4px),
+        linear-gradient(to left, rgba(201, 0, 98, 0.8) 4px, transparent 4px),
+        linear-gradient(to top, rgba(201, 0, 98, 0.8) 4px, transparent 4px);
+    background-size: 28px 4px, 4px 28px, 28px 4px, 4px 28px;
     background-position: top left, top right, bottom right, bottom left;
     background-repeat: repeat-x, repeat-y, repeat-x, repeat-y;
 }
@@ -52,25 +52,20 @@ body.link-opener-prepare-animation a.link-opener-limit-exceeded {
     border-radius: 2px;
 }
 
-body[data-link-opener-highlight-style='classic-yellow'] a.link-opener-highlighted-link {
-    color: #000 !important;
-    text-shadow: 0 0 2px #fff !important;
+body[data-link-opener-highlight-style="classic-yellow"] a.link-opener-highlighted-link {
     background-color: rgba(255, 255, 0, 0.4) !important;
     box-shadow: 0 0 0 2px rgba(255, 165, 0, 0.6), 0 0 0 2px rgba(255, 165, 0, 0.8) !important;
     outline: 2px solid rgba(255, 165, 0, 0.9) !important;
 }
 
-body[data-link-opener-highlight-style='dark-gray'] a.link-opener-highlighted-link {
-    color: #fff !important;
-    text-shadow: 0 0 2px #000 !important;
+body[data-link-opener-highlight-style="dark-gray"] a.link-opener-highlighted-link {
+    color: #111 !important;
     background-color: rgba(60, 60, 60, 0.5) !important;
     box-shadow: 0 0 0 2px rgba(80, 80, 80, 0.6), 0 0 0 2px rgba(120, 120, 120, 0.9) !important;
     outline: 2px solid rgba(120, 120, 120, 0.9) !important;
 }
 
-body[data-link-opener-highlight-style='green-highlighter'] a.link-opener-highlighted-link {
-    color: #000 !important;
-    text-shadow: 0 0 2px #fff !important;
+body[data-link-opener-highlight-style="green-highlighter"] a.link-opener-highlighted-link {
     background-color: rgba(21, 243, 31, 0.35) !important;
     box-shadow: 0 0 0 2px rgba(21, 243, 31, 0.5), 0 0 0 2px rgba(15, 190, 25, 0.9) !important;
     outline: 2px solid rgba(15, 190, 25, 0.9) !important;

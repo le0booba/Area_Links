@@ -16,121 +16,140 @@ const DEFAULTS = {
 
 let activeSelectionTabId = null;
 let settingsCache = null;
+let initPromise = null;
 let lastContextMenuSig = '';
 let lastContextMenuUpdate = 0;
 const MENU_THROTTLE_MS = 1500;
 
-const mergeUnique = (primary, secondary, limit) => [...new Set([...primary, ...secondary])].slice(0, limit);
+const mergeUnique = (primary, secondary, limit) => {
+  const seen = new Set(primary);
+  const result = [...primary];
+  for (const item of secondary) {
+    if (!seen.has(item)) { seen.add(item); result.push(item); }
+    if (result.length >= limit) break;
+  }
+  return result;
+};
 
-const safeSendMessage = (tabId, msg) => {
-  chrome.tabs.sendMessage(tabId, msg).catch(() => { });
+const safeSendMessage = (tabId, msg) => chrome.tabs.sendMessage(tabId, msg).catch(() => { });
+
+const processExclusions = () => {
+  if (!settingsCache) return;
+  const domainSet = new Set();
+  for (const raw of (settingsCache.excludedDomains || '').split(',')) {
+    const val = raw.trim();
+    if (!val) continue;
+    try {
+      domainSet.add(new URL(val.includes('://') ? val : 'http://' + val).hostname.toLowerCase());
+    } catch {
+      domainSet.add(val.toLowerCase());
+    }
+  }
+  settingsCache.processedExcludedDomains = [...domainSet];
+  settingsCache.processedExcludedWords = (settingsCache.excludedWords || '')
+    .split(',')
+    .map(w => w.trim().toLowerCase())
+    .filter(Boolean);
 };
 
 const settingsManager = {
   async initialize() {
-    try {
-      const [sync, local] = await Promise.all([
-        chrome.storage.sync.get(DEFAULTS.sync), chrome.storage.local.get(DEFAULTS.local)
-      ]);
+    if (initPromise) return initPromise;
+    initPromise = Promise.all([
+      chrome.storage.sync.get(DEFAULTS.sync),
+      chrome.storage.local.get(DEFAULTS.local),
+    ]).then(([sync, local]) => {
       settingsCache = { ...sync, ...local };
-      this.processExclusions();
-    } catch {
+      processExclusions();
+      return settingsCache;
+    }).catch(() => {
       settingsCache = { ...DEFAULTS.sync, ...DEFAULTS.local };
-    }
-    return settingsCache;
+      initPromise = null;
+      return settingsCache;
+    });
+    return initPromise;
   },
-  async get() { return settingsCache || await this.initialize(); },
-  processExclusions() {
-    if (!settingsCache) return;
-    const dSet = new Set();
-    for (const raw of (settingsCache.excludedDomains || '').split(',')) {
-      const val = raw.trim();
-      if (!val) continue;
-      try {
-        dSet.add(new URL(val.includes('://') ? val : 'http://' + val).hostname.toLowerCase());
-      } catch {
-        dSet.add(val.toLowerCase());
-      }
-    }
-    settingsCache.processedExcludedDomains = Array.from(dSet);
-    const wSet = new Set();
-    for (const raw of (settingsCache.excludedWords || '').split(',')) {
-      const val = raw.trim().toLowerCase();
-      if (val) wSet.add(val);
-    }
-    settingsCache.processedExcludedWords = Array.from(wSet);
-  }
+  get() { return settingsCache ? Promise.resolve(settingsCache) : this.initialize(); },
 };
 
-async function setupContextMenu() {
+async function setupContextMenu(forceUpdate = false) {
   const now = Date.now();
-  if (now - lastContextMenuUpdate < MENU_THROTTLE_MS) return;
+  if (!forceUpdate && now - lastContextMenuUpdate < MENU_THROTTLE_MS) return;
   lastContextMenuUpdate = now;
-  const settings = await settingsManager.get();
 
+  const settings = await settingsManager.get();
   if (!settings.showContextMenu) {
     if (lastContextMenuSig) {
       lastContextMenuSig = '';
-      try { await chrome.contextMenus.removeAll(); } catch { }
+      chrome.contextMenus.removeAll().catch(() => { });
     }
     return;
   }
 
   const commands = await chrome.commands.getAll();
   const shortcuts = new Map(commands.map(c => [c.name, c.shortcut || '']));
-  const getShortcut = (name) => shortcuts.get(name) || '';
+  const getShortcut = name => shortcuts.get(name) || '';
 
   const menus = [
-    { id: "activate-selection-menu", title: `${chrome.i18n.getMessage("cmdActivate")} ${getShortcut('activate-selection') && `(${getShortcut('activate-selection')})`}` },
-    { id: "activate-selection-copy-menu", title: `${chrome.i18n.getMessage("cmdActivateCopy")} ${getShortcut('activate-selection-copy') && `(${getShortcut('activate-selection-copy')})`}` }
+    { id: 'activate-selection-menu', title: `${chrome.i18n.getMessage('cmdActivate')} ${getShortcut('activate-selection') ? `(${getShortcut('activate-selection')})` : ''}` },
+    { id: 'activate-selection-copy-menu', title: `${chrome.i18n.getMessage('cmdActivateCopy')} ${getShortcut('activate-selection-copy') ? `(${getShortcut('activate-selection-copy')})` : ''}` },
   ];
 
   const sig = JSON.stringify(menus.map(m => [m.id, m.title]));
   if (sig === lastContextMenuSig) return;
   lastContextMenuSig = sig;
 
-  try { await chrome.contextMenus.removeAll(); } catch { }
+  await chrome.contextMenus.removeAll().catch(() => { });
   for (const m of menus) {
-    chrome.contextMenus.create({ ...m, contexts: ["page"] }, () => chrome.runtime.lastError);
+    chrome.contextMenus.create({ ...m, contexts: ['page'] }, () => chrome.runtime.lastError);
   }
 }
-
-chrome.runtime.onInstalled.addListener(async (d) => {
-  if (d.reason === 'install') {
-    await Promise.all([chrome.storage.sync.set(DEFAULTS.sync), chrome.storage.local.set(DEFAULTS.local)]);
-    await settingsManager.initialize();
-  } else {
-    await settingsManager.initialize();
-  }
-  setupContextMenu();
-});
-
-chrome.runtime.onStartup.addListener(async () => {
-  await settingsManager.initialize();
-  await setupContextMenu();
-});
 
 chrome.storage.onChanged.addListener(async (changes) => {
   if (settingsCache) {
     for (const [k, { newValue }] of Object.entries(changes)) {
       settingsCache[k] = newValue;
     }
+    if (changes.excludedDomains || changes.excludedWords) {
+      processExclusions();
+    }
+    if (changes.showContextMenu || changes.language) {
+      setupContextMenu(true);
+    }
   }
-  const keys = Object.keys(changes);
-  if (keys.some(k => ['excludedDomains', 'excludedWords'].includes(k))) {
-    if (!settingsCache) await settingsManager.initialize();
-    settingsManager.processExclusions();
+});
+
+chrome.runtime.onInstalled.addListener(async ({ reason }) => {
+  if (reason === 'install') {
+    const browserLang = chrome.i18n.getUILanguage().split('-')[0];
+    const language = browserLang === 'ru' ? 'ru' : 'en';
+    await Promise.all([
+      chrome.storage.sync.set({ ...DEFAULTS.sync, language }),
+      chrome.storage.local.set(DEFAULTS.local),
+    ]);
   }
-  if (keys.some(k => ['showContextMenu', 'language'].includes(k))) setupContextMenu();
+  await settingsManager.initialize();
+  setupContextMenu();
+});
+
+chrome.runtime.onStartup.addListener(async () => {
+  await settingsManager.initialize();
+  setupContextMenu();
+});
+
+chrome.windows.onFocusChanged.addListener(windowId => {
+  if (windowId !== chrome.windows.WINDOW_ID_NONE) setupContextMenu();
 });
 
 chrome.contextMenus.onClicked.addListener((info, tab) => {
-  if (tab?.id) triggerSelection(tab, info.menuItemId === "activate-selection-menu" ? "initiateSelection" : "initiateSelectionCopy");
+  if (tab?.id) {
+    triggerSelection(tab, info.menuItemId === 'activate-selection-menu' ? 'initiateSelection' : 'initiateSelectionCopy');
+  }
 });
 
-chrome.tabs.onActivated.addListener(i => {
-  if (activeSelectionTabId && activeSelectionTabId !== i.tabId) {
-    safeSendMessage(activeSelectionTabId, { type: "resetSelection" });
+chrome.tabs.onActivated.addListener(({ tabId }) => {
+  if (activeSelectionTabId && activeSelectionTabId !== tabId) {
+    safeSendMessage(activeSelectionTabId, { type: 'resetSelection' });
     activeSelectionTabId = null;
   }
   if (settingsCache?.showContextMenu) setupContextMenu();
@@ -141,10 +160,10 @@ chrome.tabs.onRemoved.addListener(id => {
 });
 
 async function triggerSelection(tab, type) {
-  if (!tab.url || (!tab.url.startsWith('http://') && !tab.url.startsWith('https://')) || !tab.id) return;
+  if (!tab?.id || !tab.url?.startsWith('http')) return;
 
   if (activeSelectionTabId && activeSelectionTabId !== tab.id) {
-    safeSendMessage(activeSelectionTabId, { type: "resetSelection" });
+    safeSendMessage(activeSelectionTabId, { type: 'resetSelection' });
   }
 
   const s = await settingsManager.get();
@@ -154,8 +173,10 @@ async function triggerSelection(tab, type) {
     tabLimit: s.tabLimit, checkDuplicatesOnCopy: s.checkDuplicatesOnCopy,
     applyExclusionsOnCopy: s.applyExclusionsOnCopy, useHistory: s.useHistory,
     useCopyHistory: s.useCopyHistory, removeDuplicatesInSelection: s.removeDuplicatesInSelection,
-    linkHistory: s.useHistory ? s.linkHistory : [], copyHistory: s.useCopyHistory ? s.copyHistory : [],
-    excludedDomains: s.processedExcludedDomains, excludedWords: s.processedExcludedWords,
+    linkHistory: s.useHistory ? s.linkHistory : [],
+    copyHistory: s.useCopyHistory ? s.copyHistory : [],
+    excludedDomains: s.processedExcludedDomains,
+    excludedWords: s.processedExcludedWords,
   };
 
   try {
@@ -164,12 +185,14 @@ async function triggerSelection(tab, type) {
   } catch {
     await chrome.scripting.insertCSS({ target: { tabId: tab.id }, files: ['styles.css'] }).catch(() => { });
     await chrome.scripting.executeScript({ target: { tabId: tab.id }, files: ['content.js'] }).catch(() => { });
-    chrome.tabs.sendMessage(tab.id, msg).then(r => { if (r?.success) activeSelectionTabId = tab.id; }).catch(() => { });
+    chrome.tabs.sendMessage(tab.id, msg)
+      .then(r => { if (r?.success) activeSelectionTabId = tab.id; })
+      .catch(() => { });
   }
 }
 
 chrome.commands.onCommand.addListener((cmd, tab) => {
-  triggerSelection(tab, cmd === "activate-selection" ? "initiateSelection" : "initiateSelectionCopy");
+  triggerSelection(tab, cmd === 'activate-selection' ? 'initiateSelection' : 'initiateSelectionCopy');
 });
 
 chrome.runtime.onMessage.addListener((req, sender, sendResponse) => {
@@ -200,6 +223,7 @@ async function processLinks(urls, tab) {
   const s = await settingsManager.get();
   const list = s.reverseOrder ? [...urls].reverse() : urls;
   if (!list.length) return;
+
   if (s.openInNewWindow) {
     chrome.windows.create({ url: list, focused: true });
   } else {
@@ -208,6 +232,7 @@ async function processLinks(urls, tab) {
       chrome.tabs.create({ url: list[i], active: false, index: start !== undefined ? start + i : undefined });
     }
   }
+
   if (s.useHistory) {
     chrome.storage.local.set({ linkHistory: mergeUnique(list, s.linkHistory, HISTORY_LIMIT) });
   }

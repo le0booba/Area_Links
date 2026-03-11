@@ -21,10 +21,10 @@
     "message": "Открывать в обратном порядке"
   },
   "optionsUseHistory": {
-    "message": "Запоминать ссылки"
+    "message": "Помнить ссылки"
   },
   "optionsUseCopyHistory": {
-    "message": "Запоминать ссылки"
+    "message": "Помнить ссылки"
   },
   "optionsCheckDuplicatesOnCopy": {
     "message": "Убирать дубликаты"
@@ -48,7 +48,7 @@
     "message": "КОПИР."
   },
   "optionsTabLimit": {
-    "message": "Максимум вкладок для открытия за раз:"
+    "message": "Макс. вкладок для открытия за раз"
   },
   "optionsClearHistory": {
     "message": "Очистить историю"
@@ -57,10 +57,10 @@
     "message": "Исключения"
   },
   "optionsExcludedDomains": {
-    "message": "Исключенные домены (через запятую):"
+    "message": "Исключенные домены (через запятую)"
   },
   "optionsExcludedWords": {
-    "message": "Исключить ссылки с этими словами (через запятую):"
+    "message": "Исключить ссылки с этими словами (через запятую)"
   },
   "optionsSaveExclusionsButton": {
     "message": "Сохранить исключения"
@@ -69,7 +69,7 @@
     "message": "Внешний вид"
   },
   "optionsSelectionStyle": {
-    "message": "Стиль рамки выделения:"
+    "message": "Стиль рамки выделения"
   },
   "optionsStyleDashedBlue": {
     "message": "Пунктирный синий"
@@ -93,10 +93,10 @@
     "message": "Точечный"
   },
   "optionsSelectionBoxStyleSubtle": {
-    "message": "Незаметный"
+    "message": "Тонкий"
   },
   "optionsSelectionColor": {
-    "message": "Цвет рамки выделения:"
+    "message": "Цвет рамки выделения"
   },
   "optionsShowContextMenu": {
     "message": "Показывать в контекстном меню"
@@ -138,7 +138,7 @@
     "message": "Рядом с текущей"
   },
   "optionsHighlightStyle": {
-    "message": "Цвет выделения ссылок:"
+    "message": "Цвет выделения ссылок"
   },
   "optionsHighlightStyleClassicYellow": {
     "message": "Классический Желтый"
@@ -156,13 +156,31 @@
     "message": "Экспорт"
   },
   "optionsStatusImportSuccess": {
-    "message": "Импорт успешно завершен."
+    "message": "Импорт успешно завершен (импорт: $1, изм.: $2)."
   },
   "optionsStatusImportError": {
     "message": "Ошибка импорта: Неверный формат файла."
   },
+  "optionsStatusImportInvalidSyntax": {
+    "message": "Ошибка импорта: Неверный синтаксис JSON."
+  },
+  "optionsStatusImportInvalidFile": {
+    "message": "Ошибка импорта: Выбранный файл не является корректным файлом настроек."
+  },
+  "optionsStatusBackupError": {
+    "message": "Ошибка импорта: Произошла непредвиденная ошибка."
+  },
   "optionsImportConflictMessage": {
-    "message": "Поле '[FIELD_NAME]' уже содержит данные. \n\n • Нажмите ОК, чтобы ОБЪЕДИНИТЬ новые данные с существующими. \n • Нажмите Отмена, чтобы ЗАМЕНИТЬ существующие данные новыми."
+    "message": "Поле '$1' уже содержит данные. Выберите действие:"
+  },
+  "optionsModalMerge": {
+    "message": "Объединить"
+  },
+  "optionsModalReplace": {
+    "message": "Заменить"
+  },
+  "optionsModalCancel": {
+    "message": "Отмена"
   },
   "popupClearHistoryTitle": {
     "message": "Очистить историю"

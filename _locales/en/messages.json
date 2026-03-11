@@ -48,7 +48,7 @@
     "message": "COPY"
   },
   "optionsTabLimit": {
-    "message": "Maximum Tabs to Open at Once:"
+    "message": "Maximum Tabs to Open at Once"
   },
   "optionsClearHistory": {
     "message": "Clear History"
@@ -57,10 +57,10 @@
     "message": "Exclusions"
   },
   "optionsExcludedDomains": {
-    "message": "Excluded Domains (comma-separated):"
+    "message": "Excluded Domains (comma-separated)"
   },
   "optionsExcludedWords": {
-    "message": "Exclude links with these words (comma-separated):"
+    "message": "Exclude links with these words (comma-separated)"
   },
   "optionsSaveExclusionsButton": {
     "message": "Save Exclusions"
@@ -69,7 +69,7 @@
     "message": "Appearance"
   },
   "optionsSelectionStyle": {
-    "message": "Selection Box Style:"
+    "message": "Selection Box Style"
   },
   "optionsStyleDashedBlue": {
     "message": "Dashed Blue"
@@ -96,7 +96,7 @@
     "message": "Subtle"
   },
   "optionsSelectionColor": {
-    "message": "Selection Color:"
+    "message": "Selection Color"
   },
   "optionsShowContextMenu": {
     "message": "Show in context menu"
@@ -138,7 +138,7 @@
     "message": "Next to current"
   },
   "optionsHighlightStyle": {
-    "message": "Link Highlight Style:"
+    "message": "Link Highlight Style"
   },
   "optionsHighlightStyleClassicYellow": {
     "message": "Classic Yellow"
@@ -150,19 +150,37 @@
     "message": "Dark Gray"
   },
   "optionsImportExclusionsButton": {
-    "message": "Import  "
+    "message": "Import"
   },
   "optionsExportExclusionsButton": {
-    "message": "  Export"
+    "message": "Export"
   },
   "optionsStatusImportSuccess": {
-    "message": "Import successful."
+    "message": "Import successful ($1 imported, $2 changed)."
   },
   "optionsStatusImportError": {
     "message": "Import failed: Invalid file format."
   },
+  "optionsStatusImportInvalidSyntax": {
+    "message": "Import failed: Invalid JSON syntax."
+  },
+  "optionsStatusImportInvalidFile": {
+    "message": "Import failed: Selected file is not a valid settings backup."
+  },
+  "optionsStatusBackupError": {
+    "message": "Import failed: An unexpected error occurred."
+  },
   "optionsImportConflictMessage": {
-    "message": "The '[FIELD_NAME]' field has existing data. \n\n • Press OK to MERGE the new data with the existing data. \n • Press Cancel to REPLACE the existing data with the new data."
+    "message": "The '$1' field has existing data. Please choose an action:"
+  },
+  "optionsModalMerge": {
+    "message": "Merge"
+  },
+  "optionsModalReplace": {
+    "message": "Replace"
+  },
+  "optionsModalCancel": {
+    "message": "Cancel"
   },
   "popupClearHistoryTitle": {
     "message": "Clear history"
