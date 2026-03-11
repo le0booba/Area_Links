@@ -38,7 +38,7 @@
 | ------------------ | ---------------- | ---------------------------------------- |
 | **Open Links**     | `Alt+Z`          | Hold shortcut, drag a box, then release. |
 | **Copy Links**     | `Alt+X`          | Hold shortcut, drag a box, then release. |
-| **Cancel Selection** | `Esc`            | Press `Esc` key during an active selection. |
+| **Cancel Selection** | `Esc`          | Press `Esc` key during an active selection. |
 
 > **Tip:** You can customize keyboard shortcuts anytime at `chrome://extensions/shortcuts`.
 
@@ -60,7 +60,7 @@
 
 ### Advanced Options
 - 🚫 **Exclusion Filters**: Exclude links from specific domains or URLs containing certain keywords.
-- 📥📤 **Import/Export Exclusions**: Backup and restore your exclusion lists with JSON file support and automatic conflict resolution.
+- 📥📤 **Import/Export Settings**: Backup and restore your exclusion lists or all settings with JSON file support and automatic conflict resolution.
 - 🧠 **History Tracking**: Separate history for opened and copied links with option to remember up to 50 URLs for each mode.
 - 🗑️ **Duplicate Detection**: Remove duplicate URLs within the current selection or prevent re-opening previously opened links.
 - 💾 **Cross-Device Sync**: Your core settings are synced to your Chrome account.
@@ -68,7 +68,7 @@
 - 🌐 **Multi-Language Support**: Full UI localization in English and Russian with automatic language detection.
 - 🎭 **Custom Cursors**: Dedicated cursor styles for copy and open modes for clear visual feedback.
 - 🎬 **Smooth Animations**: CSS transitions for visual feedback when highlighting links.
-- 📋 **Smart Clipboard Handling**: Fallback mechanism for copying links on non-secure contexts.
+- 📋 **Smart Clipboard Handling**: Fallback mechanism for copying links in non-secure contexts.
 
 ---
 
@@ -125,13 +125,13 @@ The popup also provides quick action buttons to activate selection modes and cle
 
 ### Performance Optimizations
 
-1. **Link Position Caching**: All link bounding rectangles are pre-calculated once on `mousedown` and stored as plain coordinate values (`left`, `right`, `top`, `bottom`) in a `cachedLinks` array. This completely eliminates DOM queries during mouse movement, preventing layout thrashing and enabling smooth 60fps interaction even on pages with thousands of links. The cache also stores a `data` field for lazy URL parsing — hostname and lowercase variants are only computed the first time a link enters the selection rectangle, not upfront for all links.
+1. **Link Position Caching**: All link bounding rectangles are pre-calculated once on `mousedown` and stored as plain coordinate values (`left`, `right`, `top`, `bottom`) in a `cachedLinks` array. This completely eliminates DOM queries during mouse movement, preventing layout thrashing and enabling smooth 60fps interaction even on pages with thousands of links. A `data: null` field per entry enables lazy URL parsing — hostname and lowercase variants are only computed via `getLinkData()` the first time a link enters the selection rectangle, not upfront for every link on the page.
 
 2. **RequestAnimationFrame with Batched Updates**: Mouse movement events are processed using `requestAnimationFrame` via a `scheduleUpdate()` guard that sets an `isUpdateScheduled` flag. Multiple rapid `mousemove` events fired between frames are collapsed into a single render update, drastically reducing CPU usage during selection. The flag is reset only after the frame callback completes, ensuring no redundant calculations are ever queued.
 
 3. **In-Memory Settings Cache**: A `settingsCache` object in `background.js` combines sync and local storage into a single in-memory snapshot, loaded once via `settingsManager.initialize()` on startup. Throughout a browser session this reduces storage API calls from potentially hundreds down to 1–2. The cache is kept fresh automatically via a `chrome.storage.onChanged` listener that patches only the changed keys — no full reload required.
 
-4. **Set-based History Lookup (O(1) vs O(n))**: Link history arrays are converted to `Set` objects (`historySet`, `copyHistorySet`) immediately when selection is initiated. Duplicate and history checks during mouse movement are constant-time `Set.has()` lookups rather than linear array scans. For a selection of 100 links checked against a 50-entry history, this reduces the total number of comparisons from 5,000 to 100 — a 50× improvement that is most impactful when both history and duplicate detection are enabled simultaneously.
+4. **Set-based History Lookup (O(1) vs O(n))**: Link history arrays are converted to `Set` objects (`historySet`, `copyHistorySet`) immediately when selection is initiated in `initSelection()`. Duplicate and history checks during mouse movement are constant-time `Set.has()` lookups rather than linear array scans. For a selection of 100 links checked against a 50-entry history, this reduces the total number of comparisons from 5,000 to 100 — a 50× improvement that is most impactful when both history and duplicate detection are enabled simultaneously.
 
 5. **CSS Class Toggling with Status Tracking**: Each cached link carries a `status` field (`0` = outside, `1` = highlighted, `2` = duplicate/excluded, `3` = over limit). On every animation frame, a class change via `classList.add/remove` is only triggered when a link's new status differs from its previous one. This means links that remain inside or outside the selection box across frames generate zero DOM mutations, minimizing layout recalculation and reflow even when hundreds of links are visible simultaneously.
 
@@ -188,7 +188,7 @@ This extension was built with your privacy as a top priority.
 | `tabs`             | To open links in new tabs and create new windows.                         |
 | `scripting`        | To inject the code that draws the selection box onto web pages.           |
 | `contextMenus`     | To add the activation options to your right-click menu for easy access.   |
-| `http://*/*`, `https://*/*` | To allow the extension to run on any website you visit.     |
+| `http://*/*`, `https://*/*` | To allow the extension to run on any website you visit.      |
 
 *We only request permissions that are essential for the extension's core functionality.*
 
