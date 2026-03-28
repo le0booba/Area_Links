@@ -53,7 +53,7 @@
 - 🚀 **Dual Operation Modes**: Open links in new tabs or copy them to your clipboard.
 - ✨ **Visual Highlighting**: See which links are inside your selection box with three color themes (Classic Yellow, Green Highlighter, Dark Gray).
 - 🎨 **Customizable Selection Box**: Choose from four border styles (Solid, Dashed, Dotted, Subtle) and customize the color with a color picker plus four saveable preset slots.
-- 🔗 **Smart Filtering**: Automatically ignores non-http/https links, anchor (`#`) links, javascript: links, and hidden or zero-size elements.
+- 🔗 **Smart Filtering**: Automatically skips invisible and zero-size elements during link detection. Use domain and keyword exclusion filters for fine-grained URL-level control.
 - 🖱️ **Context Menu Integration**: Activate selection using the right-click menu on any page.
 - 📂 **Flexible Opening Behavior**: Open links in new tabs or a completely new window, position new tabs next to the current tab or at the end, open links in reverse order.
 - ⚙️ **Configurable Tab Limit**: Set a maximum number of tabs to open at once (from 1 to 50).
@@ -143,7 +143,7 @@ The popup also provides quick action buttons to activate selection modes and cle
 
 ### Smart Behaviors
 - **Automatic Tab Switching Prevention**: Automatically resets selection when switching to a different tab
-- **Link Validation**: Filters out invalid links (anchors, javascript:, hidden elements, zero-size elements)
+- **Link Element Filtering**: Skips invisible and zero-size elements (`width ≤ 1px` or `height ≤ 1px`) during link caching; domain and keyword exclusion filters provide URL-level control
 - **Duplicate Detection**: Multiple mechanisms to prevent duplicate link opening/copying with separate history tracking for each mode
 - **International Domain Support**: Proper handling of international domains with automatic Punycode conversion for exclusion filters
 - **Graceful Degradation**: Fallback clipboard copy method (`document.execCommand`) for non-secure contexts
