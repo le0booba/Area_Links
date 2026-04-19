@@ -49,16 +49,14 @@
     };
 
     const createSelectionElements = () => {
-        if (!selectionOverlay) {
-            selectionOverlay = document.createElement('div');
-            selectionOverlay.id = 'link-opener-selection-overlay';
-            document.body.appendChild(selectionOverlay);
-        }
-        if (!selectionBox) {
-            selectionBox = document.createElement('div');
-            selectionBox.id = 'link-opener-selection-box';
-            document.body.appendChild(selectionBox);
-        }
+        selectionOverlay = document.createElement('div');
+        selectionOverlay.id = 'link-opener-selection-overlay';
+        document.body.appendChild(selectionOverlay);
+
+        selectionBox = document.createElement('div');
+        selectionBox.id = 'link-opener-selection-box';
+        selectionBox.style.display = 'none';
+        document.body.appendChild(selectionBox);
     };
 
     const getRect = () => {
@@ -139,17 +137,28 @@
         }
     };
 
+    const handleVisibilityChange = () => {
+        if (document.visibilityState === 'hidden') resetSelection();
+    };
+
     const resetSelection = () => {
         if (!state.isActive) return;
         if (selectionOverlay) {
             selectionOverlay.removeEventListener('mousedown', handleMouseDown, true);
             selectionOverlay.removeEventListener('mousemove', handleMouseMove, true);
             selectionOverlay.removeEventListener('mouseup', handleMouseUp, true);
-            selectionOverlay.style.display = 'none';
+            selectionOverlay.remove();
+            selectionOverlay = null;
         }
         document.removeEventListener('keydown', handleKeyDown, true);
         document.removeEventListener('scroll', handleScroll, { passive: true });
-        if (selectionBox) selectionBox.style.display = 'none';
+        document.removeEventListener('visibilitychange', handleVisibilityChange);
+        ['popstate', 'hashchange', 'pagehide', 'blur'].forEach(event => window.removeEventListener(event, resetSelection));
+
+        if (selectionBox) {
+            selectionBox.remove();
+            selectionBox = null;
+        }
         if (cachedLinks) {
             for (const item of cachedLinks) {
                 if (item.status !== 0) item.el.classList.remove(HIGHLIGHT_CLASS, DUPLICATE_CLASS, LIMIT_EXCEEDED_CLASS);
@@ -158,10 +167,15 @@
         document.body.classList.remove(PREPARE_ANIMATION_CLASS);
         delete document.body.dataset.linkOpenerHighlightStyle;
         document.body.style.cursor = '';
+
         state.isActive = false;
         state.isSelecting = false;
         cachedLinks = null;
-        chrome.runtime.sendMessage({ type: 'selectionDeactivated' }).catch(() => { });
+
+        state.historySet.clear();
+        state.copyHistorySet.clear();
+        state.settings = {};
+        seenInCurrentPass.clear();
     };
 
     const copyLinksToClipboard = (links) => {
@@ -170,7 +184,7 @@
             chrome.runtime.sendMessage({ type: 'saveCopyHistory', urls: links });
         }
         if (navigator.clipboard && window.isSecureContext) {
-            navigator.clipboard.writeText(text).catch(console.error);
+            navigator.clipboard.writeText(text).catch(() => { });
         } else {
             const ta = Object.assign(document.createElement('textarea'), {
                 value: text, style: 'position:fixed;opacity:0'
@@ -267,12 +281,15 @@
         document.body.dataset.linkOpenerHighlightStyle = settings.highlightStyle;
         document.body.classList.add(PREPARE_ANIMATION_CLASS);
         document.body.style.cursor = state.isCopyMode ? customCopyCursor : 'crosshair';
+
         createSelectionElements();
         setSelectionBoxAppearance(settings);
-        selectionOverlay.style.display = 'block';
+
         selectionOverlay.addEventListener('mousedown', handleMouseDown, true);
         document.addEventListener('keydown', handleKeyDown, true);
         document.addEventListener('scroll', handleScroll, { passive: true });
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+        ['popstate', 'hashchange', 'pagehide', 'blur'].forEach(event => window.addEventListener(event, resetSelection));
     };
 
     chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
@@ -283,6 +300,4 @@
             sendResponse({ success: true });
         }
     });
-
-    ['popstate', 'hashchange', 'pagehide'].forEach(event => window.addEventListener(event, resetSelection));
 })();

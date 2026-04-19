@@ -6,10 +6,10 @@
     "message": "Open or copy multiple links by selecting an area."
   },
   "cmdActivate": {
-    "message": "Activate Selection (Open)"
+    "message": "Select & Open"
   },
   "cmdActivateCopy": {
-    "message": "Activate Selection (Copy)"
+    "message": "Select & Copy"
   },
   "popupStatusSaved": {
     "message": "\u2713"

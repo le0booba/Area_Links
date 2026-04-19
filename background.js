@@ -14,12 +14,9 @@ const DEFAULTS = {
   }
 };
 
-let activeSelectionTabId = null;
 let settingsCache = null;
 let initPromise = null;
 let lastContextMenuSig = '';
-let lastContextMenuUpdate = 0;
-const MENU_THROTTLE_MS = 1500;
 
 const mergeUnique = (primary, secondary, limit) => {
   const seen = new Set(primary);
@@ -30,8 +27,6 @@ const mergeUnique = (primary, secondary, limit) => {
   }
   return result;
 };
-
-const safeSendMessage = (tabId, msg) => chrome.tabs.sendMessage(tabId, msg).catch(() => { });
 
 const processExclusions = () => {
   if (!settingsCache) return;
@@ -72,27 +67,20 @@ const settingsManager = {
   get() { return settingsCache ? Promise.resolve(settingsCache) : this.initialize(); },
 };
 
-async function setupContextMenu(forceUpdate = false) {
-  const now = Date.now();
-  if (!forceUpdate && now - lastContextMenuUpdate < MENU_THROTTLE_MS) return;
-  lastContextMenuUpdate = now;
-
+async function setupContextMenu() {
   const settings = await settingsManager.get();
+
   if (!settings.showContextMenu) {
-    if (lastContextMenuSig) {
-      lastContextMenuSig = '';
-      chrome.contextMenus.removeAll().catch(() => { });
+    if (lastContextMenuSig !== 'hidden') {
+      lastContextMenuSig = 'hidden';
+      await chrome.contextMenus.removeAll().catch(() => { });
     }
     return;
   }
 
-  const commands = await chrome.commands.getAll();
-  const shortcuts = new Map(commands.map(c => [c.name, c.shortcut || '']));
-  const getShortcut = name => shortcuts.get(name) || '';
-
   const menus = [
-    { id: 'activate-selection-menu', title: `${chrome.i18n.getMessage('cmdActivate')} ${getShortcut('activate-selection') ? `(${getShortcut('activate-selection')})` : ''}` },
-    { id: 'activate-selection-copy-menu', title: `${chrome.i18n.getMessage('cmdActivateCopy')} ${getShortcut('activate-selection-copy') ? `(${getShortcut('activate-selection-copy')})` : ''}` },
+    { id: 'activate-selection-menu', title: chrome.i18n.getMessage('cmdActivate') },
+    { id: 'activate-selection-copy-menu', title: chrome.i18n.getMessage('cmdActivateCopy') }
   ];
 
   const sig = JSON.stringify(menus.map(m => [m.id, m.title]));
@@ -106,16 +94,15 @@ async function setupContextMenu(forceUpdate = false) {
 }
 
 chrome.storage.onChanged.addListener(async (changes) => {
-  if (settingsCache) {
-    for (const [k, { newValue }] of Object.entries(changes)) {
-      settingsCache[k] = newValue;
-    }
-    if (changes.excludedDomains || changes.excludedWords) {
-      processExclusions();
-    }
-    if (changes.showContextMenu || changes.language) {
-      setupContextMenu(true);
-    }
+  const settings = await settingsManager.get();
+  for (const [k, { newValue }] of Object.entries(changes)) {
+    settings[k] = newValue;
+  }
+  if (changes.excludedDomains || changes.excludedWords) {
+    processExclusions();
+  }
+  if (changes.showContextMenu || changes.language) {
+    setupContextMenu();
   }
 });
 
@@ -137,34 +124,14 @@ chrome.runtime.onStartup.addListener(async () => {
   setupContextMenu();
 });
 
-chrome.windows.onFocusChanged.addListener(windowId => {
-  if (windowId !== chrome.windows.WINDOW_ID_NONE) setupContextMenu();
-});
-
 chrome.contextMenus.onClicked.addListener((info, tab) => {
   if (tab?.id) {
     triggerSelection(tab, info.menuItemId === 'activate-selection-menu' ? 'initiateSelection' : 'initiateSelectionCopy');
   }
 });
 
-chrome.tabs.onActivated.addListener(({ tabId }) => {
-  if (activeSelectionTabId && activeSelectionTabId !== tabId) {
-    safeSendMessage(activeSelectionTabId, { type: 'resetSelection' });
-    activeSelectionTabId = null;
-  }
-  if (settingsCache?.showContextMenu) setupContextMenu();
-});
-
-chrome.tabs.onRemoved.addListener(id => {
-  if (id === activeSelectionTabId) activeSelectionTabId = null;
-});
-
 async function triggerSelection(tab, type) {
   if (!tab?.id || !tab.url?.startsWith('http')) return;
-
-  if (activeSelectionTabId && activeSelectionTabId !== tab.id) {
-    safeSendMessage(activeSelectionTabId, { type: 'resetSelection' });
-  }
 
   const s = await settingsManager.get();
   const msg = {
@@ -180,14 +147,11 @@ async function triggerSelection(tab, type) {
   };
 
   try {
-    const res = await chrome.tabs.sendMessage(tab.id, msg);
-    if (res?.success) activeSelectionTabId = tab.id;
+    await chrome.tabs.sendMessage(tab.id, msg);
   } catch {
     await chrome.scripting.insertCSS({ target: { tabId: tab.id }, files: ['styles.css'] }).catch(() => { });
     await chrome.scripting.executeScript({ target: { tabId: tab.id }, files: ['content.js'] }).catch(() => { });
-    chrome.tabs.sendMessage(tab.id, msg)
-      .then(r => { if (r?.success) activeSelectionTabId = tab.id; })
-      .catch(() => { });
+    chrome.tabs.sendMessage(tab.id, msg).catch(() => { });
   }
 }
 
@@ -199,9 +163,6 @@ chrome.runtime.onMessage.addListener((req, sender, sendResponse) => {
   switch (req.type) {
     case 'ping':
       sendResponse({ type: 'pong' });
-      break;
-    case 'selectionDeactivated':
-      if (sender.tab?.id === activeSelectionTabId) activeSelectionTabId = null;
       break;
     case 'openLinks':
       processLinks(req.urls, sender.tab);

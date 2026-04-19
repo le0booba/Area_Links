@@ -123,7 +123,6 @@ const showToast = (messageKey, isError = false, ...args) => {
 
   container.appendChild(toast);
 
-  // Auto-remove after animation finishes (300ms in + 2700ms stay + 300ms out = 3.3s total)
   setTimeout(() => {
     toast.remove();
   }, 3300);
@@ -377,11 +376,12 @@ const handleImport = (event) => {
       let changedCount = 0;
 
       for (const field of ["excludedDomains", "excludedWords"]) {
-        if (typeof data[field] === "string" && data[field].trim()) {
-          importedCount++;
+        if (typeof data[field] === "string") {
           const textarea = $(field);
           const oldData = textarea.value.trim();
           const newData = data[field].trim();
+
+          if (newData || oldData) importedCount++;
 
           if (oldData && oldData !== newData) {
             const labelKey = field === "excludedDomains" ? "optionsExcludedDomains" : "optionsExcludedWords";
@@ -389,7 +389,12 @@ const handleImport = (event) => {
             if (result === "cancel") return;
 
             if (result === "merge") {
-              textarea.value = `${oldData},${newData}`;
+              const mergeUnique = (a, b) => {
+                const arr1 = a ? a.split(",").map(s => s.trim()).filter(Boolean) : [];
+                const arr2 = b ? b.split(",").map(s => s.trim()).filter(Boolean) : [];
+                return Array.from(new Set([...arr1, ...arr2])).join(",");
+              };
+              textarea.value = mergeUnique(oldData, newData);
               changedCount++;
             } else {
               textarea.value = newData;
@@ -440,28 +445,38 @@ const handleFullSettingsImport = (event) => {
       const currentSync = await chrome.storage.sync.get(null);
       const currentLocal = await chrome.storage.local.get(null);
 
-      // Handle exclusions merge conflict
       const importDomains = data.local?.excludedDomains?.trim() || "";
       const importWords = data.local?.excludedWords?.trim() || "";
       const currentDomains = currentLocal.excludedDomains?.trim() || "";
       const currentWords = currentLocal.excludedWords?.trim() || "";
 
-      if ((importDomains && currentDomains && importDomains !== currentDomains) || (importWords && currentWords && importWords !== currentWords)) {
+      const domainsConflict = currentDomains && currentDomains !== importDomains;
+      const wordsConflict = currentWords && currentWords !== importWords;
+
+      if (domainsConflict || wordsConflict) {
         const result = await showConflictModal("optionsImportConflictMessage", "optionsHeaderExclusions");
         if (result === "cancel") return;
 
+        if (!data.local) data.local = {};
+
         if (result === "merge") {
-          if (!data.local) data.local = {};
-          if (importDomains && currentDomains && importDomains !== currentDomains) {
-            data.local.excludedDomains = `${currentDomains},${importDomains}`;
-          }
-          if (importWords && currentWords && importWords !== currentWords) {
-            data.local.excludedWords = `${currentWords},${importWords}`;
-          }
+          const mergeUnique = (a, b) => {
+            const arr1 = a ? a.split(",").map(s => s.trim()).filter(Boolean) : [];
+            const arr2 = b ? b.split(",").map(s => s.trim()).filter(Boolean) : [];
+            return Array.from(new Set([...arr1, ...arr2])).join(",");
+          };
+          data.local.excludedDomains = mergeUnique(currentDomains, importDomains);
+          data.local.excludedWords = mergeUnique(currentWords, importWords);
+        } else if (result === "replace") {
+          data.local.excludedDomains = importDomains;
+          data.local.excludedWords = importWords;
         }
+      } else {
+        if (!data.local) data.local = {};
+        if (importDomains !== currentDomains) data.local.excludedDomains = importDomains;
+        if (importWords !== currentWords) data.local.excludedWords = importWords;
       }
 
-      // Count and compare sync settings
       if (data.sync) {
         for (const [key, value] of Object.entries(data.sync)) {
           importedCount++;
@@ -472,7 +487,6 @@ const handleFullSettingsImport = (event) => {
         await chrome.storage.sync.set(data.sync);
       }
 
-      // Count and compare local settings
       if (data.local) {
         for (const [key, value] of Object.entries(data.local)) {
           importedCount++;
@@ -483,12 +497,11 @@ const handleFullSettingsImport = (event) => {
         await chrome.storage.local.set(data.local);
       }
 
-      // Count and compare shortcuts
       if (data.shortcuts) {
         const shortcutsKeys = Object.keys(data.shortcuts);
         const currentShortcuts = currentLocal.savedShortcuts || {};
         importedCount += shortcutsKeys.length;
-        
+
         let shortcutsChanged = false;
         for (const key of shortcutsKeys) {
           if (currentShortcuts[key] !== data.shortcuts[key]) {

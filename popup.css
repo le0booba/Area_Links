@@ -41,10 +41,10 @@ header {
 }
 
 .logo {
-    width: 40px;
-    height: 40px;
-    margin-left: 4px;
-    margin-top: 4px;
+    width: 32px;
+    height: 32px;
+    margin-left: 2px;
+    margin-top: 2px;
 }
 
 h1 {
@@ -251,10 +251,10 @@ h1 {
     transition: transform 0.4s;
 }
 
-input:checked + .slider {
+input:checked+.slider {
     background-color: var(--slider-checked-bg);
 }
 
-input:checked + .slider:before {
+input:checked+.slider:before {
     transform: translateX(12px);
 }
