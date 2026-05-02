@@ -5,10 +5,10 @@
     <img src="https://raw.githubusercontent.com/le0booba/Area_Links/refs/heads/main/screen-options.png" alt="Area Links Screenshot 2" width="380"/>
     <img src="https://raw.githubusercontent.com/le0booba/Area_Links/refs/heads/main/screen-options-popup.png" alt="Area Links Screenshot 1" width="270"/>
   </div>
+
+  **Выделил. Открыл.**
   
   **[English](README.md)** | **Русский**
-  
-  **Выделил. Открыл.**
   
   Выделите область на странице и откройте или скопируйте все ссылки внутри одним движением.
 
