@@ -6,9 +6,9 @@
     <img src="https://raw.githubusercontent.com/le0booba/Area_Links/refs/heads/main/screen-options-popup.png" alt="Area Links Screenshot 1" width="270"/>
   </div>
 
-  **English** | **[Русский](README.ru.md)**
-  
   **Select. Open. Done**
+  
+  **English** | **[Русский](README.ru.md)**
   
   Select any area on a webpage and open or copy all links inside with one action.
 
