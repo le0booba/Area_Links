@@ -6,9 +6,7 @@
     <img src="https://raw.githubusercontent.com/le0booba/Area_Links/refs/heads/main/screen-options-popup.png" alt="Area Links Screenshot 1" width="270"/>
   </div>
   
-  <p>
-    <a href="README.md">⯈ Description in English ⯇</a>
-  </p>
+  **[English](README.md)** | **Русский**
   
   **Выделил. Открыл.**
   
