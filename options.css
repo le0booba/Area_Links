@@ -408,11 +408,12 @@ input[type="color"] {
     border: 2.5px solid #000;
     border-radius: 6px;
     cursor: pointer;
-    transition: border-color 0.2s;
+    transition: border-color 0.2s, box-shadow 0.2s;
 }
 
 input[type="color"]:hover {
-    border-color: rgba(255, 255, 255, 0.5);
+    border-color: #fff;
+    box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.6);
 }
 
 .selection-color-control {
@@ -453,7 +454,7 @@ input[type="color"]:hover {
     border: 1px solid var(--border-color);
     border-radius: 6px;
     cursor: pointer;
-    transition: border-color 0.2s;
+    transition: border-color 0.2s, box-shadow 0.2s;
 }
 
 .color-preset:hover:not(:disabled) {
@@ -462,6 +463,11 @@ input[type="color"]:hover {
 
 .color-preset.selected {
     border: 2px solid #fff;
+}
+
+.color-preset.selected:hover {
+    border-color: #fff;
+    box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.6);
 }
 
 .color-preset-save {
