@@ -179,6 +179,55 @@ const animateButtonIcon = (btnId, color = "var(--primary-color)") => {
   }, 1200);
 };
 
+const sanitizeDomains = (str) => {
+  if (!str || typeof str !== "string") return "";
+  const tokens = str.split(/[\r\n\s,;]+/);
+  const set = new Set();
+  for (const raw of tokens) {
+    let val = raw.trim().toLowerCase();
+    if (!val) continue;
+    val = val.replace(/^https?:\/\//i, "").replace(/^\/\//, "");
+    val = val.replace(/^\*+\.?/, "");
+    val = val.split(/[\/?#]/)[0];
+    val = val.replace(/:\d+$/, "");
+    val = val.replace(/^\.+|\.+$/g, "");
+    val = val.replace(/^www\./, "");
+    if (!val) continue;
+    if (/^[\p{L}\p{N}](?:[\p{L}\p{N}-]*[\p{L}\p{N}])?(?:\.[\p{L}\p{N}](?:[\p{L}\p{N}-]*[\p{L}\p{N}])?)*$/u.test(val)) {
+      set.add(val);
+    }
+  }
+  return Array.from(set).join(", ");
+};
+
+const sanitizeWords = (str) => {
+  if (!str || typeof str !== "string") return "";
+  const tokens = str.split(/[\r\n,;]+/);
+  const set = new Set();
+  for (const raw of tokens) {
+    let val = raw.trim().toLowerCase();
+    val = val.replace(/^["']+|["']+$/g, "").trim();
+    if (!val) continue;
+    try {
+      val = decodeURIComponent(val);
+    } catch { }
+    val = val.replace(/[\r\n\t]+/g, " ").trim();
+    if (val) {
+      set.add(val);
+    }
+  }
+  return Array.from(set).join(", ");
+};
+
+const mergeUnique = (a, b, isDomain = false) => {
+  const sanitizeFn = isDomain ? sanitizeDomains : sanitizeWords;
+  const cleanA = sanitizeFn(a);
+  const cleanB = sanitizeFn(b);
+  const arr1 = cleanA ? cleanA.split(",").map((s) => s.trim()).filter(Boolean) : [];
+  const arr2 = cleanB ? cleanB.split(",").map((s) => s.trim()).filter(Boolean) : [];
+  return Array.from(new Set([...arr1, ...arr2])).join(", ");
+};
+
 const updateExclusionButtonsState = () => {
   const domainsValue = $("excludedDomains").value.trim();
   const wordsValue = $("excludedWords").value.trim();
@@ -272,8 +321,10 @@ const restoreOptions = async () => {
     btn.classList.toggle("active", btn.dataset.lang === settings.language);
   });
 
-  savedExcludedDomains = settings.excludedDomains;
-  savedExcludedWords = settings.excludedWords;
+  savedExcludedDomains = sanitizeDomains(settings.excludedDomains || "");
+  savedExcludedWords = sanitizeWords(settings.excludedWords || "");
+  $("excludedDomains").value = savedExcludedDomains;
+  $("excludedWords").value = savedExcludedWords;
 
   const detailsEl = $("exclusions-details");
   if (localStorage.getItem("exclusionsOpen") === "true" && (savedExcludedDomains || savedExcludedWords)) {
@@ -290,17 +341,8 @@ const restoreOptions = async () => {
 };
 
 const saveExclusions = async () => {
-  const sanitize = (str, isDomain) => str
-    .replace(/[\r\n\s]+/g, ",")
-    .replace(/https?:\/\//gi, "")
-    .replace(isDomain ? /[^\p{L}\p{N}\.\-,]/gu : /[^\p{L}\p{N}\.\-_~!$&'()*+,;=:@%\/]/gu, "")
-    .split(",")
-    .map((s) => s.trim())
-    .filter(Boolean)
-    .join(",");
-
-  const domainsToSave = sanitize($("excludedDomains").value, true);
-  const wordsToSave = sanitize($("excludedWords").value, false);
+  const domainsToSave = sanitizeDomains($("excludedDomains").value);
+  const wordsToSave = sanitizeWords($("excludedWords").value);
 
   $("excludedDomains").value = domainsToSave;
   $("excludedWords").value = wordsToSave;
@@ -377,24 +419,21 @@ const handleImport = (event) => {
 
       for (const field of ["excludedDomains", "excludedWords"]) {
         if (typeof data[field] === "string") {
+          const isDomain = field === "excludedDomains";
+          const sanitizeFn = isDomain ? sanitizeDomains : sanitizeWords;
           const textarea = $(field);
-          const oldData = textarea.value.trim();
-          const newData = data[field].trim();
+          const oldData = sanitizeFn(textarea.value);
+          const newData = sanitizeFn(data[field]);
 
           if (newData || oldData) importedCount++;
 
           if (oldData && oldData !== newData) {
-            const labelKey = field === "excludedDomains" ? "optionsExcludedDomains" : "optionsExcludedWords";
+            const labelKey = isDomain ? "optionsExcludedDomains" : "optionsExcludedWords";
             const result = await showConflictModal("optionsImportConflictMessage", labelKey);
             if (result === "cancel") return;
 
             if (result === "merge") {
-              const mergeUnique = (a, b) => {
-                const arr1 = a ? a.split(",").map(s => s.trim()).filter(Boolean) : [];
-                const arr2 = b ? b.split(",").map(s => s.trim()).filter(Boolean) : [];
-                return Array.from(new Set([...arr1, ...arr2])).join(",");
-              };
-              textarea.value = mergeUnique(oldData, newData);
+              textarea.value = mergeUnique(oldData, newData, isDomain);
               changedCount++;
             } else {
               textarea.value = newData;
@@ -445,10 +484,10 @@ const handleFullSettingsImport = (event) => {
       const currentSync = await chrome.storage.sync.get(null);
       const currentLocal = await chrome.storage.local.get(null);
 
-      const importDomains = data.local?.excludedDomains?.trim() || "";
-      const importWords = data.local?.excludedWords?.trim() || "";
-      const currentDomains = currentLocal.excludedDomains?.trim() || "";
-      const currentWords = currentLocal.excludedWords?.trim() || "";
+      const importDomains = sanitizeDomains(data.local?.excludedDomains || "");
+      const importWords = sanitizeWords(data.local?.excludedWords || "");
+      const currentDomains = sanitizeDomains(currentLocal.excludedDomains || "");
+      const currentWords = sanitizeWords(currentLocal.excludedWords || "");
 
       const domainsConflict = currentDomains && currentDomains !== importDomains;
       const wordsConflict = currentWords && currentWords !== importWords;
@@ -460,13 +499,8 @@ const handleFullSettingsImport = (event) => {
         if (!data.local) data.local = {};
 
         if (result === "merge") {
-          const mergeUnique = (a, b) => {
-            const arr1 = a ? a.split(",").map(s => s.trim()).filter(Boolean) : [];
-            const arr2 = b ? b.split(",").map(s => s.trim()).filter(Boolean) : [];
-            return Array.from(new Set([...arr1, ...arr2])).join(",");
-          };
-          data.local.excludedDomains = mergeUnique(currentDomains, importDomains);
-          data.local.excludedWords = mergeUnique(currentWords, importWords);
+          data.local.excludedDomains = mergeUnique(currentDomains, importDomains, true);
+          data.local.excludedWords = mergeUnique(currentWords, importWords, false);
         } else if (result === "replace") {
           data.local.excludedDomains = importDomains;
           data.local.excludedWords = importWords;
@@ -533,7 +567,10 @@ const setupEventListeners = () => {
   });
 
   $("exportExclusions").addEventListener("click", () => {
-    const data = { excludedDomains: $("excludedDomains").value, excludedWords: $("excludedWords").value };
+    const data = {
+      excludedDomains: sanitizeDomains($("excludedDomains").value),
+      excludedWords: sanitizeWords($("excludedWords").value),
+    };
     downloadJson(`area-links-exclusions_${formatDate(new Date())}.json`, data);
   });
 

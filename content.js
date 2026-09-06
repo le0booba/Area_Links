@@ -20,6 +20,11 @@
     let cachedLinks = null;
     const seenInCurrentPass = new Set();
 
+    const isDomainExcluded = (host, domain) => {
+        if (!host || !domain) return false;
+        return host === domain || host.endsWith('.' + domain) || (!domain.includes('.') && host.includes(domain));
+    };
+
     const setSelectionBoxAppearance = (settings = {}) => {
         if (!selectionBox) return;
         const { selectionBoxStyle: boxStyle, selectionBoxColor: boxColor, style } = settings;
@@ -109,7 +114,7 @@
                 const data = getLinkData(item);
                 let isExcluded = false;
                 if (checkExclusions) {
-                    if (hasExcludedDomains) isExcluded = excludedDomains.some(d => data.h.includes(d));
+                    if (hasExcludedDomains) isExcluded = excludedDomains.some(d => isDomainExcluded(data.h, d));
                     if (!isExcluded && hasExcludedWords) isExcluded = excludedWords.some(w => getDecodedLower(data).includes(w));
                 }
                 const isHistory = useHistory && relevantHistory.has(data.raw);

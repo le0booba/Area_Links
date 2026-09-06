@@ -31,20 +31,31 @@ const mergeUnique = (primary, secondary, limit) => {
 const processExclusions = () => {
   if (!settingsCache) return;
   const domainSet = new Set();
-  for (const raw of (settingsCache.excludedDomains || '').split(',')) {
-    const val = raw.trim();
+  for (const raw of (settingsCache.excludedDomains || '').split(/[\r\n,;]+/)) {
+    let val = raw.trim().toLowerCase();
     if (!val) continue;
-    try {
-      domainSet.add(new URL(val.includes('://') ? val : 'http://' + val).hostname.toLowerCase());
-    } catch {
-      domainSet.add(val.toLowerCase());
+    val = val.replace(/^https?:\/\//i, '').replace(/^\/\//, '');
+    val = val.replace(/^\*+\.?/, '');
+    val = val.split(/[\/?#]/)[0];
+    val = val.replace(/:\d+$/, '');
+    val = val.replace(/^\.+|\.+$/g, '');
+    val = val.replace(/^www\./, '');
+    if (!val) continue;
+    if (/^[\p{L}\p{N}](?:[\p{L}\p{N}-]*[\p{L}\p{N}])?(?:\.[\p{L}\p{N}](?:[\p{L}\p{N}-]*[\p{L}\p{N}])?)*$/u.test(val)) {
+      domainSet.add(val);
     }
   }
   settingsCache.processedExcludedDomains = [...domainSet];
-  settingsCache.processedExcludedWords = (settingsCache.excludedWords || '')
-    .split(',')
-    .map(w => w.trim().toLowerCase())
-    .filter(Boolean);
+  const wordSet = new Set();
+  for (const raw of (settingsCache.excludedWords || '').split(/[\r\n,;]+/)) {
+    let val = raw.trim().toLowerCase();
+    val = val.replace(/^["']+|["']+$/g, '').trim();
+    if (!val) continue;
+    try { val = decodeURIComponent(val); } catch { }
+    val = val.replace(/[\r\n\t]+/g, ' ').trim();
+    if (val) wordSet.add(val);
+  }
+  settingsCache.processedExcludedWords = [...wordSet];
 };
 
 const settingsManager = {
