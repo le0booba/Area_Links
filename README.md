@@ -121,23 +121,19 @@ The popup also provides quick action buttons to activate selection modes and cle
 
 ## 🔧 Technical Details
 
+<details>
+<summary><b>View Technical Details</b></summary>
+
 ### Performance Optimizations
 
-1. **Link Position Caching**: All link bounding rectangles are pre-calculated once on `mousedown` and stored as plain coordinate values (`left`, `right`, `top`, `bottom`) in a `cachedLinks` array. This completely eliminates DOM queries during mouse movement, preventing layout thrashing and enabling smooth 60fps interaction even on pages with thousands of links. A `data: null` field per entry enables lazy URL parsing — hostname and lowercase variants are only computed via `getLinkData()` the first time a link enters the selection rectangle, not upfront for every link on the page.
+Area Links is engineered for near-zero runtime overhead and smooth 60fps interaction even on pages with thousands of links:
 
-2. **RequestAnimationFrame with Batched Updates**: Mouse movement events are processed using `requestAnimationFrame` via a `scheduleUpdate()` guard that sets an `isUpdateScheduled` flag. Multiple rapid `mousemove` events fired between frames are collapsed into a single render update, drastically reducing CPU usage during selection. The flag is reset only after the frame callback completes, ensuring no redundant calculations are ever queued.
-
-3. **In-Memory Settings Cache**: A `settingsCache` object in `background.js` combines sync and local storage into a single in-memory snapshot, loaded once via `settingsManager.initialize()` on startup. Throughout a browser session this reduces storage API calls from potentially hundreds down to 1–2. The cache is kept fresh automatically via a `chrome.storage.onChanged` listener that patches only the changed keys — no full reload required.
-
-4. **Set-based History Lookup (O(1) vs O(n))**: Link history arrays are converted to `Set` objects (`historySet`, `copyHistorySet`) immediately when selection is initiated in `initSelection()`. Duplicate and history checks during mouse movement are constant-time `Set.has()` lookups rather than linear array scans. For a selection of 100 links checked against a 50-entry history, this reduces the total number of comparisons from 5,000 to 100 — a 50× improvement that is most impactful when both history and duplicate detection are enabled simultaneously.
-
-5. **CSS Class Toggling with Status Tracking**: Each cached link carries a `status` field (`0` = outside, `1` = highlighted, `2` = duplicate/excluded, `3` = over limit). On every animation frame, a class change via `classList.add/remove` is only triggered when a link's new status differs from its previous one. This means links that remain inside or outside the selection box across frames generate zero DOM mutations, minimizing layout recalculation and reflow even when hundreds of links are visible simultaneously.
-
-### Browser Compatibility
-- Built with **Manifest V3** for modern Chrome extensions
-- Requires Chrome/Chromium-based browsers (Chrome, Edge, Brave, etc.)
-- Minimum Chrome version: 88+
-- Fully compatible with the latest Chrome security requirements
+*   **💤 Lazy Dynamic Injection:** Content scripts and styles are not loaded automatically on pages. They are dynamically injected via `chrome.scripting` only upon trigger, saving RAM and CPU.
+*   **📐 One-Pass Geometry Caching (Zero Layout Thrashing):** Bounding boxes for all links (`getBoundingClientRect`) are calculated *once* on `mousedown`. During mouse drag, intersection tests rely exclusively on plain in-memory coordinate comparisons with zero DOM reflows.
+*   **🎞️ Frame-Bound Rendering:** Selection updates are tied to the browser's refresh rate via `requestAnimationFrame` with passive scroll listeners, ensuring stutter-free rendering without event flooding.
+*   **🎯 DOM Mutation Diffing:** Links only trigger DOM updates (`classList`) when their selection state actually changes (`status !== newStatus`), drastically reducing layout/paint recalculations.
+*   **⚡ Lazy URL Parsing & O(1) Lookups:** Expensive URL decoding and domain extractions (`new URL()`) are performed only for links within the active selection and are memoized. History and duplication checks use native `Set.has()` lookups ($O(1)$).
+*   **🧹 Strict Memory Cleanup:** Immediately upon release or cancellation, all DOM nodes, listeners, and cached data structures are destroyed to prevent memory leaks.
 
 ### Smart Behaviors
 - **Automatic Tab Switching Prevention**: Automatically resets selection when switching to a different tab
@@ -145,6 +141,8 @@ The popup also provides quick action buttons to activate selection modes and cle
 - **Duplicate Detection**: Multiple mechanisms to prevent duplicate link opening/copying with separate history tracking for each mode
 - **International Domain Support**: Proper handling of international domains with automatic Punycode conversion for exclusion filters
 - **Graceful Degradation**: Fallback clipboard copy method (`document.execCommand`) for non-secure contexts
+
+</details>
 
 ---
 
